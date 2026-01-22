@@ -65,10 +65,10 @@ export function CTASection() {
   }, [])
 
   return (
-    <section className="py-20" ref={ref}>
-      <div className="container-custom">
+    <section className="py-12 md:py-20" ref={ref}>
+      <div className="container-custom px-4 md:px-6">
         <motion.div
-          className="grid lg:grid-cols-2 gap-8"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8"
           variants={containerVariants}
           initial={mounted ? "hidden" : false}
           animate={mounted ? (isInView ? "visible" : "hidden") : false}

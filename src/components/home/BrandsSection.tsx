@@ -61,8 +61,8 @@ export function BrandsSection() {
   }, [])
 
   return (
-    <section className="py-20 bg-secondary-50" ref={ref}>
-      <div className="container-custom">
+    <section className="py-12 md:py-20 bg-secondary-50" ref={ref}>
+      <div className="container-custom px-4 md:px-6">
         {/* Header */}
         <motion.div
           className="text-center mb-12"
@@ -70,7 +70,7 @@ export function BrandsSection() {
           initial={mounted ? "hidden" : false}
           animate={mounted ? (isInView ? "visible" : "hidden") : false}
         >
-          <h2 className="section-title mb-4">Marcas más buscadas</h2>
+          <h2 className="section-title mb-4 text-2xl md:text-3xl lg:text-4xl">Marcas más buscadas</h2>
           <p className="section-subtitle mx-auto">
             Encuentra tu marca favorita entre nuestra amplia selección de vehículos
           </p>

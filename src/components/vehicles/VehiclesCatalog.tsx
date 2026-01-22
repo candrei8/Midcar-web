@@ -173,7 +173,7 @@ export function VehiclesCatalog() {
   }
 
   return (
-    <div className="container-custom py-8">
+    <div className="container-custom py-6 md:py-8 px-4 md:px-6">
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar Filters - Desktop */}
         <aside className="hidden lg:block lg:w-72 flex-shrink-0">

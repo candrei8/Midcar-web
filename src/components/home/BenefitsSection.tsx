@@ -83,8 +83,8 @@ export function BenefitsSection() {
   }, [])
 
   return (
-    <section className="py-20 bg-secondary-50" ref={ref}>
-      <div className="container-custom">
+    <section className="py-12 md:py-20 bg-secondary-50" ref={ref}>
+      <div className="container-custom px-4 md:px-6">
         {/* Header */}
         <motion.div
           className="text-center mb-16"
@@ -92,7 +92,7 @@ export function BenefitsSection() {
           initial={mounted ? "hidden" : false}
           animate={mounted ? (isInView ? "visible" : "hidden") : false}
         >
-          <h2 className="section-title mb-4">¿Por qué comprar en MID Car?</h2>
+          <h2 className="section-title mb-4 text-2xl md:text-3xl lg:text-4xl">¿Por qué comprar en MID Car?</h2>
           <p className="section-subtitle mx-auto">
             Miles de clientes han confiado en nosotros para la compra de su vehículo.
             Descubre por qué somos diferentes.
@@ -101,7 +101,7 @@ export function BenefitsSection() {
 
         {/* Grid */}
         <motion.div
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
           variants={containerVariants}
           initial={mounted ? "hidden" : false}
           animate={mounted ? (isInView ? "visible" : "hidden") : false}

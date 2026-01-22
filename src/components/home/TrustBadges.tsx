@@ -56,8 +56,8 @@ export function TrustBadges() {
   }, [])
 
   return (
-    <section className="py-12 bg-secondary-50" ref={ref}>
-      <div className="container-custom">
+    <section className="py-8 md:py-12 bg-secondary-50" ref={ref}>
+      <div className="container-custom px-4 md:px-6">
         <motion.div
           className="flex flex-wrap items-center justify-center gap-8 md:gap-16"
           variants={containerVariants}

@@ -90,7 +90,7 @@ export function SearchSection() {
   }
 
   return (
-    <section className="relative -mt-24 z-20 pb-12" ref={ref}>
+    <section className="relative -mt-12 md:-mt-24 z-20 pb-8 md:pb-12 px-4 md:px-0" ref={ref}>
       <div className="container-custom">
         <motion.div
           className="bg-white rounded-3xl shadow-2xl shadow-secondary-900/10 border border-secondary-100 overflow-hidden"
@@ -100,25 +100,25 @@ export function SearchSection() {
         >
           {/* Header */}
           <motion.div
-            className="bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6"
+            className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 md:px-8 py-4 md:py-6"
             variants={itemVariants}
           >
-            <h2 className="text-2xl font-bold text-white font-display">
+            <h2 className="text-xl md:text-2xl font-bold text-white font-display">
               Encuentra tu coche ideal
             </h2>
-            <p className="text-primary-100 mt-1">
+            <p className="text-primary-100 mt-1 text-sm md:text-base">
               Busca entre {vehicleCount} vehículos certificados
             </p>
           </motion.div>
 
-          <div className="p-8">
+          <div className="p-4 md:p-8">
             {/* Body Type Selection */}
             <motion.div className="mb-8" variants={itemVariants}>
               <label className="block text-sm font-medium text-secondary-700 mb-3">
                 Tipo de carrocería
               </label>
               <motion.div
-                className="grid grid-cols-3 md:grid-cols-6 gap-3"
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 md:gap-3"
                 variants={containerVariants}
               >
                 {bodyTypes.map((type, index) => (

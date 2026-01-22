@@ -18,7 +18,7 @@ export function HeroSection() {
   }, [])
 
   return (
-    <section className="relative min-h-[100vh] flex items-center overflow-hidden">
+    <section className="relative min-h-[90vh] md:min-h-[100vh] flex items-center overflow-hidden">
       {/* Static Background - NO blur, NO animations */}
       <div className="absolute inset-0 bg-gradient-to-br from-secondary-900 via-secondary-800 to-secondary-900">
         {/* Static gradient orbs - using opacity and gradients instead of blur */}
@@ -113,7 +113,7 @@ export function HeroSection() {
 
           {/* Hero Image/Visual */}
           <div
-            className={`hidden lg:block relative transition-all duration-700 ease-out delay-200 ${
+            className={`relative transition-all duration-700 ease-out delay-200 ${
               mounted ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
             }`}
           >

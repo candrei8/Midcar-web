@@ -141,20 +141,20 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 
 export function FeaturedVehicles() {
   return (
-    <section className="py-20">
-      <div className="container-custom">
+    <section className="py-12 md:py-20">
+      <div className="container-custom px-4 md:px-6 lg:px-8">
         {/* Header */}
         <ScrollAnimation variant="fadeUp">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 md:mb-12">
             <div>
-              <h2 className="section-title mb-2">Ofertas destacadas</h2>
-              <p className="section-subtitle">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-secondary-900 font-display mb-2">Ofertas destacadas</h2>
+              <p className="text-base md:text-lg text-secondary-500 max-w-2xl">
                 Los mejores vehículos a precios increíbles. ¡Solo este mes!
               </p>
             </div>
             <Link
               href="/vehiculos"
-              className="btn-secondary self-start md:self-auto"
+              className="btn-secondary self-start md:self-auto text-sm md:text-base"
             >
               Ver todas las ofertas
               <ArrowRight className="w-4 h-4" />
@@ -163,7 +163,7 @@ export function FeaturedVehicles() {
         </ScrollAnimation>
 
         {/* Grid */}
-        <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {featuredVehicles.slice(0, 4).map((vehicle) => (
             <StaggerItem key={vehicle.id}>
               <VehicleCard vehicle={vehicle} />

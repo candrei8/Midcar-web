@@ -88,9 +88,9 @@ export function TestimonialsSection() {
   }, [])
 
   return (
-    <section className="py-20" ref={ref}>
-      <div className="container-custom">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+    <section className="py-12 md:py-20" ref={ref}>
+      <div className="container-custom px-4 md:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
           {/* Left Content */}
           <motion.div
             variants={leftContentVariants}
@@ -98,7 +98,7 @@ export function TestimonialsSection() {
             animate={mounted ? (isInView ? "visible" : "hidden") : false}
           >
             <motion.h2
-              className="section-title mb-4"
+              className="section-title mb-4 text-2xl md:text-3xl lg:text-4xl"
               initial={mounted ? { opacity: 0, y: 20 } : false}
               animate={mounted ? (isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }) : false}
               transition={{ delay: 0.2, duration: 0.5 }}
