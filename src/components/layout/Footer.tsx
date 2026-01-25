@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Youtube, Twitter } from 'lucide-react'
+import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Youtube, Twitter, LucideIcon } from 'lucide-react'
+import { getContactInfo, ContactInfo } from '@/lib/content-service'
 
 const footerLinks = {
   vehiculos: [
@@ -17,14 +19,60 @@ const footerLinks = {
   ],
 }
 
-const socialLinks = [
-  { name: 'Facebook', icon: Facebook, href: 'https://www.facebook.com/midcar.midcar/' },
-  { name: 'Instagram', icon: Instagram, href: 'https://www.instagram.com/midcarmidcar/' },
-  { name: 'YouTube', icon: Youtube, href: 'https://www.youtube.com/@mid7473' },
-  { name: 'Twitter', icon: Twitter, href: 'https://twitter.com/MidcarVehiculos' },
-]
+const defaultContactInfo: ContactInfo = {
+  telefono: '910 023 016',
+  whatsapp: '695055555',
+  email: 'ventas@midcar.net',
+  direccion: {
+    calle: 'C/ Polo Sur 2',
+    cp: '28850',
+    ciudad: 'Torrejón de Ardoz',
+    provincia: 'Madrid',
+  },
+  horario: {
+    lunesJueves: '9:00-14:00 / 16:00-20:30',
+    viernes: '9:00-17:00',
+    sabado: 'Cerrado',
+    domingo: '11:00-14:00',
+  },
+  googleMapsUrl: 'https://goo.gl/maps/QBEDPvLewMC1NdZ68',
+  redes: {
+    facebook: 'https://www.facebook.com/midcar.midcar/',
+    instagram: 'https://www.instagram.com/midcarmidcar/',
+    youtube: 'https://www.youtube.com/@mid7473',
+    twitter: 'https://twitter.com/MidcarVehiculos',
+  },
+}
+
+interface SocialLink {
+  name: string
+  icon: LucideIcon
+  href: string
+}
 
 export function Footer() {
+  const [contactInfo, setContactInfo] = useState<ContactInfo>(defaultContactInfo)
+
+  useEffect(() => {
+    async function fetchContactInfo() {
+      try {
+        const data = await getContactInfo()
+        setContactInfo(data)
+      } catch (error) {
+        console.error('Error fetching contact info:', error)
+      }
+    }
+
+    fetchContactInfo()
+  }, [])
+
+  const socialLinks: SocialLink[] = [
+    { name: 'Facebook', icon: Facebook, href: contactInfo.redes.facebook },
+    { name: 'Instagram', icon: Instagram, href: contactInfo.redes.instagram },
+    { name: 'YouTube', icon: Youtube, href: contactInfo.redes.youtube },
+    { name: 'Twitter', icon: Twitter, href: contactInfo.redes.twitter },
+  ]
+
   return (
     <footer className="bg-secondary-900 text-white">
       {/* Main Footer */}
@@ -49,33 +97,33 @@ export function Footer() {
             {/* Contact Info */}
             <div className="space-y-3">
               <a
-                href="tel:910023016"
+                href={`tel:${contactInfo.telefono.replace(/\s/g, '')}`}
                 className="flex items-center gap-3 text-secondary-300 hover:text-primary-400 transition-colors"
               >
                 <Phone className="w-5 h-5" />
-                <span>910 023 016</span>
+                <span>{contactInfo.telefono}</span>
               </a>
               <a
-                href="mailto:ventas@midcar.net"
+                href={`mailto:${contactInfo.email}`}
                 className="flex items-center gap-3 text-secondary-300 hover:text-primary-400 transition-colors"
               >
                 <Mail className="w-5 h-5" />
-                <span>ventas@midcar.net</span>
+                <span>{contactInfo.email}</span>
               </a>
               <a
-                href="https://goo.gl/maps/QBEDPvLewMC1NdZ68"
+                href={contactInfo.googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-start gap-3 text-secondary-300 hover:text-primary-400 transition-colors"
               >
                 <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                <span>C/ Polo Sur 2, 28850<br />Torrejón de Ardoz, Madrid</span>
+                <span>{contactInfo.direccion.calle}, {contactInfo.direccion.cp}<br />{contactInfo.direccion.ciudad}, {contactInfo.direccion.provincia}</span>
               </a>
               <div className="flex items-start gap-3 text-secondary-300">
                 <Clock className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p>L-J: 9:00-14:00 / 16:00-20:30</p>
-                  <p>V: 9:00-17:00 | D: 11:00-14:00</p>
+                  <p>L-J: {contactInfo.horario.lunesJueves}</p>
+                  <p>V: {contactInfo.horario.viernes} | D: {contactInfo.horario.domingo}</p>
                 </div>
               </div>
             </div>

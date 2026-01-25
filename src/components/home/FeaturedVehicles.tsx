@@ -1,22 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Heart, Fuel, Gauge, Calendar, Zap } from 'lucide-react'
+import { ArrowRight, Fuel, Gauge, Calendar, Zap, Car } from 'lucide-react'
 import { formatPrice, formatKilometers } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import { vehicles, getFeaturedVehicles, getVehiclesOnSale, type Vehicle } from '@/data/vehicles'
+import { getVehiclesOnSale, getFeaturedVehicles, getVehicleCount, type Vehicle } from '@/lib/vehicles-service'
 import { ScrollAnimation, StaggerContainer, StaggerItem } from '@/components/ui/ScrollAnimation'
 
-// Get featured vehicles first, then fill with on-sale vehicles if needed
-const featured = getFeaturedVehicles()
-const onSale = getVehiclesOnSale()
-const featuredVehicles = featured.length >= 4
-  ? featured.slice(0, 8)
-  : [...featured, ...onSale.filter(v => !v.featured)].slice(0, 8)
-
 function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  const [imageError, setImageError] = useState(false)
   const monthlyPayment = vehicle.monthlyPayment || Math.round(vehicle.price / 60)
 
   const labelColors: Record<string, string> = {
@@ -26,33 +18,16 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
     '0': 'bg-blue-500',
   }
 
-  // Use placeholder images based on vehicle type when no images available
-  const placeholderImages: Record<string, string> = {
-    berlina: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80',
-    familiar: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&q=80',
-    suv: 'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800&q=80',
-    monovolumen: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=800&q=80',
-    furgoneta: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
-    industrial: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
-  }
-  const imageUrl = vehicle.images[0] || placeholderImages[vehicle.bodyType] || placeholderImages.berlina
-
   return (
     <article className="card-vehicle group relative">
-      {/* Image */}
-      <div className="relative aspect-[4/3] bg-secondary-100 overflow-hidden">
-        {!imageError ? (
-          <img
-            src={imageUrl}
-            alt={vehicle.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary-200 to-secondary-300">
-            <span className="text-6xl opacity-50">🚗</span>
+      {/* Placeholder sin imagen */}
+      <div className="relative aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-2 bg-secondary-300 rounded-full flex items-center justify-center">
+            <Fuel className="w-8 h-8 text-secondary-500" />
           </div>
-        )}
+          <p className="text-sm font-medium text-secondary-500">{vehicle.brand}</p>
+        </div>
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
@@ -79,11 +54,6 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
             </span>
           </div>
         )}
-
-        {/* Favorite Button */}
-        <button className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white">
-          <Heart className="w-5 h-5 text-secondary-600 hover:text-primary-500" />
-        </button>
       </div>
 
       {/* Content */}
@@ -140,6 +110,61 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 }
 
 export function FeaturedVehicles() {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadVehicles() {
+      setIsLoading(true)
+      try {
+        // Get featured first, then fill with on-sale vehicles if needed
+        const featured = await getFeaturedVehicles()
+        const onSale = await getVehiclesOnSale()
+        const count = await getVehicleCount()
+
+        const featuredVehicles = featured.length >= 4
+          ? featured.slice(0, 8)
+          : [...featured, ...onSale.filter(v => !v.featured)].slice(0, 8)
+
+        setVehicles(featuredVehicles)
+        setTotalCount(count)
+      } catch (error) {
+        console.error('Error loading vehicles:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadVehicles()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <section className="py-12 md:py-20">
+        <div className="container-custom px-4 md:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 md:mb-12">
+            <div>
+              <div className="h-8 w-64 bg-secondary-200 rounded animate-pulse mb-2" />
+              <div className="h-6 w-96 bg-secondary-100 rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse">
+                <div className="aspect-[4/3] bg-secondary-200" />
+                <div className="p-5 space-y-3">
+                  <div className="h-5 bg-secondary-200 rounded w-3/4" />
+                  <div className="h-7 bg-secondary-200 rounded w-1/2" />
+                  <div className="h-4 bg-secondary-100 rounded w-1/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="py-12 md:py-20">
       <div className="container-custom px-4 md:px-6 lg:px-8">
@@ -164,7 +189,7 @@ export function FeaturedVehicles() {
 
         {/* Grid */}
         <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {featuredVehicles.slice(0, 4).map((vehicle) => (
+          {vehicles.slice(0, 4).map((vehicle) => (
             <StaggerItem key={vehicle.id}>
               <VehicleCard vehicle={vehicle} />
             </StaggerItem>
@@ -175,7 +200,7 @@ export function FeaturedVehicles() {
         <ScrollAnimation variant="fadeUp" delay={0.3}>
           <div className="mt-12 text-center">
             <Link href="/vehiculos" className="btn-primary text-lg px-8 py-4">
-              Ver todos los vehículos ({onSale.length})
+              Ver todos los vehículos ({totalCount})
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>

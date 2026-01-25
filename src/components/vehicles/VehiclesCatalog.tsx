@@ -1,15 +1,12 @@
 'use client'
 
-import React, { useState, useMemo, useEffect, useRef } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
-import { Heart, Fuel, Gauge, Calendar, Zap, SlidersHorizontal, X, ChevronDown, Grid, List } from 'lucide-react'
+import { Fuel, Gauge, Calendar, Zap, SlidersHorizontal, X, ChevronDown, Grid, List } from 'lucide-react'
 import { formatPrice, formatKilometers, cn } from '@/lib/utils'
-import { vehicles, getBrands, getFuelTypes, getBodyTypes, type Vehicle } from '@/data/vehicles'
+import { getVehiclesOnSale, getBrands, getFuelTypes, type Vehicle } from '@/lib/vehicles-service'
 
-const brands = ['Todas', ...getBrands()]
-const fuelTypes = ['Todos', ...getFuelTypes()]
 const bodyTypes = [
   { id: 'todas', name: 'Todas' },
   { id: 'berlina', name: 'Berlina' },
@@ -41,12 +38,18 @@ const kmRanges = [
   { label: '150.000 km', value: 150000 },
   { label: '200.000 km', value: 200000 },
 ]
-const yearRanges = ['Sin límite', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015']
+const yearRanges = ['Sin límite', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015']
 
 export function VehiclesCatalog() {
   const searchParams = useSearchParams()
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Dynamic data from Supabase
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [brands, setBrands] = useState<string[]>(['Todas'])
+  const [fuelTypes, setFuelTypes] = useState<string[]>(['Todos'])
 
   // Initialize filters from URL params
   const [filters, setFilters] = useState({
@@ -58,6 +61,28 @@ export function VehiclesCatalog() {
     minYear: 'Sin límite',
   })
   const [sortBy, setSortBy] = useState('relevancia')
+
+  // Load data from Supabase on mount
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true)
+      try {
+        const [vehiclesData, brandsData, fuelTypesData] = await Promise.all([
+          getVehiclesOnSale(),
+          getBrands(),
+          getFuelTypes(),
+        ])
+        setVehicles(vehiclesData)
+        setBrands(['Todas', ...brandsData])
+        setFuelTypes(['Todos', ...fuelTypesData])
+      } catch (error) {
+        console.error('Error loading data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadData()
+  }, [])
 
   // Parse URL params on mount
   useEffect(() => {
@@ -95,12 +120,11 @@ export function VehiclesCatalog() {
     }
 
     setFilters(newFilters)
-  }, [searchParams])
+  }, [searchParams, brands])
 
   // Filter and sort vehicles
   const filteredVehicles = useMemo(() => {
-    // Start with only on-sale vehicles
-    let result = vehicles.filter(v => v.onSale)
+    let result = [...vehicles]
 
     // Filter by brand
     if (filters.brand !== 'Todas') {
@@ -159,7 +183,7 @@ export function VehiclesCatalog() {
     }
 
     return result
-  }, [filters, sortBy])
+  }, [vehicles, filters, sortBy])
 
   const resetFilters = () => {
     setFilters({
@@ -170,6 +194,42 @@ export function VehiclesCatalog() {
       maxKm: 'Sin límite',
       minYear: 'Sin límite',
     })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container-custom py-6 md:py-8 px-4 md:px-6">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar Skeleton */}
+          <aside className="hidden lg:block lg:w-72 flex-shrink-0">
+            <div className="bg-white rounded-2xl border border-secondary-100 p-6">
+              <div className="h-6 bg-secondary-200 rounded w-1/2 mb-6 animate-pulse" />
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="h-12 bg-secondary-100 rounded-xl animate-pulse" />
+                ))}
+              </div>
+            </div>
+          </aside>
+          {/* Grid Skeleton */}
+          <div className="flex-1">
+            <div className="h-8 bg-secondary-100 rounded w-48 mb-6 animate-pulse" />
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse">
+                  <div className="aspect-[4/3] bg-secondary-200" />
+                  <div className="p-5 space-y-3">
+                    <div className="h-5 bg-secondary-200 rounded w-3/4" />
+                    <div className="h-7 bg-secondary-200 rounded w-1/2" />
+                    <div className="h-4 bg-secondary-100 rounded w-1/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -474,23 +534,7 @@ export function VehiclesCatalog() {
 }
 
 function VehicleCard({ vehicle, viewMode }: { vehicle: Vehicle, viewMode: 'grid' | 'list' }) {
-  const [imageError, setImageError] = useState(false)
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const imgRef = useRef<HTMLImageElement>(null)
   const monthlyPayment = vehicle.monthlyPayment || Math.round(vehicle.price / 60)
-
-  // Reset error state when vehicle changes
-  useEffect(() => {
-    setImageError(false)
-    setImageLoaded(false)
-  }, [vehicle.id])
-
-  // Check if image is already loaded from cache
-  useEffect(() => {
-    if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
-      setImageLoaded(true)
-    }
-  }, [vehicle.id])
 
   const labelColors: Record<string, string> = {
     'ECO': 'bg-green-500',
@@ -499,27 +543,16 @@ function VehicleCard({ vehicle, viewMode }: { vehicle: Vehicle, viewMode: 'grid'
     '0': 'bg-blue-500',
   }
 
-  const imageUrl = vehicle.images[0] || `https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80`
-
   if (viewMode === 'list') {
     return (
       <article className="bg-white rounded-2xl border border-secondary-100 overflow-hidden hover:shadow-xl transition-all duration-300 group relative">
         <div className="flex flex-col md:flex-row">
-          {/* Image */}
-          <div className="relative w-full md:w-72 flex-shrink-0 aspect-[4/3] md:aspect-auto bg-secondary-100">
-            {/* Fallback placeholder - always rendered behind the image */}
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary-200 to-secondary-300">
-              <span className="text-5xl opacity-50">🚗</span>
+          {/* Placeholder sin imagen */}
+          <div className="relative w-full md:w-72 flex-shrink-0 aspect-[4/3] md:aspect-auto bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center min-h-[150px]">
+            <div className="text-center p-4">
+              <Fuel className="w-10 h-10 text-secondary-400 mx-auto mb-2" />
+              <p className="text-sm font-medium text-secondary-500">{vehicle.brand}</p>
             </div>
-            {!imageError && (
-              <img
-                src={imageUrl}
-                alt={vehicle.title}
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                onError={() => setImageError(true)}
-                onLoad={() => setImageLoaded(true)}
-              />
-            )}
             {vehicle.featured && (
               <span className="absolute top-3 left-3 badge-primary text-xs">DESTACADO</span>
             )}
@@ -568,22 +601,12 @@ function VehicleCard({ vehicle, viewMode }: { vehicle: Vehicle, viewMode: 'grid'
 
   return (
     <article className="card-vehicle group relative">
-      {/* Image */}
-      <div className="relative aspect-[4/3] bg-secondary-100 overflow-hidden">
-        {/* Fallback placeholder - always rendered behind the image */}
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary-200 to-secondary-300">
-          <span className="text-6xl opacity-50">🚗</span>
+      {/* Placeholder sin imagen */}
+      <div className="relative aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <Fuel className="w-12 h-12 text-secondary-400 mx-auto mb-2" />
+          <p className="text-sm font-medium text-secondary-500">{vehicle.brand}</p>
         </div>
-        {!imageError && (
-          <img
-            ref={imgRef}
-            src={imageUrl}
-            alt={vehicle.title}
-            className={`absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-            onError={() => setImageError(true)}
-            onLoad={() => setImageLoaded(true)}
-          />
-        )}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {vehicle.featured && <span className="badge-primary text-xs">DESTACADO</span>}
           {vehicle.ivaDeducible && <span className="badge bg-blue-100 text-blue-700 text-xs">IVA DEDUCIBLE</span>}
@@ -596,9 +619,6 @@ function VehicleCard({ vehicle, viewMode }: { vehicle: Vehicle, viewMode: 'grid'
             {vehicle.label}
           </span>
         )}
-        <button className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white">
-          <Heart className="w-5 h-5 text-secondary-600 hover:text-primary-500" />
-        </button>
       </div>
 
       {/* Content */}

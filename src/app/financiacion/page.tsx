@@ -5,6 +5,78 @@ import { Calculator, Check, ArrowRight, Shield, Clock, FileCheck } from 'lucide-
 import Link from 'next/link'
 import { formatPrice } from '@/lib/utils'
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+
+// Datos estructurados para FAQs
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: '¿Qué documentación necesito para financiar un coche?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'DNI/NIE en vigor, última nómina o declaración de la renta, y justificante de domicilio. Si eres autónomo, necesitarás además los últimos recibos de autónomo.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '¿Puedo financiar un coche sin entrada?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Sí, ofrecemos financiación hasta el 100% del valor del vehículo, sin necesidad de entrada inicial.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '¿Cuánto tarda la aprobación de la financiación?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Normalmente la respuesta es en menos de 24 horas hábiles. En muchos casos, podemos darte una respuesta el mismo día.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '¿Puedo cancelar la financiación anticipadamente?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Sí, puedes cancelar tu financiación en cualquier momento sin penalización.',
+      },
+    },
+  ],
+}
+
+// Datos estructurados de la página
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${siteUrl}/financiacion#webpage`,
+  url: `${siteUrl}/financiacion`,
+  name: 'Financiación de Coches - MID Car Madrid',
+  description: 'Financiación de coches sin entrada, hasta 10 años y respuesta en 24 horas.',
+  isPartOf: {
+    '@id': `${siteUrl}/#website`,
+  },
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Inicio',
+        item: siteUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Financiación',
+        item: `${siteUrl}/financiacion`,
+      },
+    ],
+  },
+}
+
 const benefits = [
   {
     icon: Shield,
@@ -55,10 +127,19 @@ export default function FinanciacionPage() {
     ? (financedAmount * monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1)
     : 0
   const totalCost = monthlyPayment * months
-  const totalInterest = totalCost - financedAmount
 
   return (
     <div className="min-h-screen bg-secondary-50">
+      {/* Datos estructurados */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pageSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Header */}
       <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white py-16">
         <div className="container-custom">

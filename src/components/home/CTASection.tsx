@@ -4,6 +4,26 @@ import { useRef, useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import Link from 'next/link'
 import { Phone, Search, MapPin, ArrowRight } from 'lucide-react'
+import { getCTAContent, CTAContent } from '@/lib/content-service'
+
+const defaultContent: CTAContent = {
+  financiacion: {
+    badge: 'Financiación flexible',
+    titulo: 'Financiación a tu medida',
+    descripcion: 'Te ayudamos a financiar el 100% del valor de tu coche, sin entrada y hasta en 10 años. Calculamos tu cuota en minutos.',
+    boton: 'Calcular mi financiación',
+  },
+  cocheCarta: {
+    badge: 'Coche a la carta',
+    titulo: '¿No encuentras lo que buscas?',
+    descripcion: 'Nosotros te lo encontramos al mejor precio. Dinos qué coche necesitas y lo buscaremos por ti.',
+    boton: 'Solicitar coche',
+  },
+  contacto: {
+    titulo: '¿Tienes alguna duda?',
+    subtitulo: 'Estamos aquí para ayudarte. Contáctanos sin compromiso.',
+  },
+}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -59,9 +79,21 @@ export function CTASection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
   const [mounted, setMounted] = useState(false)
+  const [content, setContent] = useState<CTAContent>(defaultContent)
 
   useEffect(() => {
     setMounted(true)
+
+    async function fetchContent() {
+      try {
+        const ctaContent = await getCTAContent()
+        setContent(ctaContent)
+      } catch (error) {
+        console.error('Error fetching CTA content:', error)
+      }
+    }
+
+    fetchContent()
   }, [])
 
   return (
@@ -92,7 +124,7 @@ export function CTASection() {
                   animate={{ scale: [1, 1.3, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
-                Financiación flexible
+                {content.financiacion.badge}
               </motion.div>
               <motion.h3
                 className="text-3xl font-bold text-white mb-4 font-display"
@@ -100,7 +132,7 @@ export function CTASection() {
                 animate={mounted ? (isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }) : false}
                 transition={{ delay: 0.6, duration: 0.5 }}
               >
-                Financiación a tu medida
+                {content.financiacion.titulo}
               </motion.h3>
               <motion.p
                 className="text-primary-100 mb-8 max-w-md"
@@ -108,8 +140,7 @@ export function CTASection() {
                 animate={mounted ? (isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }) : false}
                 transition={{ delay: 0.7, duration: 0.5 }}
               >
-                Te ayudamos a financiar el 100% del valor de tu coche, sin entrada y hasta en 10 años.
-                Calculamos tu cuota en minutos.
+                {content.financiacion.descripcion}
               </motion.p>
               <Link href="/financiacion">
                 <motion.div
@@ -119,7 +150,7 @@ export function CTASection() {
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
-                  Calcular mi financiación
+                  {content.financiacion.boton}
                   <ArrowRight className="w-5 h-5" />
                 </motion.div>
               </Link>
@@ -156,7 +187,7 @@ export function CTASection() {
                 transition={{ delay: 0.7, duration: 0.5 }}
               >
                 <Search className="w-4 h-4" />
-                Coche a la carta
+                {content.cocheCarta.badge}
               </motion.div>
               <motion.h3
                 className="text-3xl font-bold text-white mb-4 font-display"
@@ -164,7 +195,7 @@ export function CTASection() {
                 animate={mounted ? (isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }) : false}
                 transition={{ delay: 0.8, duration: 0.5 }}
               >
-                ¿No encuentras lo que buscas?
+                {content.cocheCarta.titulo}
               </motion.h3>
               <motion.p
                 className="text-secondary-300 mb-8 max-w-md"
@@ -172,8 +203,7 @@ export function CTASection() {
                 animate={mounted ? (isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }) : false}
                 transition={{ delay: 0.9, duration: 0.5 }}
               >
-                Nosotros te lo encontramos al mejor precio. Dinos qué coche necesitas
-                y lo buscaremos por ti.
+                {content.cocheCarta.descripcion}
               </motion.p>
               <Link href="/coche-a-la-carta">
                 <motion.div
@@ -183,7 +213,7 @@ export function CTASection() {
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
-                  Solicitar coche
+                  {content.cocheCarta.boton}
                   <ArrowRight className="w-5 h-5" />
                 </motion.div>
               </Link>
@@ -217,10 +247,10 @@ export function CTASection() {
               transition={{ delay: 0.6, duration: 0.5 }}
             >
               <h3 className="text-xl font-bold text-secondary-900 mb-1">
-                ¿Tienes alguna duda?
+                {content.contacto.titulo}
               </h3>
               <p className="text-secondary-500">
-                Estamos aquí para ayudarte. Contáctanos sin compromiso.
+                {content.contacto.subtitulo}
               </p>
             </motion.div>
             <motion.div

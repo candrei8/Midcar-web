@@ -3,28 +3,29 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Star, Quote } from 'lucide-react'
+import { getTestimonials, Testimonial } from '@/lib/content-service'
 
-const testimonials = [
+const defaultTestimonials: Testimonial[] = [
   {
-    id: 1,
-    name: 'Carlos M.',
-    date: 'Hace 2 meses',
+    id: '1',
+    nombre: 'Carlos M.',
+    fecha: 'Hace 2 meses',
     rating: 5,
-    text: 'Compré un Ford Focus y todo fue perfecto. El coche estaba impecable y el trato fue inmejorable. Muy recomendable.',
+    texto: 'Compré un Ford Focus y todo fue perfecto. El coche estaba impecable y el trato fue inmejorable. Muy recomendable.',
   },
   {
-    id: 2,
-    name: 'María G.',
-    date: 'Hace 3 meses',
+    id: '2',
+    nombre: 'María G.',
+    fecha: 'Hace 3 meses',
     rating: 5,
-    text: 'Después de buscar en varios concesionarios, encontré en MID Car el coche que buscaba al mejor precio. La financiación fue muy sencilla.',
+    texto: 'Después de buscar en varios concesionarios, encontré en MID Car el coche que buscaba al mejor precio. La financiación fue muy sencilla.',
   },
   {
-    id: 3,
-    name: 'Antonio R.',
-    date: 'Hace 4 meses',
+    id: '3',
+    nombre: 'Antonio R.',
+    fecha: 'Hace 4 meses',
     rating: 5,
-    text: 'Viajé desde Ávila para comprar un coche y valió la pena. Profesionales de verdad, te asesoran sin presiones.',
+    texto: 'Viajé desde Ávila para comprar un coche y valió la pena. Profesionales de verdad, te asesoran sin presiones.',
   },
 ]
 
@@ -82,9 +83,23 @@ export function TestimonialsSection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-80px' })
   const [mounted, setMounted] = useState(false)
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(defaultTestimonials)
 
   useEffect(() => {
     setMounted(true)
+
+    async function fetchTestimonials() {
+      try {
+        const data = await getTestimonials()
+        if (data && data.length > 0) {
+          setTestimonials(data)
+        }
+      } catch (error) {
+        console.error('Error fetching testimonials:', error)
+      }
+    }
+
+    fetchTestimonials()
   }, [])
 
   return (
@@ -203,12 +218,12 @@ export function TestimonialsSection() {
                     transition={{ duration: 0.5 }}
                   >
                     <span className="text-lg font-bold text-primary-600">
-                      {testimonial.name.charAt(0)}
+                      {testimonial.nombre.charAt(0)}
                     </span>
                   </motion.div>
                   <div>
-                    <p className="font-semibold text-secondary-900">{testimonial.name}</p>
-                    <p className="text-sm text-secondary-500">{testimonial.date}</p>
+                    <p className="font-semibold text-secondary-900">{testimonial.nombre}</p>
+                    <p className="text-sm text-secondary-500">{testimonial.fecha}</p>
                   </div>
                 </div>
                 <div className="flex gap-1 mb-3">
@@ -223,7 +238,7 @@ export function TestimonialsSection() {
                     </motion.div>
                   ))}
                 </div>
-                <p className="text-secondary-600">{testimonial.text}</p>
+                <p className="text-secondary-600">{testimonial.texto}</p>
               </motion.div>
             ))}
           </motion.div>

@@ -3,19 +3,61 @@
 import { ArrowRight, Shield, Award, Clock, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { getHeroContent, HeroContent } from '@/lib/content-service'
 
-const stats = [
+const defaultStats = [
   { icon: Shield, label: '15+ años', sublabel: 'de experiencia' },
   { icon: Award, label: '1 año', sublabel: 'de garantía' },
   { icon: Clock, label: '80+', sublabel: 'vehículos en stock' },
 ]
 
+// Default content (fallback)
+const defaultContent: HeroContent = {
+  badge: 'Concesionario de confianza en Madrid',
+  titulo1: 'Tu próximo coche',
+  titulo2: 'está aquí',
+  subtitulo: 'Más de 15 años ofreciendo vehículos de ocasión certificados, garantizados y al mejor precio en Torrejón de Ardoz, Madrid.',
+  ctaPrimario: 'Ver vehículos',
+  ctaSecundario: 'Contactar',
+  stats: [
+    { valor: '15+', label: 'años de experiencia' },
+    { valor: '1 año', label: 'de garantía' },
+    { valor: '80+', label: 'vehículos en stock' },
+  ],
+  precioDesde: '7.900€',
+  garantiaBadge: 'Garantía 12 meses',
+  imagenUrl: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1200&q=80',
+}
+
 export function HeroSection() {
   const [mounted, setMounted] = useState(false)
+  const [content, setContent] = useState<HeroContent>(defaultContent)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setMounted(true)
+
+    // Fetch content from Supabase
+    async function fetchContent() {
+      try {
+        const heroContent = await getHeroContent()
+        setContent(heroContent)
+      } catch (error) {
+        console.error('Error fetching hero content:', error)
+        // Keep default content on error
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchContent()
   }, [])
+
+  const statsWithIcons = [
+    { icon: Shield, label: content.stats[0]?.valor || '15+', sublabel: content.stats[0]?.label || 'años de experiencia' },
+    { icon: Award, label: content.stats[1]?.valor || '1 año', sublabel: content.stats[1]?.label || 'de garantía' },
+    { icon: Clock, label: content.stats[2]?.valor || '80+', sublabel: content.stats[2]?.label || 'vehículos en stock' },
+  ]
 
   return (
     <section className="relative min-h-[90vh] md:min-h-[100vh] flex items-center overflow-hidden">
@@ -62,29 +104,28 @@ export function HeroSection() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full border border-white/20">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className="text-sm font-medium">Concesionario de confianza en Madrid</span>
+              <span className="text-sm font-medium">{content.badge}</span>
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.1]">
-              Tu próximo coche
+              {content.titulo1}
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-500">
-                está aquí
+                {content.titulo2}
               </span>
             </h1>
 
             <p className="text-lg md:text-xl text-secondary-300 max-w-lg">
-              Más de 15 años ofreciendo vehículos de ocasión certificados,
-              garantizados y al mejor precio en Torrejón de Ardoz, Madrid.
+              {content.subtitulo}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/vehiculos" className="btn-primary text-lg px-8 py-4 hover:scale-105 transition-transform">
-                Ver vehículos
+                {content.ctaPrimario}
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link href="/contacto" className="btn-secondary bg-white/10 border-white/20 text-white hover:bg-white hover:text-secondary-900 text-lg px-8 py-4 hover:scale-105 transition-transform">
-                Contactar
+                {content.ctaSecundario}
               </Link>
             </div>
 
@@ -94,7 +135,7 @@ export function HeroSection() {
                 mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
             >
-              {stats.map((stat) => (
+              {statsWithIcons.map((stat) => (
                 <div
                   key={stat.label}
                   className="flex items-center gap-3 hover:scale-105 transition-transform cursor-default"
@@ -121,8 +162,8 @@ export function HeroSection() {
               {/* Main Car Image */}
               <div className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br from-secondary-700 to-secondary-800 border border-white/10 shadow-2xl hover:scale-[1.02] transition-transform duration-300">
                 <img
-                  src="https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1200&q=80"
-                  alt="BMW de ocasión en MID Car - Concesionario de coches de segunda mano en Madrid"
+                  src={content.imagenUrl}
+                  alt="Coche de ocasión en MID Car - Concesionario de coches de segunda mano en Madrid"
                   className="w-full h-full object-cover"
                   loading="eager"
                 />
@@ -135,7 +176,7 @@ export function HeroSection() {
                   }`}
                 >
                   <p className="text-sm text-secondary-500">Desde</p>
-                  <p className="text-2xl font-bold text-secondary-900">7.900€</p>
+                  <p className="text-2xl font-bold text-secondary-900">{content.precioDesde}</p>
                 </div>
 
                 {/* Floating guarantee badge */}
@@ -145,7 +186,7 @@ export function HeroSection() {
                   }`}
                 >
                   <Shield className="w-4 h-4" />
-                  <span className="text-sm font-semibold">Garantía 12 meses</span>
+                  <span className="text-sm font-semibold">{content.garantiaBadge}</span>
                 </div>
               </div>
 

@@ -1,16 +1,86 @@
+import { Metadata } from 'next'
 import { Phone, Mail, MapPin, Clock, Send } from 'lucide-react'
+import { getContactInfo } from '@/lib/content-service'
 
-export const metadata = {
-  title: 'Contacto | MID Car Madrid',
-  description: 'Contacta con MID Car. Visítanos en Torrejón de Ardoz, Madrid. Teléfono, email y ubicación.',
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+
+export const metadata: Metadata = {
+  title: 'Contacto | Concesionario MID Car Torrejón de Ardoz',
+  description: 'Contacta con MID Car, tu concesionario de coches de segunda mano en Torrejón de Ardoz, Madrid. Teléfono 910 023 016. Visítanos en C/ Polo Sur 2.',
+  keywords: [
+    'contacto midcar',
+    'concesionario torrejón de ardoz',
+    'teléfono concesionario madrid',
+    'dirección midcar',
+    'horario concesionario madrid',
+    'comprar coche torrejón',
+  ],
+  alternates: {
+    canonical: `${siteUrl}/contacto`,
+  },
+  openGraph: {
+    title: 'Contacto | MID Car Madrid',
+    description: 'Visítanos en Torrejón de Ardoz. Teléfono: 910 023 016. Horario: L-J 9:00-14:00/16:00-20:30, V 9:00-17:00, D 11:00-14:00.',
+    url: `${siteUrl}/contacto`,
+    type: 'website',
+    images: [
+      {
+        url: `${siteUrl}/og-image.jpg`,
+        width: 1200,
+        height: 630,
+        alt: 'Contacto MID Car',
+      },
+    ],
+  },
 }
 
-export default function ContactoPage() {
+// Datos estructurados de la página de contacto
+const contactPageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  '@id': `${siteUrl}/contacto#webpage`,
+  url: `${siteUrl}/contacto`,
+  name: 'Contacto - MID Car Madrid',
+  description: 'Página de contacto de MID Car, concesionario de coches de segunda mano en Madrid',
+  isPartOf: {
+    '@id': `${siteUrl}/#website`,
+  },
+  mainEntity: {
+    '@id': `${siteUrl}/#organization`,
+  },
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Inicio',
+        item: siteUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Contacto',
+        item: `${siteUrl}/contacto`,
+      },
+    ],
+  },
+}
+
+export default async function ContactoPage() {
+  const contactInfo = await getContactInfo()
+
   return (
     <div className="min-h-screen bg-secondary-50">
+      {/* Datos estructurados */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactPageSchema) }}
+      />
+
       {/* Header */}
       <div className="bg-gradient-to-br from-secondary-900 to-secondary-800 text-white py-16">
-        <div className="container-custom">
+        <div className="container-custom px-4 md:px-6">
           <h1 className="text-4xl md:text-5xl font-bold font-display mb-4">
             Contacto
           </h1>
@@ -21,7 +91,7 @@ export default function ContactoPage() {
         </div>
       </div>
 
-      <div className="container-custom py-16">
+      <div className="container-custom px-4 md:px-6 py-16">
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Contact Info */}
           <div>
@@ -37,11 +107,11 @@ export default function ContactoPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-secondary-900 mb-1">Teléfono</h3>
-                  <a href="tel:910023016" className="text-primary-600 hover:text-primary-700 text-lg font-medium">
-                    910 023 016
+                  <a href={`tel:${contactInfo.telefono.replace(/\s/g, '')}`} className="text-primary-600 hover:text-primary-700 text-lg font-medium">
+                    {contactInfo.telefono}
                   </a>
                   <p className="text-secondary-500 text-sm mt-1">
-                    También WhatsApp: 695 055 555
+                    También WhatsApp: {contactInfo.whatsapp}
                   </p>
                 </div>
               </div>
@@ -53,8 +123,8 @@ export default function ContactoPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-secondary-900 mb-1">Email</h3>
-                  <a href="mailto:ventas@midcar.net" className="text-primary-600 hover:text-primary-700">
-                    ventas@midcar.net
+                  <a href={`mailto:${contactInfo.email}`} className="text-primary-600 hover:text-primary-700">
+                    {contactInfo.email}
                   </a>
                 </div>
               </div>
@@ -66,13 +136,13 @@ export default function ContactoPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-secondary-900 mb-1">Dirección</h3>
-                  <p className="text-secondary-600">
-                    C/ Polo Sur 2<br />
-                    28850 Torrejón de Ardoz<br />
-                    Madrid
-                  </p>
+                  <address className="text-secondary-600 not-italic">
+                    {contactInfo.direccion.calle}<br />
+                    {contactInfo.direccion.cp} {contactInfo.direccion.ciudad}<br />
+                    {contactInfo.direccion.provincia}
+                  </address>
                   <a
-                    href="https://goo.gl/maps/QBEDPvLewMC1NdZ68"
+                    href={contactInfo.googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary-600 hover:text-primary-700 text-sm font-medium mt-2 inline-block"
@@ -90,10 +160,10 @@ export default function ContactoPage() {
                 <div>
                   <h3 className="font-semibold text-secondary-900 mb-1">Horario</h3>
                   <div className="text-secondary-600 space-y-1">
-                    <p>Lunes - Jueves: 9:00-14:00 / 16:00-20:30</p>
-                    <p>Viernes: 9:00-17:00</p>
-                    <p>Sábado: Cerrado</p>
-                    <p>Domingo: 11:00-14:00</p>
+                    <p>Lunes - Jueves: {contactInfo.horario.lunesJueves}</p>
+                    <p>Viernes: {contactInfo.horario.viernes}</p>
+                    <p>Sábado: {contactInfo.horario.sabado}</p>
+                    <p>Domingo: {contactInfo.horario.domingo}</p>
                   </div>
                 </div>
               </div>
@@ -109,6 +179,7 @@ export default function ContactoPage() {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
+                title="Ubicación de MID Car en Google Maps"
               />
             </div>
           </div>
@@ -123,26 +194,32 @@ export default function ContactoPage() {
                 Rellena el formulario y te responderemos lo antes posible.
               </p>
 
-              <form className="space-y-6">
+              <form className="space-y-6" action="/api/contact" method="POST">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    <label htmlFor="nombre" className="block text-sm font-medium text-secondary-700 mb-2">
                       Nombre *
                     </label>
                     <input
                       type="text"
+                      id="nombre"
+                      name="nombre"
                       required
+                      autoComplete="name"
                       className="input-modern"
                       placeholder="Tu nombre"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    <label htmlFor="telefono" className="block text-sm font-medium text-secondary-700 mb-2">
                       Teléfono *
                     </label>
                     <input
                       type="tel"
+                      id="telefono"
+                      name="telefono"
                       required
+                      autoComplete="tel"
                       className="input-modern"
                       placeholder="Tu teléfono"
                     />
@@ -150,35 +227,40 @@ export default function ContactoPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-secondary-700 mb-2">
                     Email *
                   </label>
                   <input
                     type="email"
+                    id="email"
+                    name="email"
                     required
+                    autoComplete="email"
                     className="input-modern"
                     placeholder="tu@email.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  <label htmlFor="asunto" className="block text-sm font-medium text-secondary-700 mb-2">
                     Asunto
                   </label>
-                  <select className="select-modern">
-                    <option>Información sobre un vehículo</option>
-                    <option>Financiación</option>
-                    <option>Coche a la carta</option>
-                    <option>Tasación de mi vehículo</option>
-                    <option>Otro</option>
+                  <select id="asunto" name="asunto" className="select-modern">
+                    <option value="vehiculo">Información sobre un vehículo</option>
+                    <option value="financiacion">Financiación</option>
+                    <option value="carta">Coche a la carta</option>
+                    <option value="tasacion">Tasación de mi vehículo</option>
+                    <option value="otro">Otro</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  <label htmlFor="mensaje" className="block text-sm font-medium text-secondary-700 mb-2">
                     Mensaje *
                   </label>
                   <textarea
+                    id="mensaje"
+                    name="mensaje"
                     required
                     rows={5}
                     className="input-modern resize-none"
@@ -190,6 +272,7 @@ export default function ContactoPage() {
                   <input
                     type="checkbox"
                     id="privacy"
+                    name="privacy"
                     required
                     className="mt-1"
                   />

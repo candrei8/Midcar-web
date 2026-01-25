@@ -1,0 +1,44 @@
+{
+  "name": "MID Car - Concesionario de Coches de Segunda Mano",
+  "short_name": "MID Car",
+  "description": "Concesionario de coches de segunda mano en Torrejón de Ardoz, Madrid. Vehículos de ocasión certificados con garantía.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["auto", "shopping", "business"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ver vehículos",
+      "short_name": "Vehículos",
+      "description": "Ver todos los vehículos disponibles",
+      "url": "/vehiculos"
+    },
+    {
+      "name": "Contactar",
+      "short_name": "Contacto",
+      "description": "Contactar con MID Car",
+      "url": "/contacto"
+    },
+    {
+      "name": "Financiación",
+      "short_name": "Financiar",
+      "description": "Calcular financiación",
+      "url": "/financiacion"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
