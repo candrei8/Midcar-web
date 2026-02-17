@@ -14,7 +14,10 @@ const footerLinks = {
     { name: 'Híbridos y eléctricos', href: '/vehiculos?combustible=hibrido' },
   ],
   servicios: [
-    { name: 'Financiación', href: '/financiacion' },
+    { name: 'Coches de segunda mano', href: '/vehiculos' },
+    { name: 'Financiar coches ocasión', href: '/financiacion' },
+    { name: 'Noticias y consejos', href: '/blog' },
+    { name: 'Quiénes Somos', href: '/#sobre-nosotros' },
     { name: 'Contacto', href: '/contacto' },
   ],
 }

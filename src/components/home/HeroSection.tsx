@@ -1,22 +1,126 @@
 'use client'
 
-import { ArrowRight, Shield, Award, Clock, ChevronDown } from 'lucide-react'
+import { Canvas } from '@react-three/fiber'
+import { OrbitControls, useGLTF, ContactShadows } from '@react-three/drei'
+import { useEffect, useRef, useState, Suspense } from 'react'
+import gsap from 'gsap'
+import { ArrowRight, Shield, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import * as THREE from 'three'
 import { getHeroContent, HeroContent } from '@/lib/content-service'
 
-const defaultStats = [
-  { icon: Shield, label: '15+ años', sublabel: 'de experiencia' },
-  { icon: Award, label: '1 año', sublabel: 'de garantía' },
-  { icon: Clock, label: '80+', sublabel: 'vehículos en stock' },
-]
+useGLTF.preload('/models/car.glb')
 
-// Default content (fallback)
+// ============================================
+// 3D Scene
+// ============================================
+
+function CarModel() {
+  const { scene } = useGLTF('/models/car.glb')
+  const groupRef = useRef<THREE.Group>(null!)
+
+  useEffect(() => {
+    if (!groupRef.current) return
+
+    // Auto-fit: normalize any model to ~4.5 units
+    const box = new THREE.Box3().setFromObject(scene)
+    const size = new THREE.Vector3()
+    box.getSize(size)
+    const autoScale = 4.5 / Math.max(size.x, size.y, size.z)
+    scene.scale.setScalar(autoScale)
+
+    // Center on ground
+    const fitted = new THREE.Box3().setFromObject(scene)
+    const center = new THREE.Vector3()
+    fitted.getCenter(center)
+    scene.position.set(-center.x, -fitted.min.y, -center.z)
+
+    // Cinematic drop — visible but fast (0.8s)
+    groupRef.current.position.y = 5
+    groupRef.current.scale.setScalar(0.93)
+    groupRef.current.rotation.y = -0.3
+
+    gsap.to(groupRef.current.position, {
+      y: 0,
+      duration: 0.8,
+      ease: 'power3.out',
+      delay: 0.1,
+    })
+    gsap.to(groupRef.current.scale, {
+      x: 1, y: 1, z: 1,
+      duration: 0.6,
+      ease: 'power2.out',
+      delay: 0.1,
+    })
+    gsap.to(groupRef.current.rotation, {
+      y: 0,
+      duration: 1.0,
+      ease: 'power2.out',
+      delay: 0.1,
+    })
+  }, [])
+
+  return (
+    <group ref={groupRef}>
+      <primitive object={scene} />
+    </group>
+  )
+}
+
+function Platform() {
+  const ref = useRef<THREE.Mesh>(null!)
+
+  useEffect(() => {
+    if (!ref.current) return
+    ref.current.scale.set(0, 0, 0)
+    gsap.to(ref.current.scale, {
+      x: 1, y: 1, z: 1,
+      duration: 0.5,
+      ease: 'power2.out',
+      delay: 0.2,
+    })
+  }, [])
+
+  return (
+    <mesh
+      ref={ref}
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, -0.01, 0]}
+      receiveShadow
+    >
+      <circleGeometry args={[4, 64]} />
+      <meshStandardMaterial
+        color="#6b7a94"
+        metalness={0.6}
+        roughness={0.3}
+      />
+    </mesh>
+  )
+}
+
+function SceneLoader() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center z-30">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-amber-200/10 border-t-amber-200/50 rounded-full animate-spin" />
+        <p className="text-amber-100/20 text-[11px] tracking-[0.25em] uppercase">
+          Cargando
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// Content defaults
+// ============================================
+
 const defaultContent: HeroContent = {
   badge: 'Concesionario de confianza en Madrid',
   titulo1: 'Tu próximo coche',
   titulo2: 'está aquí',
-  subtitulo: 'Más de 15 años ofreciendo vehículos de ocasión certificados, garantizados y al mejor precio en Torrejón de Ardoz, Madrid.',
+  subtitulo:
+    'Más de 15 años ofreciendo vehículos de ocasión certificados, garantizados y al mejor precio en Torrejón de Ardoz, Madrid.',
   ctaPrimario: 'Ver vehículos',
   ctaSecundario: 'Contactar',
   stats: [
@@ -26,205 +130,348 @@ const defaultContent: HeroContent = {
   ],
   precioDesde: '7.900€',
   garantiaBadge: 'Garantía 12 meses',
-  imagenUrl: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1200&q=80',
+  imagenUrl: '',
 }
 
+// ============================================
+// Hero
+// ============================================
+
 export function HeroSection() {
-  const [mounted, setMounted] = useState(false)
+  const sectionRef = useRef<HTMLElement>(null)
+  const lineRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLDivElement>(null)
+  const subtitleRef = useRef<HTMLDivElement>(null)
+  const priceRef = useRef<HTMLDivElement>(null)
+  const guaranteeRef = useRef<HTMLDivElement>(null)
+  const stat0Ref = useRef<HTMLDivElement>(null)
+  const stat1Ref = useRef<HTMLDivElement>(null)
+  const stat2Ref = useRef<HTMLDivElement>(null)
+  const ctaRef = useRef<HTMLDivElement>(null)
+  const mobilePanelRef = useRef<HTMLDivElement>(null)
   const [content, setContent] = useState<HeroContent>(defaultContent)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setMounted(true)
-
-    // Fetch content from Supabase
     async function fetchContent() {
       try {
-        const heroContent = await getHeroContent()
-        setContent(heroContent)
-      } catch (error) {
-        console.error('Error fetching hero content:', error)
-        // Keep default content on error
-      } finally {
-        setLoading(false)
+        const data = await getHeroContent()
+        setContent(data)
+      } catch {
+        // defaults
       }
     }
-
     fetchContent()
   }, [])
 
-  const statsWithIcons = [
-    { icon: Shield, label: content.stats[0]?.valor || '15+', sublabel: content.stats[0]?.label || 'años de experiencia' },
-    { icon: Award, label: content.stats[1]?.valor || '1 año', sublabel: content.stats[1]?.label || 'de garantía' },
-    { icon: Clock, label: content.stats[2]?.valor || '80+', sublabel: content.stats[2]?.label || 'vehículos en stock' },
+  // Auto-reveal timeline — plays after car lands
+  useEffect(() => {
+    const statRefs = [stat0Ref, stat1Ref, stat2Ref]
+    const ctx = gsap.context(() => {
+      // Delay = car drop (0.8s) + small pause
+      const tl = gsap.timeline({ delay: 1.0 })
+
+      // Horizontal accent line draws
+      tl.fromTo(lineRef.current,
+        { scaleX: 0 },
+        { scaleX: 1, duration: 0.8, ease: 'power2.inOut' }
+      )
+
+      // Title reveals with clip-path
+      .fromTo(titleRef.current,
+        { y: 25, opacity: 0, clipPath: 'inset(100% 0 0 0)' },
+        { y: 0, opacity: 1, clipPath: 'inset(0% 0 0 0)', duration: 0.6, ease: 'power3.out' },
+        0.15
+      )
+
+      // Subtitle
+      .fromTo(subtitleRef.current,
+        { y: 12, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
+        0.35
+      )
+
+      // Price (right side)
+      .fromTo(priceRef.current,
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
+        0.45
+      )
+
+      // Stats staggered from left
+      statRefs.forEach((ref, i) => {
+        tl.fromTo(ref.current,
+          { x: -20, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.4, ease: 'power2.out' },
+          0.55 + i * 0.1
+        )
+      })
+
+      // Guarantee badge
+      tl.fromTo(guaranteeRef.current,
+        { y: 10, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' },
+        0.85
+      )
+
+      // Mobile panel
+      tl.fromTo(mobilePanelRef.current,
+        { y: 40, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
+        0.4
+      )
+
+      // CTA
+      tl.fromTo(ctaRef.current,
+        { y: 15, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
+        0.95
+      )
+    })
+
+    return () => ctx.revert()
+  }, [])
+
+  const stats = [
+    { value: content.stats[0]?.valor || '15+', label: content.stats[0]?.label || 'años de experiencia' },
+    { value: content.stats[1]?.valor || '1 año', label: content.stats[1]?.label || 'de garantía' },
+    { value: content.stats[2]?.valor || '80+', label: content.stats[2]?.label || 'vehículos en stock' },
   ]
+  const statRefs = [stat0Ref, stat1Ref, stat2Ref]
 
   return (
-    <section className="relative min-h-[90vh] md:min-h-[100vh] flex items-center overflow-hidden">
-      {/* Static Background - NO blur, NO animations */}
-      <div className="absolute inset-0 bg-gradient-to-br from-secondary-900 via-secondary-800 to-secondary-900">
-        {/* Static gradient orbs - using opacity and gradients instead of blur */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div
-            className="absolute top-20 left-10 w-72 h-72 rounded-full opacity-20"
-            style={{
-              background: 'radial-gradient(circle, rgba(239,68,68,0.6) 0%, transparent 70%)'
-            }}
-          />
-          <div
-            className="absolute bottom-20 right-10 w-96 h-96 rounded-full opacity-20"
-            style={{
-              background: 'radial-gradient(circle, rgba(239,68,68,0.5) 0%, transparent 70%)'
-            }}
-          />
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10"
-            style={{
-              background: 'radial-gradient(circle, rgba(239,68,68,0.4) 0%, transparent 60%)'
-            }}
-          />
-        </div>
-
-        {/* Grid Pattern - static */}
+    <section
+      ref={sectionRef}
+      className="relative h-screen overflow-hidden"
+      style={{ background: '#0c1220' }}
+    >
+      {/* ── Background with warm spotlight center ── */}
+      <div className="absolute inset-0">
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            background: 'radial-gradient(ellipse 70% 55% at 50% 48%, #1e2d42 0%, #121a2a 45%, #0c1220 80%)',
+          }}
+        />
+        {/* Subtle warm glow behind car position */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse 45% 40% at 52% 50%, rgba(200, 180, 140, 0.08) 0%, transparent 70%)',
           }}
         />
       </div>
 
-      <div className="container-custom relative z-10 py-20">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-          {/* Content */}
-          <div
-            className={`text-white space-y-8 transition-all duration-700 ease-out ${
-              mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}
+      {/* ── 3D Canvas ── */}
+      <div className="absolute inset-0 z-10">
+        <Suspense fallback={<SceneLoader />}>
+          <Canvas
+            camera={{ position: [5.5, 2, 5.5], fov: 38 }}
+            shadows
+            dpr={[1, 2]}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full border border-white/20">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className="text-sm font-medium">{content.badge}</span>
-            </div>
+            <fog attach="fog" args={['#0c1220', 16, 35]} />
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold font-display leading-[1.1]">
+            {/* Bright showroom lighting */}
+            <ambientLight intensity={0.9} />
+            {/* Key light — warm, strong */}
+            <spotLight
+              position={[7, 12, 5]}
+              angle={0.5}
+              penumbra={1}
+              intensity={5}
+              castShadow
+              shadow-mapSize={[1024, 1024]}
+              color="#ffe8cc"
+            />
+            {/* Fill light — cool, adds dimension */}
+            <spotLight
+              position={[-6, 8, -3]}
+              angle={0.6}
+              penumbra={1}
+              intensity={2.5}
+              color="#b0cce8"
+            />
+            {/* Rim light — outlines the car from behind */}
+            <spotLight
+              position={[0, 5, -9]}
+              angle={0.7}
+              penumbra={0.8}
+              intensity={3}
+              color="#d0d8e8"
+            />
+            {/* Top-down fill — opens up the shadows */}
+            <spotLight
+              position={[0, 14, 0]}
+              angle={0.8}
+              penumbra={1}
+              intensity={1.5}
+              color="#e0e4f0"
+            />
+            <hemisphereLight args={['#e8ecf4', '#2a3548', 0.8]} />
+            <directionalLight
+              position={[3, 10, -4]}
+              intensity={0.8}
+              color="#f0e8dc"
+            />
+
+            <CarModel />
+            <Platform />
+            <ContactShadows
+              position={[0, -0.01, 0]}
+              opacity={0.5}
+              scale={14}
+              blur={2.5}
+              far={5}
+            />
+            <OrbitControls
+              enableZoom={false}
+              enablePan={false}
+              autoRotate
+              autoRotateSpeed={0.3}
+              minPolarAngle={Math.PI / 3.5}
+              maxPolarAngle={Math.PI / 2.2}
+              makeDefault
+            />
+          </Canvas>
+        </Suspense>
+      </div>
+
+      {/* ── UI Overlay ── */}
+      <div className="absolute inset-0 z-20 pointer-events-none">
+
+        {/* Brand mark — top left */}
+        <div className="absolute top-7 left-8 lg:left-12">
+          <p className="text-slate-400/30 text-[11px] tracking-[0.3em] uppercase font-medium">
+            MID Car · Madrid
+          </p>
+        </div>
+
+        {/* Horizontal accent line */}
+        <div
+          ref={lineRef}
+          className="absolute top-[63%] left-[5%] right-[5%] h-px origin-left"
+          style={{
+            transform: 'scaleX(0)',
+            background: 'linear-gradient(90deg, transparent, rgba(180, 160, 120, 0.12) 20%, rgba(180, 160, 120, 0.12) 80%, transparent)',
+          }}
+        />
+
+        {/* ═══ DESKTOP ═══ */}
+
+        {/* Left column — title, subtitle, stats */}
+        <div className="absolute left-8 xl:left-16 bottom-[18%] hidden lg:block max-w-xs">
+          <div ref={titleRef} className="opacity-0 mb-3">
+            <h1 className="text-3xl xl:text-4xl font-bold font-display text-white leading-[1.15] tracking-tight">
               {content.titulo1}
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-500">
-                {content.titulo2}
-              </span>
+              <span className="text-white/50">{content.titulo2}</span>
             </h1>
+          </div>
 
-            <p className="text-lg md:text-xl text-secondary-300 max-w-lg">
+          <div ref={subtitleRef} className="opacity-0 mb-8">
+            <p className="text-white/25 text-sm leading-relaxed max-w-[280px]">
               {content.subtitulo}
             </p>
+          </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/vehiculos" className="btn-primary text-lg px-8 py-4 hover:scale-105 transition-transform">
-                {content.ctaPrimario}
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link href="/contacto" className="btn-secondary bg-white/10 border-white/20 text-white hover:bg-white hover:text-secondary-900 text-lg px-8 py-4 hover:scale-105 transition-transform">
-                {content.ctaSecundario}
-              </Link>
+          <div className="space-y-3">
+            {stats.map((stat, i) => (
+              <div
+                ref={statRefs[i]}
+                key={stat.label}
+                className="opacity-0 flex items-baseline gap-3"
+              >
+                <span className="text-xl font-bold text-white tabular-nums tracking-tight">
+                  {stat.value}
+                </span>
+                <span className="text-white/20 text-xs uppercase tracking-wider">
+                  {stat.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right column — price, guarantee */}
+        <div className="absolute right-8 xl:right-16 bottom-[18%] hidden lg:block text-right">
+          <div ref={priceRef} className="opacity-0 mb-5">
+            <p className="text-white/20 text-[10px] tracking-[0.25em] uppercase mb-1">
+              Desde
+            </p>
+            <p className="text-5xl xl:text-6xl font-extrabold text-white tracking-tighter">
+              {content.precioDesde}
+            </p>
+          </div>
+
+          <div ref={guaranteeRef} className="opacity-0">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/[0.08]">
+              <Shield className="w-3.5 h-3.5 text-white/40" />
+              <span className="text-xs text-white/40 font-medium tracking-wide">
+                {content.garantiaBadge}
+              </span>
             </div>
+          </div>
+        </div>
 
-            {/* Stats */}
-            <div
-              className={`flex flex-wrap gap-8 pt-8 border-t border-white/10 transition-all duration-700 ease-out delay-300 ${
-                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-            >
-              {statsWithIcons.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="flex items-center gap-3 hover:scale-105 transition-transform cursor-default"
-                >
-                  <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-                    <stat.icon className="w-6 h-6 text-primary-400" />
-                  </div>
-                  <div>
-                    <p className="text-xl font-bold">{stat.label}</p>
-                    <p className="text-sm text-secondary-400">{stat.sublabel}</p>
-                  </div>
+        {/* ═══ MOBILE ═══ */}
+        <div
+          ref={mobilePanelRef}
+          className="absolute bottom-24 left-4 right-4 opacity-0 lg:hidden pointer-events-auto"
+        >
+          <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.06] p-5 space-y-4">
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-white/20 text-[10px] tracking-[0.2em] uppercase">Desde</p>
+                <p className="text-3xl font-extrabold text-white tracking-tight">
+                  {content.precioDesde}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 border border-white/[0.08] rounded-full">
+                <Shield className="w-3 h-3 text-white/30" />
+                <span className="text-[10px] text-white/30 font-medium">
+                  {content.garantiaBadge}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {stats.map((stat) => (
+                <div key={stat.label} className="flex-1 text-center">
+                  <p className="text-base font-bold text-white">{stat.value}</p>
+                  <p className="text-[9px] text-white/25 leading-tight mt-0.5 uppercase tracking-wider">
+                    {stat.label}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
+        </div>
 
-          {/* Hero Image/Visual */}
-          <div
-            className={`relative transition-all duration-700 ease-out delay-200 ${
-              mounted ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
-            }`}
-          >
-            <div className="relative z-10">
-              {/* Main Car Image */}
-              <div className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br from-secondary-700 to-secondary-800 border border-white/10 shadow-2xl hover:scale-[1.02] transition-transform duration-300">
-                <img
-                  src={content.imagenUrl}
-                  alt="Coche de ocasión en MID Car - Concesionario de coches de segunda mano en Madrid"
-                  className="w-full h-full object-cover"
-                  loading="eager"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-secondary-900/70 via-transparent to-secondary-900/20" />
-
-                {/* Floating price tag */}
-                <div
-                  className={`absolute bottom-6 left-6 bg-white/95 rounded-2xl px-5 py-3 shadow-xl transition-all duration-500 delay-500 hover:scale-105 ${
-                    mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                  }`}
-                >
-                  <p className="text-sm text-secondary-500">Desde</p>
-                  <p className="text-2xl font-bold text-secondary-900">{content.precioDesde}</p>
-                </div>
-
-                {/* Floating guarantee badge */}
-                <div
-                  className={`absolute top-6 right-6 bg-green-500 text-white rounded-full px-4 py-2 shadow-xl flex items-center gap-2 transition-all duration-500 delay-700 hover:scale-110 ${
-                    mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-                  }`}
-                >
-                  <Shield className="w-4 h-4" />
-                  <span className="text-sm font-semibold">{content.garantiaBadge}</span>
-                </div>
-              </div>
-
-              {/* Decorative elements - static gradients instead of animated blur */}
-              <div
-                className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full opacity-30"
-                style={{
-                  background: 'radial-gradient(circle, rgba(239,68,68,0.5) 0%, transparent 70%)'
-                }}
-              />
-              <div
-                className="absolute -top-6 -left-6 w-24 h-24 rounded-full opacity-40"
-                style={{
-                  background: 'radial-gradient(circle, rgba(239,68,68,0.4) 0%, transparent 70%)'
-                }}
-              />
-            </div>
+        {/* ── CTA ── */}
+        <div
+          ref={ctaRef}
+          className="absolute bottom-7 lg:bottom-10 left-1/2 -translate-x-1/2 opacity-0 pointer-events-auto"
+        >
+          <div className="flex items-center gap-3">
+            <Link
+              href="/vehiculos"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-secondary-900 text-sm font-semibold rounded-xl hover:bg-white/90 transition-all duration-200"
+            >
+              {content.ctaPrimario}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/contacto"
+              className="inline-flex items-center gap-2 px-6 py-3 text-white/60 text-sm font-medium rounded-xl border border-white/[0.08] hover:border-white/20 hover:text-white transition-all duration-200"
+            >
+              {content.ctaSecundario}
+            </Link>
           </div>
         </div>
-      </div>
 
-      {/* Scroll indicator */}
-      <div
-        className={`absolute bottom-8 left-1/2 -translate-x-1/2 transition-all duration-500 delay-1000 ${
-          mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
-        }`}
-      >
-        <button
-          className="flex flex-col items-center gap-2 cursor-pointer animate-bounce"
-          onClick={() => {
-            if (typeof window !== 'undefined') {
-              window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })
-            }
-          }}
-        >
-          <span className="text-white/50 text-sm">Descubre más</span>
-          <ChevronDown className="w-6 h-6 text-white/50" />
-        </button>
+        {/* ── Scroll hint ── */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
+          <ChevronDown className="w-4 h-4 text-slate-500/25 animate-bounce" />
+        </div>
       </div>
     </section>
   )

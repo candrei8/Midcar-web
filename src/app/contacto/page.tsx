@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
-import { Phone, Mail, MapPin, Clock, Send } from 'lucide-react'
+import { Phone, Mail, MapPin, Clock } from 'lucide-react'
 import { getContactInfo } from '@/lib/content-service'
+import { ContactForm } from '@/components/contact/ContactForm'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
 
@@ -186,108 +187,7 @@ export default async function ContactoPage() {
 
           {/* Contact Form */}
           <div>
-            <div className="bg-white rounded-2xl border border-secondary-100 p-8">
-              <h2 className="text-2xl font-bold text-secondary-900 mb-2">
-                Envíanos un mensaje
-              </h2>
-              <p className="text-secondary-500 mb-8">
-                Rellena el formulario y te responderemos lo antes posible.
-              </p>
-
-              <form className="space-y-6" action="/api/contact" method="POST">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="nombre" className="block text-sm font-medium text-secondary-700 mb-2">
-                      Nombre *
-                    </label>
-                    <input
-                      type="text"
-                      id="nombre"
-                      name="nombre"
-                      required
-                      autoComplete="name"
-                      className="input-modern"
-                      placeholder="Tu nombre"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="telefono" className="block text-sm font-medium text-secondary-700 mb-2">
-                      Teléfono *
-                    </label>
-                    <input
-                      type="tel"
-                      id="telefono"
-                      name="telefono"
-                      required
-                      autoComplete="tel"
-                      className="input-modern"
-                      placeholder="Tu teléfono"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-secondary-700 mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    autoComplete="email"
-                    className="input-modern"
-                    placeholder="tu@email.com"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="asunto" className="block text-sm font-medium text-secondary-700 mb-2">
-                    Asunto
-                  </label>
-                  <select id="asunto" name="asunto" className="select-modern">
-                    <option value="vehiculo">Información sobre un vehículo</option>
-                    <option value="financiacion">Financiación</option>
-                    <option value="carta">Coche a la carta</option>
-                    <option value="tasacion">Tasación de mi vehículo</option>
-                    <option value="otro">Otro</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="mensaje" className="block text-sm font-medium text-secondary-700 mb-2">
-                    Mensaje *
-                  </label>
-                  <textarea
-                    id="mensaje"
-                    name="mensaje"
-                    required
-                    rows={5}
-                    className="input-modern resize-none"
-                    placeholder="¿En qué podemos ayudarte?"
-                  />
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="privacy"
-                    name="privacy"
-                    required
-                    className="mt-1"
-                  />
-                  <label htmlFor="privacy" className="text-sm text-secondary-600">
-                    Acepto la <a href="/politica-privacidad" className="text-primary-600 hover:underline">política de privacidad</a> y
-                    el tratamiento de mis datos para la gestión de mi consulta.
-                  </label>
-                </div>
-
-                <button type="submit" className="btn-primary w-full justify-center text-lg py-4">
-                  <Send className="w-5 h-5" />
-                  Enviar mensaje
-                </button>
-              </form>
-            </div>
+            <ContactForm />
           </div>
         </div>
       </div>

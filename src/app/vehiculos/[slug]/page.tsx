@@ -16,12 +16,13 @@ import {
   FileCheck
 } from 'lucide-react'
 import { formatPrice, formatKilometers, cn } from '@/lib/utils'
-import { getVehicleBySlug, type Vehicle } from '@/lib/vehicles-service'
+import { getVehicleBySlug, getSimilarVehicles, type Vehicle } from '@/lib/vehicles-service'
 
 export default function VehicleDetailPage() {
   const params = useParams()
   const slug = params.slug as string
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
+  const [similarVehicles, setSimilarVehicles] = useState<Vehicle[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [images, setImages] = useState<string[]>([])
 
@@ -35,6 +36,9 @@ export default function VehicleDetailPage() {
             setVehicle(v)
             // Use the vehicle images (from Supabase, currently only 1 image)
             setImages(v.images.length > 0 ? v.images : [])
+            // Load similar vehicles
+            const similar = await getSimilarVehicles(v, 4)
+            setSimilarVehicles(similar)
           }
         } catch (error) {
           console.error('Error loading vehicle:', error)
@@ -169,6 +173,14 @@ export default function VehicleDetailPage() {
                 </div>
               </div>
 
+              {/* Description (if available) */}
+              {vehicle.description && (
+                <div className="bg-white rounded-xl p-6 border border-secondary-100">
+                  <h3 className="font-semibold text-secondary-900 mb-3">Descripción</h3>
+                  <p className="text-secondary-700 whitespace-pre-line">{vehicle.description}</p>
+                </div>
+              )}
+
               {/* Guarantees */}
               <div className="bg-white rounded-xl p-6 border border-secondary-100 space-y-4">
                 <div className="flex items-start gap-3">
@@ -214,6 +226,50 @@ export default function VehicleDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* Similar Vehicles Section */}
+          {similarVehicles.length > 0 && (
+            <div className="mt-16">
+              <h2 className="text-2xl font-bold text-secondary-900 mb-6">
+                Vehículos similares
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {similarVehicles.map((v) => (
+                  <Link
+                    key={v.id}
+                    href={`/vehiculos/${v.slug}`}
+                    className="bg-white rounded-2xl border border-secondary-100 overflow-hidden hover:shadow-lg transition-shadow"
+                  >
+                    <div className="aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center relative">
+                      <div className="text-center p-4">
+                        <Fuel className="w-10 h-10 text-secondary-400 mx-auto mb-2" />
+                        <p className="text-sm font-semibold text-secondary-500">{v.brand}</p>
+                        <p className="text-xs text-secondary-400">{v.model}</p>
+                      </div>
+                      {v.featured && (
+                        <span className="absolute top-2 left-2 badge-primary text-xs">DESTACADO</span>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-secondary-900 text-sm mb-1 line-clamp-1">
+                        {v.title}
+                      </h3>
+                      <p className="text-lg font-bold text-primary-600 mb-2">
+                        {formatPrice(v.price)}
+                      </p>
+                      <div className="flex items-center gap-3 text-xs text-secondary-500">
+                        <span>{formatKilometers(v.km)}</span>
+                        <span>·</span>
+                        <span>{v.year}</span>
+                        <span>·</span>
+                        <span>{v.fuel}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

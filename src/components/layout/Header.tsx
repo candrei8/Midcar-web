@@ -32,20 +32,17 @@ const defaultContactInfo: ContactInfo = {
 }
 
 const navigation = [
-  { name: 'Inicio', href: '/' },
+  { name: 'Coches de segunda mano', href: '/vehiculos' },
+  { name: 'Coche a la carta', href: '/coche-a-la-carta' },
+  { name: 'Financiación', href: '/financiacion' },
   {
-    name: 'Vehículos',
-    href: '/vehiculos',
+    name: 'Sobre Nosotros',
+    href: '/#sobre-nosotros',
     children: [
-      { name: 'Todos los coches', href: '/vehiculos' },
-      { name: 'SUV y 4x4', href: '/vehiculos?tipo=suv' },
-      { name: 'Berlinas', href: '/vehiculos?tipo=berlina' },
-      { name: 'Furgonetas', href: '/vehiculos?tipo=furgoneta' },
+      { name: 'Quiénes Somos', href: '/#sobre-nosotros' },
+      { name: 'Noticias y consejos', href: '/blog' },
     ]
   },
-  { name: 'Financiación', href: '/financiacion' },
-  { name: 'Sobre nosotros', href: '/#sobre-nosotros' },
-  { name: 'Garantía', href: '/#garantia' },
   { name: 'Contacto', href: '/contacto' },
 ]
 

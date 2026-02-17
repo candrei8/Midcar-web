@@ -26,6 +26,7 @@ export interface Vehicle {
   images: string[]
   featured?: boolean
   monthlyPayment?: number
+  description?: string  // Campo de descripción/comentario extra
 }
 
 // Database vehicle format
@@ -47,6 +48,7 @@ interface DBVehicle {
   descuento: number
   imagen_principal: string
   en_oferta: boolean
+  descripcion?: string  // Campo opcional de descripción/comentario
 }
 
 // Transform database vehicle to web format
@@ -106,6 +108,7 @@ function transformToWebFormat(dbVehicle: DBVehicle): Vehicle {
     images: dbVehicle.imagen_principal ? [dbVehicle.imagen_principal] : [],
     featured: dbVehicle.destacado,
     monthlyPayment,
+    description: dbVehicle.descripcion || undefined,
   }
 }
 
@@ -410,4 +413,75 @@ export async function getVehicleCount(): Promise<number> {
   }
 
   return count || 0
+}
+
+// Get similar vehicles (same body type or fuel, similar price range)
+export async function getSimilarVehicles(vehicle: Vehicle, limit: number = 4): Promise<Vehicle[]> {
+  if (!isSupabaseConfigured) return []
+
+  // Define price range (±30% of the vehicle price)
+  const minPrice = Math.round(vehicle.price * 0.7)
+  const maxPrice = Math.round(vehicle.price * 1.3)
+
+  // First try: same body type and similar price
+  let { data, error } = await supabase
+    .from('vehicles')
+    .select('*')
+    .eq('estado', 'disponible')
+    .eq('tipo_carroceria', vehicle.bodyType.toLowerCase())
+    .gte('precio_venta', minPrice)
+    .lte('precio_venta', maxPrice)
+    .neq('id', vehicle.id)
+    .limit(limit)
+
+  if (error) {
+    console.error('Error fetching similar vehicles:', error)
+    return []
+  }
+
+  // If not enough results, try same fuel type
+  if (!data || data.length < limit) {
+    const fuelMap: Record<string, string> = {
+      'Diesel': 'diesel',
+      'Gasolina': 'gasolina',
+      'Híbrido': 'hibrido',
+      'Eléctrico': 'electrico',
+      'Gas': 'glp',
+    }
+
+    const existingIds = (data || []).map(v => v.id)
+
+    const { data: fuelData, error: fuelError } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('estado', 'disponible')
+      .eq('combustible', fuelMap[vehicle.fuel] || vehicle.fuel.toLowerCase())
+      .neq('id', vehicle.id)
+      .not('id', 'in', `(${existingIds.join(',')})`)
+      .limit(limit - (data?.length || 0))
+
+    if (!fuelError && fuelData) {
+      data = [...(data || []), ...fuelData]
+    }
+  }
+
+  // If still not enough, get any available vehicles
+  if (!data || data.length < limit) {
+    const existingIds = (data || []).map(v => v.id)
+
+    const { data: anyData, error: anyError } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('estado', 'disponible')
+      .neq('id', vehicle.id)
+      .not('id', 'in', `(${existingIds.length > 0 ? existingIds.join(',') : "''"})`)
+      .order('destacado', { ascending: false })
+      .limit(limit - (data?.length || 0))
+
+    if (!anyError && anyData) {
+      data = [...(data || []), ...anyData]
+    }
+  }
+
+  return (data || []).slice(0, limit).map(transformToWebFormat)
 }
