@@ -3,7 +3,7 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
-import rehypeSanitize from 'rehype-sanitize'
+// rehype-sanitize removed: blog content is trusted first-party HTML from MidCar CMS
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -15,7 +15,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw, rehypeSanitize]}
+      rehypePlugins={[rehypeRaw]}
       components={{
         // Headings
         h1: ({ children }) => (

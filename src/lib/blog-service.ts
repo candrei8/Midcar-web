@@ -1,49 +1,22 @@
 import { supabase, isSupabaseConfigured } from './supabase'
+import { blogPosts as _staticBlogPosts, blogCategories as _staticBlogCategories } from '@/data/blog-posts'
 
-// ============================================================================
-// TIPOS
-// ============================================================================
+// Re-export types from shared file (avoids circular dependency with data file)
+export type { BlogCategory, BlogPost, BlogPostsOptions, BlogPostsResult, PopularBrand, PopularModel } from './blog-types'
+import type { BlogCategory, BlogPost, BlogPostsOptions, BlogPostsResult, PopularBrand, PopularModel } from './blog-types'
 
-export interface BlogCategory {
-  id: string
-  nombre: string
-  slug: string
-  descripcion: string | null
-  imagen_url: string | null
-  orden: number
-  activo: boolean
-  created_at: string
-  updated_at: string
-}
-
-export interface BlogPost {
-  id: string
-  slug: string
-  titulo: string
-  extracto: string | null
-  contenido: string
-  imagen_principal: string | null
-  categoria_id: string | null
-  autor: string
-  tags: string[]
-  seo_titulo: string | null
-  seo_descripcion: string | null
-  seo_keywords: string | null
-  estado: 'borrador' | 'publicado' | 'archivado'
-  destacado: boolean
-  orden: number
-  fecha_publicacion: string | null
-  created_at: string
-  updated_at: string
-  categoria?: BlogCategory
-}
+// Cast untyped data imports
+const staticBlogPosts = _staticBlogPosts as BlogPost[]
+const staticBlogCategories = _staticBlogCategories as BlogCategory[]
 
 // ============================================================================
 // CATEGORÍAS
 // ============================================================================
 
 export async function getBlogCategories(): Promise<BlogCategory[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    return staticBlogCategories
+  }
 
   const { data, error } = await supabase
     .from('blog_categories')
@@ -53,14 +26,16 @@ export async function getBlogCategories(): Promise<BlogCategory[]> {
 
   if (error) {
     console.error('Error fetching blog categories:', error)
-    return []
+    return staticBlogCategories
   }
 
   return data || []
 }
 
 export async function getBlogCategoryBySlug(slug: string): Promise<BlogCategory | null> {
-  if (!isSupabaseConfigured) return null
+  if (!isSupabaseConfigured) {
+    return staticBlogCategories.find(c => c.slug === slug) || null
+  }
 
   const { data, error } = await supabase
     .from('blog_categories')
@@ -71,7 +46,7 @@ export async function getBlogCategoryBySlug(slug: string): Promise<BlogCategory 
 
   if (error) {
     console.error('Error fetching blog category:', error)
-    return null
+    return staticBlogCategories.find(c => c.slug === slug) || null
   }
 
   return data
@@ -81,27 +56,7 @@ export async function getBlogCategoryBySlug(slug: string): Promise<BlogCategory 
 // POSTS
 // ============================================================================
 
-export interface BlogPostsOptions {
-  page?: number
-  limit?: number
-  categoria_id?: string
-  categoria_slug?: string
-  destacado?: boolean
-  search?: string
-}
-
-export interface BlogPostsResult {
-  posts: BlogPost[]
-  total: number
-  page: number
-  totalPages: number
-}
-
 export async function getBlogPosts(options: BlogPostsOptions = {}): Promise<BlogPostsResult> {
-  if (!isSupabaseConfigured) {
-    return { posts: [], total: 0, page: 1, totalPages: 0 }
-  }
-
   const {
     page = 1,
     limit = 12,
@@ -110,6 +65,43 @@ export async function getBlogPosts(options: BlogPostsOptions = {}): Promise<Blog
     destacado,
     search,
   } = options
+
+  if (!isSupabaseConfigured) {
+    let filtered = [...staticBlogPosts]
+
+    // Category filtering
+    let categoryId = categoria_id
+    if (categoria_slug && !categoryId) {
+      const cat = staticBlogCategories.find(c => c.slug === categoria_slug)
+      categoryId = cat?.id
+      if (!categoryId) {
+        return { posts: [], total: 0, page, totalPages: 0 }
+      }
+    }
+    if (categoryId) {
+      filtered = filtered.filter(p => p.categoria_id === categoryId)
+    }
+
+    if (destacado !== undefined) {
+      filtered = filtered.filter(p => p.destacado === destacado)
+    }
+
+    if (search) {
+      const q = search.toLowerCase()
+      filtered = filtered.filter(p =>
+        p.titulo.toLowerCase().includes(q) ||
+        (p.extracto && p.extracto.toLowerCase().includes(q)) ||
+        p.contenido.toLowerCase().includes(q)
+      )
+    }
+
+    const total = filtered.length
+    const totalPages = Math.ceil(total / limit)
+    const offset = (page - 1) * limit
+    const posts = filtered.slice(offset, offset + limit)
+
+    return { posts, total, page, totalPages }
+  }
 
   const offset = (page - 1) * limit
 
@@ -152,7 +144,11 @@ export async function getBlogPosts(options: BlogPostsOptions = {}): Promise<Blog
 
   if (error) {
     console.error('Error fetching blog posts:', error)
-    return { posts: [], total: 0, page, totalPages: 0 }
+    // Fallback to static data
+    const total = staticBlogPosts.length
+    const totalPages = Math.ceil(total / limit)
+    const posts = staticBlogPosts.slice(offset, offset + limit)
+    return { posts, total, page, totalPages }
   }
 
   const total = count || 0
@@ -167,7 +163,9 @@ export async function getBlogPosts(options: BlogPostsOptions = {}): Promise<Blog
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
-  if (!isSupabaseConfigured) return null
+  if (!isSupabaseConfigured) {
+    return staticBlogPosts.find(p => p.slug === slug) || null
+  }
 
   const { data, error } = await supabase
     .from('blog_posts')
@@ -181,14 +179,18 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
 
   if (error) {
     console.error('Error fetching blog post by slug:', error)
-    return null
+    // Fallback to static data
+    return staticBlogPosts.find(p => p.slug === slug) || null
   }
 
   return data
 }
 
 export async function getFeaturedPosts(limit: number = 3): Promise<BlogPost[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    // No featured posts in MongoDB data, return latest
+    return staticBlogPosts.slice(0, limit)
+  }
 
   const { data, error } = await supabase
     .from('blog_posts')
@@ -203,14 +205,16 @@ export async function getFeaturedPosts(limit: number = 3): Promise<BlogPost[]> {
 
   if (error) {
     console.error('Error fetching featured posts:', error)
-    return []
+    return staticBlogPosts.slice(0, limit)
   }
 
   return data || []
 }
 
 export async function getLatestPosts(limit: number = 5): Promise<BlogPost[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    return staticBlogPosts.slice(0, limit)
+  }
 
   const { data, error } = await supabase
     .from('blog_posts')
@@ -224,14 +228,26 @@ export async function getLatestPosts(limit: number = 5): Promise<BlogPost[]> {
 
   if (error) {
     console.error('Error fetching latest posts:', error)
-    return []
+    return staticBlogPosts.slice(0, limit)
   }
 
   return data || []
 }
 
 export async function getRelatedPosts(post: BlogPost, limit: number = 4): Promise<BlogPost[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    // First try same category
+    if (post.categoria_id) {
+      const sameCat = staticBlogPosts
+        .filter(p => p.id !== post.id && p.categoria_id === post.categoria_id)
+        .slice(0, limit)
+      if (sameCat.length >= limit) return sameCat
+    }
+    // Fallback to latest posts excluding current
+    return staticBlogPosts
+      .filter(p => p.id !== post.id)
+      .slice(0, limit)
+  }
 
   // Try to get posts from the same category first
   if (post.categoria_id) {
@@ -266,14 +282,16 @@ export async function getRelatedPosts(post: BlogPost, limit: number = 4): Promis
 
   if (error) {
     console.error('Error fetching related posts:', error)
-    return []
+    return staticBlogPosts.filter(p => p.id !== post.id).slice(0, limit)
   }
 
   return data || []
 }
 
 export async function getAllPublishedSlugs(): Promise<string[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    return staticBlogPosts.map(p => p.slug)
+  }
 
   const { data, error } = await supabase
     .from('blog_posts')
@@ -282,14 +300,14 @@ export async function getAllPublishedSlugs(): Promise<string[]> {
 
   if (error) {
     console.error('Error fetching blog slugs:', error)
-    return []
+    return staticBlogPosts.map(p => p.slug)
   }
 
   return data?.map(p => p.slug) || []
 }
 
 export async function getAllActiveCategorySlugs(): Promise<string[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) return staticBlogCategories.map(c => c.slug)
 
   const { data, error } = await supabase
     .from('blog_categories')
@@ -309,7 +327,18 @@ export async function getAllActiveCategorySlugs(): Promise<string[]> {
 // ============================================================================
 
 export async function getPopularTags(limit: number = 10): Promise<string[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    const tagCounts: Record<string, number> = {}
+    staticBlogPosts.forEach(post => {
+      (post.tags || []).forEach((tag: string) => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1
+      })
+    })
+    return Object.entries(tagCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([tag]) => tag)
+  }
 
   const { data, error } = await supabase
     .from('blog_posts')
@@ -341,19 +370,20 @@ export async function getPopularTags(limit: number = 10): Promise<string[]> {
 // SIDEBAR DATA - Dynamic from vehicles
 // ============================================================================
 
-export interface PopularBrand {
-  marca: string
-  count: number
-}
-
-export interface PopularModel {
-  marca: string
-  modelo: string
-  count: number
-}
-
 export async function getPopularBrands(limit: number = 8): Promise<PopularBrand[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    // Use static vehicle data
+    const { vehicles } = await import('@/data/vehicles')
+    const disponible = vehicles.filter(v => v.onSale || v.status === 'disponible')
+    const brandCounts: Record<string, number> = {}
+    disponible.forEach(v => {
+      brandCounts[v.brand] = (brandCounts[v.brand] || 0) + 1
+    })
+    return Object.entries(brandCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([marca, count]) => ({ marca, count }))
+  }
 
   const { data, error } = await supabase
     .from('vehicles')
@@ -378,7 +408,21 @@ export async function getPopularBrands(limit: number = 8): Promise<PopularBrand[
 }
 
 export async function getPopularModels(limit: number = 6): Promise<PopularModel[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    const { vehicles } = await import('@/data/vehicles')
+    const disponible = vehicles.filter(v => v.onSale || v.status === 'disponible')
+    const modelCounts: Record<string, { marca: string; modelo: string; count: number }> = {}
+    disponible.forEach(v => {
+      const key = `${v.brand}|${v.model}`
+      if (!modelCounts[key]) {
+        modelCounts[key] = { marca: v.brand, modelo: v.model, count: 0 }
+      }
+      modelCounts[key].count++
+    })
+    return Object.values(modelCounts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit)
+  }
 
   const { data, error } = await supabase
     .from('vehicles')
@@ -406,7 +450,19 @@ export async function getPopularModels(limit: number = 6): Promise<PopularModel[
 }
 
 export async function getVehicleBodyTypes(): Promise<{ tipo: string; count: number }[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    const { vehicles } = await import('@/data/vehicles')
+    const disponible = vehicles.filter(v => v.onSale || v.status === 'disponible')
+    const typeCounts: Record<string, number> = {}
+    disponible.forEach(v => {
+      if (v.bodyType) {
+        typeCounts[v.bodyType] = (typeCounts[v.bodyType] || 0) + 1
+      }
+    })
+    return Object.entries(typeCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([tipo, count]) => ({ tipo, count }))
+  }
 
   const { data, error } = await supabase
     .from('vehicles')

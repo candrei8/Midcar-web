@@ -1,20 +1,22 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { BlogPost, formatBlogDateShort } from '@/lib/blog-service'
+import { BlogPost, formatBlogDateShort, estimateReadingTime } from '@/lib/blog-service'
 
 interface BlogCardProps {
   post: BlogPost
 }
 
 export default function BlogCard({ post }: BlogCardProps) {
+  const readingTime = estimateReadingTime(post.contenido)
+
   return (
-    <article className="group bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <article className="group bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col">
       {/* Image Container */}
       <Link
         href={`/blog/${post.slug}`}
         className="block relative overflow-hidden"
       >
-        <div className="relative h-[275px] w-full bg-gray-200">
+        <div className="relative h-[220px] w-full bg-gray-200">
           {post.imagen_principal ? (
             <Image
               src={post.imagen_principal}
@@ -28,6 +30,15 @@ export default function BlogCard({ post }: BlogCardProps) {
               <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
+            </div>
+          )}
+
+          {/* Category badge */}
+          {post.categoria && (
+            <div className="absolute top-3 left-3">
+              <span className="px-2.5 py-1 bg-[#135bec] text-white text-xs font-semibold rounded">
+                {post.categoria.nombre}
+              </span>
             </div>
           )}
 
@@ -47,12 +58,26 @@ export default function BlogCard({ post }: BlogCardProps) {
       </Link>
 
       {/* Content */}
-      <div className="p-4 bg-gray-50">
-        <h3 className="font-normal text-gray-800 group-hover:text-[#135bec] transition-colors line-clamp-2 text-base">
+      <div className="p-4 bg-gray-50 flex flex-col flex-1">
+        <h3 className="font-semibold text-gray-800 group-hover:text-[#135bec] transition-colors line-clamp-2 text-base mb-2">
           <Link href={`/blog/${post.slug}`}>
             {post.titulo}
           </Link>
         </h3>
+        {post.extracto && (
+          <p className="text-sm text-gray-500 line-clamp-2 mb-3 flex-1">
+            {post.extracto}
+          </p>
+        )}
+        <div className="flex items-center justify-between text-xs text-gray-400 mt-auto pt-2 border-t border-gray-100">
+          <span>{readingTime} min de lectura</span>
+          <Link
+            href={`/blog/${post.slug}`}
+            className="text-[#135bec] hover:underline font-medium"
+          >
+            Leer más →
+          </Link>
+        </div>
       </div>
     </article>
   )

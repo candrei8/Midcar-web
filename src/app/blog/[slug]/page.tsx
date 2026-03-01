@@ -6,7 +6,9 @@ import {
   getBlogPostBySlug,
   getRelatedPosts,
   getAllPublishedSlugs,
-  formatBlogDateShort
+  formatBlogDateShort,
+  formatBlogDate,
+  estimateReadingTime,
 } from '@/lib/blog-service'
 import RelatedPosts from '@/components/blog/RelatedPosts'
 import MarkdownRenderer from '@/components/blog/MarkdownRenderer'
@@ -188,12 +190,28 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <span className="text-gray-800">{post.titulo}</span>
             </nav>
 
-            {/* Date */}
-            <div className="flex items-center gap-2 text-gray-500 text-sm mb-8">
-              <svg className="w-4 h-4 text-[#dc2626]" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-              </svg>
-              <span>{formatBlogDateShort(post.fecha_publicacion || post.created_at)}</span>
+            {/* Post metadata */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-gray-500 text-sm mb-8 pb-6 border-b border-gray-100">
+              <div className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-[#dc2626]" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                </svg>
+                <span>{formatBlogDate(post.fecha_publicacion || post.created_at)}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{estimateReadingTime(post.contenido)} min de lectura</span>
+              </div>
+              {post.categoria && (
+                <Link
+                  href={`/blog/categoria/${post.categoria.slug}`}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#135bec]/10 text-[#135bec] text-xs font-semibold rounded hover:bg-[#135bec] hover:text-white transition-colors"
+                >
+                  {post.categoria.nombre}
+                </Link>
+              )}
             </div>
 
             {/* Content */}

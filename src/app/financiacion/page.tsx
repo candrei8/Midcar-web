@@ -114,6 +114,22 @@ const faqs = [
   },
 ]
 
+// Real financing coefficients from MidCar database
+// Monthly payment = financed amount × coefficient
+const financingCoefficients: Record<number, number> = {
+  24: 0.047854,
+  36: 0.033614,
+  48: 0.026573,
+  60: 0.022416,
+  72: 0.019656,
+  84: 0.017774,
+  96: 0.016417,
+  108: 0.015417,
+  120: 0.014672,
+}
+
+const availableMonths = Object.keys(financingCoefficients).map(Number)
+
 export default function FinanciacionPage() {
   const [vehiclePrice, setVehiclePrice] = useState(15000)
   const [downPayment, setDownPayment] = useState(0)
@@ -121,10 +137,9 @@ export default function FinanciacionPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   const financedAmount = vehiclePrice - downPayment
-  const interestRate = 0.0799
-  const monthlyRate = interestRate / 12
+  const coefficient = financingCoefficients[months] || 0.022416
   const monthlyPayment = financedAmount > 0
-    ? (financedAmount * monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1)
+    ? financedAmount * coefficient
     : 0
   const totalCost = monthlyPayment * months
 
@@ -247,24 +262,23 @@ export default function FinanciacionPage() {
                       Plazo de financiación
                     </label>
                     <span className="text-sm font-bold text-secondary-900">
-                      {months} meses ({Math.floor(months / 12)} años)
+                      {months} meses ({months >= 12 ? `${Math.floor(months / 12)} año${Math.floor(months / 12) > 1 ? 's' : ''}` : ''})
                     </span>
                   </div>
-                  <input
-                    type="range"
-                    min="12"
-                    max="120"
-                    step="12"
-                    value={months}
-                    onChange={(e) => setMonths(Number(e.target.value))}
-                    className="w-full h-2 bg-secondary-200 rounded-full appearance-none cursor-pointer
-                             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
-                             [&::-webkit-slider-thumb]:bg-primary-600 [&::-webkit-slider-thumb]:rounded-full
-                             [&::-webkit-slider-thumb]:cursor-pointer"
-                  />
-                  <div className="flex justify-between text-xs text-secondary-400 mt-1">
-                    <span>12 meses</span>
-                    <span>120 meses</span>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
+                    {availableMonths.map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => setMonths(m)}
+                        className={`py-2 px-1 rounded-lg text-sm font-medium transition-colors ${
+                          months === m
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-secondary-100 text-secondary-600 hover:bg-secondary-200'
+                        }`}
+                      >
+                        {m} m
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -286,7 +300,7 @@ export default function FinanciacionPage() {
                   </div>
                 </div>
                 <p className="text-xs text-primary-600 mt-4">
-                  * TAE 7,99%. Cálculo orientativo. La aprobación definitiva está sujeta a estudio.
+                  * Cálculo orientativo. La aprobación definitiva está sujeta a estudio financiero.
                 </p>
               </div>
 
