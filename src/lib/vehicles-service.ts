@@ -1,35 +1,15 @@
 /**
- * Vehicles Service - Connects to Supabase for vehicle data
- * Replaces hardcoded data in /src/data/vehicles.ts
+ * Vehicles Service - Uses static data from MongoDB export
+ * Falls back to Supabase when configured, otherwise uses local data
  */
 
 import { supabase, isSupabaseConfigured } from './supabase'
+import { vehicles as staticVehicles, type Vehicle as StaticVehicle } from '@/data/vehicles'
 
-// Vehicle interface (web-friendly format)
-export interface Vehicle {
-  id: string
-  slug: string
-  title: string
-  brand: string
-  model: string
-  price: number
-  originalPrice?: number
-  km: number
-  year: number
-  cv: number
-  fuel: string
-  transmission: string
-  bodyType: string
-  ivaDeducible: boolean
-  onSale: boolean
-  label?: string
-  images: string[]
-  featured?: boolean
-  monthlyPayment?: number
-  description?: string  // Campo de descripción/comentario extra
-}
+// Re-export the Vehicle type from data
+export type Vehicle = StaticVehicle
 
-// Database vehicle format
+// Database vehicle format (Supabase)
 interface DBVehicle {
   id: string
   marca: string
@@ -48,7 +28,7 @@ interface DBVehicle {
   descuento: number
   imagen_principal: string
   en_oferta: boolean
-  descripcion?: string  // Campo opcional de descripción/comentario
+  descripcion?: string
 }
 
 // Transform database vehicle to web format
@@ -68,7 +48,6 @@ function transformToWebFormat(dbVehicle: DBVehicle): Vehicle {
     'semiautomatico': 'Automático',
   }
 
-  // Generate slug from brand and model
   const slug = `${dbVehicle.marca}-${dbVehicle.modelo}-${dbVehicle.año_matriculacion}`
     .toLowerCase()
     .normalize('NFD')
@@ -77,15 +56,12 @@ function transformToWebFormat(dbVehicle: DBVehicle): Vehicle {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
-  // Generate title
   const title = `${dbVehicle.marca} ${dbVehicle.modelo}${dbVehicle.version ? ' ' + dbVehicle.version : ''}`
 
-  // Calculate original price if there's a discount
   const originalPrice = dbVehicle.descuento > 0
     ? dbVehicle.precio_venta + dbVehicle.descuento
     : undefined
 
-  // Calculate monthly payment (approximate)
   const monthlyPayment = Math.round(dbVehicle.precio_venta / 60)
 
   return {
@@ -102,7 +78,7 @@ function transformToWebFormat(dbVehicle: DBVehicle): Vehicle {
     fuel: fuelMap[dbVehicle.combustible] || dbVehicle.combustible,
     transmission: transmissionMap[dbVehicle.transmision] || dbVehicle.transmision,
     bodyType: dbVehicle.tipo_carroceria,
-    ivaDeducible: true, // Default, could be added to DB later
+    ivaDeducible: true,
     onSale: dbVehicle.estado === 'disponible',
     label: dbVehicle.etiqueta_dgt || undefined,
     images: dbVehicle.imagen_principal ? [dbVehicle.imagen_principal] : [],
@@ -112,11 +88,22 @@ function transformToWebFormat(dbVehicle: DBVehicle): Vehicle {
   }
 }
 
+// ---- Static data helpers ----
+
+function getStaticOnSale(): Vehicle[] {
+  return staticVehicles.filter(v => v.onSale || v.status === 'disponible')
+}
+
+function getStaticFeatured(): Vehicle[] {
+  return getStaticOnSale().filter(v => v.featured).slice(0, 8)
+}
+
+// ---- Public API ----
+
 // Get all vehicles
 export async function getVehicles(): Promise<Vehicle[]> {
   if (!isSupabaseConfigured) {
-    console.warn('Supabase not configured, returning empty array')
-    return []
+    return staticVehicles
   }
 
   const { data, error } = await supabase
@@ -127,7 +114,7 @@ export async function getVehicles(): Promise<Vehicle[]> {
 
   if (error) {
     console.error('Error fetching vehicles:', error)
-    return []
+    return staticVehicles
   }
 
   return (data || []).map(transformToWebFormat)
@@ -135,7 +122,9 @@ export async function getVehicles(): Promise<Vehicle[]> {
 
 // Get vehicles on sale
 export async function getVehiclesOnSale(): Promise<Vehicle[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    return getStaticOnSale()
+  }
 
   const { data, error } = await supabase
     .from('vehicles')
@@ -146,7 +135,7 @@ export async function getVehiclesOnSale(): Promise<Vehicle[]> {
 
   if (error) {
     console.error('Error fetching vehicles on sale:', error)
-    return []
+    return getStaticOnSale()
   }
 
   return (data || []).map(transformToWebFormat)
@@ -154,7 +143,9 @@ export async function getVehiclesOnSale(): Promise<Vehicle[]> {
 
 // Get featured vehicles
 export async function getFeaturedVehicles(): Promise<Vehicle[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    return getStaticFeatured()
+  }
 
   const { data, error } = await supabase
     .from('vehicles')
@@ -165,7 +156,7 @@ export async function getFeaturedVehicles(): Promise<Vehicle[]> {
 
   if (error) {
     console.error('Error fetching featured vehicles:', error)
-    return []
+    return getStaticFeatured()
   }
 
   return (data || []).map(transformToWebFormat)
@@ -173,7 +164,9 @@ export async function getFeaturedVehicles(): Promise<Vehicle[]> {
 
 // Get vehicle by ID
 export async function getVehicleById(id: string): Promise<Vehicle | null> {
-  if (!isSupabaseConfigured) return null
+  if (!isSupabaseConfigured) {
+    return staticVehicles.find(v => v.id === id) || null
+  }
 
   const { data, error } = await supabase
     .from('vehicles')
@@ -183,7 +176,7 @@ export async function getVehicleById(id: string): Promise<Vehicle | null> {
 
   if (error) {
     console.error('Error fetching vehicle by ID:', error)
-    return null
+    return staticVehicles.find(v => v.id === id) || null
   }
 
   return data ? transformToWebFormat(data) : null
@@ -191,7 +184,9 @@ export async function getVehicleById(id: string): Promise<Vehicle | null> {
 
 // Get vehicle by stock_id (original web ID)
 export async function getVehicleByStockId(stockId: string): Promise<Vehicle | null> {
-  if (!isSupabaseConfigured) return null
+  if (!isSupabaseConfigured) {
+    return staticVehicles.find(v => v.id === stockId) || null
+  }
 
   const { data, error } = await supabase
     .from('vehicles')
@@ -201,31 +196,34 @@ export async function getVehicleByStockId(stockId: string): Promise<Vehicle | nu
 
   if (error) {
     console.error('Error fetching vehicle by stock_id:', error)
-    return null
+    return staticVehicles.find(v => v.id === stockId) || null
   }
 
   return data ? transformToWebFormat(data) : null
 }
 
-// Get vehicle by slug (approximate match)
+// Get vehicle by slug
 export async function getVehicleBySlug(slug: string): Promise<Vehicle | null> {
-  if (!isSupabaseConfigured) return null
+  if (!isSupabaseConfigured) {
+    return staticVehicles.find(v => v.slug === slug) || null
+  }
 
-  // Check if slug looks like a UUID (only then try by ID)
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (uuidRegex.test(slug)) {
     const byId = await getVehicleById(slug)
     if (byId) return byId
   }
 
-  // Get all vehicles and find by generated slug
   const vehicles = await getVehicles()
   return vehicles.find(v => v.slug === slug) || null
 }
 
 // Get unique brands
 export async function getBrands(): Promise<string[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    const brands = Array.from(new Set(getStaticOnSale().map(v => v.brand)))
+    return brands.sort()
+  }
 
   const { data, error } = await supabase
     .from('vehicles')
@@ -234,7 +232,8 @@ export async function getBrands(): Promise<string[]> {
 
   if (error) {
     console.error('Error fetching brands:', error)
-    return []
+    const brands = Array.from(new Set(getStaticOnSale().map(v => v.brand)))
+    return brands.sort()
   }
 
   const brands = Array.from(new Set((data || []).map(v => v.marca)))
@@ -243,14 +242,20 @@ export async function getBrands(): Promise<string[]> {
 
 // Get unique fuel types
 export async function getFuelTypes(): Promise<string[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    const fuels = Array.from(new Set(getStaticOnSale().map(v => v.fuel)))
+    return fuels.sort()
+  }
 
   const { data, error } = await supabase
     .from('vehicles')
     .select('combustible')
     .eq('estado', 'disponible')
 
-  if (error) return []
+  if (error) {
+    const fuels = Array.from(new Set(getStaticOnSale().map(v => v.fuel)))
+    return fuels.sort()
+  }
 
   const fuelMap: Record<string, string> = {
     'diesel': 'Diesel',
@@ -267,14 +272,20 @@ export async function getFuelTypes(): Promise<string[]> {
 
 // Get unique body types
 export async function getBodyTypes(): Promise<string[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    const types = Array.from(new Set(getStaticOnSale().map(v => v.bodyType)))
+    return types.sort()
+  }
 
   const { data, error } = await supabase
     .from('vehicles')
     .select('tipo_carroceria')
     .eq('estado', 'disponible')
 
-  if (error) return []
+  if (error) {
+    const types = Array.from(new Set(getStaticOnSale().map(v => v.bodyType)))
+    return types.sort()
+  }
 
   const types = Array.from(new Set((data || []).map(v => v.tipo_carroceria)))
   return types.sort()
@@ -292,59 +303,46 @@ export async function searchVehicles(filters: {
   minYear?: number
   maxYear?: number
 }): Promise<Vehicle[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    let result = getStaticOnSale()
+    if (filters.brand) result = result.filter(v => v.brand.toLowerCase() === filters.brand!.toLowerCase())
+    if (filters.bodyType) result = result.filter(v => v.bodyType === filters.bodyType!.toLowerCase())
+    if (filters.maxPrice) result = result.filter(v => v.price <= filters.maxPrice!)
+    if (filters.minPrice) result = result.filter(v => v.price >= filters.minPrice!)
+    if (filters.maxKm) result = result.filter(v => v.km <= filters.maxKm!)
+    if (filters.fuel) result = result.filter(v => v.fuel === filters.fuel)
+    if (filters.transmission) result = result.filter(v => v.transmission === filters.transmission)
+    if (filters.minYear) result = result.filter(v => v.year >= filters.minYear!)
+    if (filters.maxYear) result = result.filter(v => v.year <= filters.maxYear!)
+    return result
+  }
 
   let query = supabase
     .from('vehicles')
     .select('*')
     .eq('estado', 'disponible')
 
-  if (filters.brand) {
-    query = query.ilike('marca', filters.brand)
-  }
-
-  if (filters.bodyType) {
-    query = query.eq('tipo_carroceria', filters.bodyType.toLowerCase())
-  }
-
-  if (filters.maxPrice) {
-    query = query.lte('precio_venta', filters.maxPrice)
-  }
-
-  if (filters.minPrice) {
-    query = query.gte('precio_venta', filters.minPrice)
-  }
-
-  if (filters.maxKm) {
-    query = query.lte('kilometraje', filters.maxKm)
-  }
+  if (filters.brand) query = query.ilike('marca', filters.brand)
+  if (filters.bodyType) query = query.eq('tipo_carroceria', filters.bodyType.toLowerCase())
+  if (filters.maxPrice) query = query.lte('precio_venta', filters.maxPrice)
+  if (filters.minPrice) query = query.gte('precio_venta', filters.minPrice)
+  if (filters.maxKm) query = query.lte('kilometraje', filters.maxKm)
 
   if (filters.fuel) {
     const fuelMap: Record<string, string> = {
-      'Diesel': 'diesel',
-      'Gasolina': 'gasolina',
-      'Híbrido': 'hibrido',
-      'Eléctrico': 'electrico',
-      'Gas': 'glp',
+      'Diesel': 'diesel', 'Gasolina': 'gasolina', 'Híbrido': 'hibrido',
+      'Eléctrico': 'electrico', 'Gas': 'glp',
     }
     query = query.eq('combustible', fuelMap[filters.fuel] || filters.fuel.toLowerCase())
   }
 
   if (filters.transmission) {
-    const transMap: Record<string, string> = {
-      'Manual': 'manual',
-      'Automático': 'automatico',
-    }
+    const transMap: Record<string, string> = { 'Manual': 'manual', 'Automático': 'automatico' }
     query = query.eq('transmision', transMap[filters.transmission] || filters.transmission.toLowerCase())
   }
 
-  if (filters.minYear) {
-    query = query.gte('año_matriculacion', filters.minYear)
-  }
-
-  if (filters.maxYear) {
-    query = query.lte('año_matriculacion', filters.maxYear)
-  }
+  if (filters.minYear) query = query.gte('año_matriculacion', filters.minYear)
+  if (filters.maxYear) query = query.lte('año_matriculacion', filters.maxYear)
 
   query = query.order('destacado', { ascending: false }).order('created_at', { ascending: false })
 
@@ -360,47 +358,49 @@ export async function searchVehicles(filters: {
 
 // Get price range
 export async function getPriceRange(): Promise<{ min: number; max: number }> {
-  if (!isSupabaseConfigured) return { min: 0, max: 100000 }
+  if (!isSupabaseConfigured) {
+    const onSale = getStaticOnSale()
+    if (onSale.length === 0) return { min: 0, max: 100000 }
+    const prices = onSale.map(v => v.price)
+    return { min: Math.min(...prices), max: Math.max(...prices) }
+  }
 
   const { data, error } = await supabase
     .from('vehicles')
     .select('precio_venta')
     .eq('estado', 'disponible')
 
-  if (error || !data || data.length === 0) {
-    return { min: 0, max: 100000 }
-  }
+  if (error || !data || data.length === 0) return { min: 0, max: 100000 }
 
   const prices = data.map(v => v.precio_venta)
-  return {
-    min: Math.min(...prices),
-    max: Math.max(...prices),
-  }
+  return { min: Math.min(...prices), max: Math.max(...prices) }
 }
 
 // Get year range
 export async function getYearRange(): Promise<{ min: number; max: number }> {
-  if (!isSupabaseConfigured) return { min: 2010, max: new Date().getFullYear() }
+  if (!isSupabaseConfigured) {
+    const onSale = getStaticOnSale()
+    if (onSale.length === 0) return { min: 2010, max: new Date().getFullYear() }
+    const years = onSale.map(v => v.year)
+    return { min: Math.min(...years), max: Math.max(...years) }
+  }
 
   const { data, error } = await supabase
     .from('vehicles')
     .select('año_matriculacion')
     .eq('estado', 'disponible')
 
-  if (error || !data || data.length === 0) {
-    return { min: 2010, max: new Date().getFullYear() }
-  }
+  if (error || !data || data.length === 0) return { min: 2010, max: new Date().getFullYear() }
 
   const years = data.map(v => (v as any).año_matriculacion as number)
-  return {
-    min: Math.min(...years),
-    max: Math.max(...years),
-  }
+  return { min: Math.min(...years), max: Math.max(...years) }
 }
 
 // Get vehicle count
 export async function getVehicleCount(): Promise<number> {
-  if (!isSupabaseConfigured) return 0
+  if (!isSupabaseConfigured) {
+    return getStaticOnSale().length
+  }
 
   const { count, error } = await supabase
     .from('vehicles')
@@ -409,21 +409,45 @@ export async function getVehicleCount(): Promise<number> {
 
   if (error) {
     console.error('Error getting vehicle count:', error)
-    return 0
+    return getStaticOnSale().length
   }
 
   return count || 0
 }
 
-// Get similar vehicles (same body type or fuel, similar price range)
+// Get similar vehicles
 export async function getSimilarVehicles(vehicle: Vehicle, limit: number = 4): Promise<Vehicle[]> {
-  if (!isSupabaseConfigured) return []
+  if (!isSupabaseConfigured) {
+    const onSale = getStaticOnSale().filter(v => v.id !== vehicle.id)
+    const minPrice = Math.round(vehicle.price * 0.7)
+    const maxPrice = Math.round(vehicle.price * 1.3)
 
-  // Define price range (±30% of the vehicle price)
+    // Same body type, similar price
+    let similar = onSale.filter(v =>
+      v.bodyType === vehicle.bodyType &&
+      v.price >= minPrice && v.price <= maxPrice
+    )
+
+    // Fill with same fuel type
+    if (similar.length < limit) {
+      const ids = new Set(similar.map(v => v.id))
+      const byFuel = onSale.filter(v => v.fuel === vehicle.fuel && !ids.has(v.id))
+      similar = [...similar, ...byFuel]
+    }
+
+    // Fill with any
+    if (similar.length < limit) {
+      const ids = new Set(similar.map(v => v.id))
+      const any = onSale.filter(v => !ids.has(v.id))
+      similar = [...similar, ...any]
+    }
+
+    return similar.slice(0, limit)
+  }
+
   const minPrice = Math.round(vehicle.price * 0.7)
   const maxPrice = Math.round(vehicle.price * 1.3)
 
-  // First try: same body type and similar price
   let { data, error } = await supabase
     .from('vehicles')
     .select('*')
@@ -439,18 +463,12 @@ export async function getSimilarVehicles(vehicle: Vehicle, limit: number = 4): P
     return []
   }
 
-  // If not enough results, try same fuel type
   if (!data || data.length < limit) {
     const fuelMap: Record<string, string> = {
-      'Diesel': 'diesel',
-      'Gasolina': 'gasolina',
-      'Híbrido': 'hibrido',
-      'Eléctrico': 'electrico',
-      'Gas': 'glp',
+      'Diesel': 'diesel', 'Gasolina': 'gasolina', 'Híbrido': 'hibrido',
+      'Eléctrico': 'electrico', 'Gas': 'glp',
     }
-
     const existingIds = (data || []).map(v => v.id)
-
     const { data: fuelData, error: fuelError } = await supabase
       .from('vehicles')
       .select('*')
@@ -459,16 +477,11 @@ export async function getSimilarVehicles(vehicle: Vehicle, limit: number = 4): P
       .neq('id', vehicle.id)
       .not('id', 'in', `(${existingIds.join(',')})`)
       .limit(limit - (data?.length || 0))
-
-    if (!fuelError && fuelData) {
-      data = [...(data || []), ...fuelData]
-    }
+    if (!fuelError && fuelData) data = [...(data || []), ...fuelData]
   }
 
-  // If still not enough, get any available vehicles
   if (!data || data.length < limit) {
     const existingIds = (data || []).map(v => v.id)
-
     const { data: anyData, error: anyError } = await supabase
       .from('vehicles')
       .select('*')
@@ -477,10 +490,7 @@ export async function getSimilarVehicles(vehicle: Vehicle, limit: number = 4): P
       .not('id', 'in', `(${existingIds.length > 0 ? existingIds.join(',') : "''"})`)
       .order('destacado', { ascending: false })
       .limit(limit - (data?.length || 0))
-
-    if (!anyError && anyData) {
-      data = [...(data || []), ...anyData]
-    }
+    if (!anyError && anyData) data = [...(data || []), ...anyData]
   }
 
   return (data || []).slice(0, limit).map(transformToWebFormat)

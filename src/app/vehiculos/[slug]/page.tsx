@@ -13,10 +13,15 @@ import {
   Phone,
   MessageCircle,
   Shield,
-  FileCheck
+  FileCheck,
+  ChevronLeft,
+  ChevronRight,
+  Camera,
+  Calculator,
 } from 'lucide-react'
 import { formatPrice, formatKilometers, cn } from '@/lib/utils'
 import { getVehicleBySlug, getSimilarVehicles, type Vehicle } from '@/lib/vehicles-service'
+import { ImageLightbox } from '@/components/ui/ImageLightbox'
 
 export default function VehicleDetailPage() {
   const params = useParams()
@@ -24,7 +29,9 @@ export default function VehicleDetailPage() {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [similarVehicles, setSimilarVehicles] = useState<Vehicle[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [images, setImages] = useState<string[]>([])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [imgErrors, setImgErrors] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     async function loadVehicle() {
@@ -34,9 +41,6 @@ export default function VehicleDetailPage() {
           const v = await getVehicleBySlug(slug)
           if (v) {
             setVehicle(v)
-            // Use the vehicle images (from Supabase, currently only 1 image)
-            setImages(v.images.length > 0 ? v.images : [])
-            // Load similar vehicles
             const similar = await getSimilarVehicles(v, 4)
             setSimilarVehicles(similar)
           }
@@ -62,6 +66,8 @@ export default function VehicleDetailPage() {
   }
 
   const monthlyPayment = vehicle.monthlyPayment || Math.round(vehicle.price / 60)
+  const images = vehicle.images?.filter((_, i) => !imgErrors.has(i)) || []
+  const hasImages = images.length > 0
 
   const labelColors: Record<string, { bg: string, text: string, name: string }> = {
     '0': { bg: 'bg-blue-500', text: 'text-white', name: 'CERO Emisiones' },
@@ -70,6 +76,13 @@ export default function VehicleDetailPage() {
     'B': { bg: 'bg-yellow-500', text: 'text-black', name: 'Etiqueta B' },
   }
 
+  const goToPrev = () => {
+    setCurrentImageIndex(prev => (prev === 0 ? images.length - 1 : prev - 1))
+  }
+
+  const goToNext = () => {
+    setCurrentImageIndex(prev => (prev === images.length - 1 ? 0 : prev + 1))
+  }
 
   return (
     <>
@@ -89,14 +102,56 @@ export default function VehicleDetailPage() {
 
         <div className="container-custom px-4 md:px-6 py-6 md:py-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Placeholder sin imagen */}
+            {/* Image Gallery */}
             <div className="space-y-4">
-              <div className="relative aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 rounded-2xl overflow-hidden flex items-center justify-center">
-                <div className="text-center">
-                  <Fuel className="w-20 h-20 text-secondary-400 mx-auto mb-4" />
-                  <p className="text-xl font-semibold text-secondary-500">{vehicle.brand}</p>
-                  <p className="text-secondary-400">{vehicle.model}</p>
-                </div>
+              {/* Main Image */}
+              <div
+                className="relative aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 rounded-2xl overflow-hidden cursor-pointer"
+                onClick={() => hasImages && setLightboxOpen(true)}
+              >
+                {hasImages ? (
+                  <>
+                    <img
+                      src={images[currentImageIndex]}
+                      alt={`${vehicle.title} - Foto ${currentImageIndex + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={() => {
+                        setImgErrors(prev => new Set(prev).add(currentImageIndex))
+                        if (currentImageIndex > 0) setCurrentImageIndex(0)
+                      }}
+                    />
+                    {/* Navigation arrows */}
+                    {images.length > 1 && (
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); goToPrev() }}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); goToNext() }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                      </>
+                    )}
+                    {/* Image counter */}
+                    <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/60 text-white text-sm px-3 py-1.5 rounded-full">
+                      <Camera className="w-4 h-4" />
+                      {currentImageIndex + 1} / {images.length}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <Fuel className="w-20 h-20 text-secondary-400 mx-auto mb-4" />
+                      <p className="text-xl font-semibold text-secondary-500">{vehicle.brand}</p>
+                      <p className="text-secondary-400">{vehicle.model}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Labels */}
                 <div className="absolute top-4 left-4 flex flex-col gap-2">
@@ -108,6 +163,39 @@ export default function VehicleDetailPage() {
                   )}
                 </div>
               </div>
+
+              {/* Thumbnail strip */}
+              {images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {images.slice(0, 20).map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={cn(
+                        'flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 transition-all',
+                        currentImageIndex === idx
+                          ? 'border-primary-600 ring-2 ring-primary-200'
+                          : 'border-secondary-200 hover:border-secondary-400'
+                      )}
+                    >
+                      <img
+                        src={img}
+                        alt={`Miniatura ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </button>
+                  ))}
+                  {images.length > 20 && (
+                    <button
+                      onClick={() => setLightboxOpen(true)}
+                      className="flex-shrink-0 w-20 h-16 rounded-lg bg-secondary-100 border-2 border-secondary-200 flex items-center justify-center text-secondary-600 text-xs font-medium hover:bg-secondary-200 transition-colors"
+                    >
+                      +{images.length - 20} más
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Vehicle Info */}
@@ -171,13 +259,34 @@ export default function VehicleDetailPage() {
                   <p className="text-sm text-secondary-500">Transmisión</p>
                   <p className="font-semibold text-secondary-900">{vehicle.transmission}</p>
                 </div>
+                {vehicle.color && (
+                  <div className="bg-white rounded-xl p-4 border border-secondary-100">
+                    <div className="w-5 h-5 rounded-full bg-secondary-300 mb-2" />
+                    <p className="text-sm text-secondary-500">Color</p>
+                    <p className="font-semibold text-secondary-900">{vehicle.color}</p>
+                  </div>
+                )}
               </div>
 
-              {/* Description (if available) */}
+              {/* Features */}
+              {vehicle.extras && vehicle.extras.length > 0 && (
+                <div className="bg-white rounded-xl p-6 border border-secondary-100">
+                  <h3 className="font-semibold text-secondary-900 mb-3">Equipamiento</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {vehicle.extras.map((extra, i) => (
+                      <span key={i} className="px-3 py-1 bg-secondary-50 text-secondary-700 text-sm rounded-full border border-secondary-200">
+                        {extra}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
               {vehicle.description && (
                 <div className="bg-white rounded-xl p-6 border border-secondary-100">
                   <h3 className="font-semibold text-secondary-900 mb-3">Descripción</h3>
-                  <p className="text-secondary-700 whitespace-pre-line">{vehicle.description}</p>
+                  <p className="text-secondary-700 whitespace-pre-line text-sm leading-relaxed">{vehicle.description}</p>
                 </div>
               )}
 
@@ -199,6 +308,9 @@ export default function VehicleDetailPage() {
                 </div>
               </div>
 
+              {/* Financing Calculator */}
+              <FinancingCalculator vehiclePrice={vehicle.price} vehicleTitle={vehicle.title} />
+
               {/* Contact buttons */}
               <div className="space-y-3">
                 <a
@@ -217,12 +329,6 @@ export default function VehicleDetailPage() {
                   <MessageCircle className="w-5 h-5" />
                   WhatsApp: 695 055 555
                 </a>
-                <Link
-                  href="/financiacion"
-                  className="btn-ghost w-full justify-center py-4 border-2"
-                >
-                  Calcular financiación
-                </Link>
               </div>
             </div>
           </div>
@@ -235,43 +341,188 @@ export default function VehicleDetailPage() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {similarVehicles.map((v) => (
-                  <Link
-                    key={v.id}
-                    href={`/vehiculos/${v.slug}`}
-                    className="bg-white rounded-2xl border border-secondary-100 overflow-hidden hover:shadow-lg transition-shadow"
-                  >
-                    <div className="aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center relative">
-                      <div className="text-center p-4">
-                        <Fuel className="w-10 h-10 text-secondary-400 mx-auto mb-2" />
-                        <p className="text-sm font-semibold text-secondary-500">{v.brand}</p>
-                        <p className="text-xs text-secondary-400">{v.model}</p>
-                      </div>
-                      {v.featured && (
-                        <span className="absolute top-2 left-2 badge-primary text-xs">DESTACADO</span>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-secondary-900 text-sm mb-1 line-clamp-1">
-                        {v.title}
-                      </h3>
-                      <p className="text-lg font-bold text-primary-600 mb-2">
-                        {formatPrice(v.price)}
-                      </p>
-                      <div className="flex items-center gap-3 text-xs text-secondary-500">
-                        <span>{formatKilometers(v.km)}</span>
-                        <span>·</span>
-                        <span>{v.year}</span>
-                        <span>·</span>
-                        <span>{v.fuel}</span>
-                      </div>
-                    </div>
-                  </Link>
+                  <SimilarVehicleCard key={v.id} vehicle={v} />
                 ))}
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Image Lightbox */}
+      {hasImages && (
+        <ImageLightbox
+          images={images}
+          initialIndex={currentImageIndex}
+          isOpen={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          alt={vehicle.title}
+        />
+      )}
     </>
+  )
+}
+
+// Real financing coefficients from MidCar database
+const financingCoefficients: Record<number, number> = {
+  24: 0.047854,
+  36: 0.033614,
+  48: 0.026573,
+  60: 0.022416,
+  72: 0.019656,
+  84: 0.017774,
+  96: 0.016417,
+  108: 0.015417,
+  120: 0.014672,
+}
+
+const availableMonths = Object.keys(financingCoefficients).map(Number)
+
+function FinancingCalculator({ vehiclePrice, vehicleTitle }: { vehiclePrice: number; vehicleTitle: string }) {
+  const [downPayment, setDownPayment] = useState(0)
+  const [months, setMonths] = useState(60)
+
+  const financedAmount = vehiclePrice - downPayment
+  const coefficient = financingCoefficients[months] || 0.022416
+  const calcMonthlyPayment = financedAmount > 0 ? financedAmount * coefficient : 0
+  const totalCost = calcMonthlyPayment * months
+
+  return (
+    <div className="bg-white rounded-xl border border-secondary-100 p-6">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+          <Calculator className="w-5 h-5 text-primary-600" />
+        </div>
+        <div>
+          <h3 className="font-semibold text-secondary-900">Calcula tu financiación</h3>
+          <p className="text-xs text-secondary-500">Para este vehículo de {formatPrice(vehiclePrice)}</p>
+        </div>
+      </div>
+
+      <div className="space-y-5">
+        {/* Down Payment */}
+        <div>
+          <div className="flex justify-between mb-2">
+            <label className="text-sm font-medium text-secondary-700">Entrada inicial</label>
+            <span className="text-sm font-bold text-secondary-900">{formatPrice(downPayment)}</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max={vehiclePrice * 0.5}
+            step="500"
+            value={downPayment}
+            onChange={(e) => setDownPayment(Number(e.target.value))}
+            className="w-full h-2 bg-secondary-200 rounded-full appearance-none cursor-pointer
+                     [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
+                     [&::-webkit-slider-thumb]:bg-primary-600 [&::-webkit-slider-thumb]:rounded-full
+                     [&::-webkit-slider-thumb]:cursor-pointer"
+          />
+          <div className="flex justify-between text-xs text-secondary-400 mt-1">
+            <span>0€</span>
+            <span>{formatPrice(Math.round(vehiclePrice * 0.5))}</span>
+          </div>
+        </div>
+
+        {/* Months */}
+        <div>
+          <label className="block text-sm font-medium text-secondary-700 mb-2">Plazo</label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {availableMonths.map((m) => (
+              <button
+                key={m}
+                onClick={() => setMonths(m)}
+                className={cn(
+                  'py-1.5 rounded-lg text-xs font-medium transition-colors',
+                  months === m
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-secondary-100 text-secondary-600 hover:bg-secondary-200'
+                )}
+              >
+                {m} meses
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Result */}
+      <div className="mt-5 p-4 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl">
+        <p className="text-xs text-primary-700 mb-1">Tu cuota mensual</p>
+        <p className="text-3xl font-bold text-primary-700">
+          {formatPrice(Math.round(calcMonthlyPayment))}<span className="text-sm font-normal">/mes</span>
+        </p>
+        <div className="mt-3 pt-3 border-t border-primary-200 grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <p className="text-primary-600">Importe financiado</p>
+            <p className="font-semibold text-primary-800">{formatPrice(financedAmount)}</p>
+          </div>
+          <div>
+            <p className="text-primary-600">Coste total</p>
+            <p className="font-semibold text-primary-800">{formatPrice(Math.round(totalCost))}</p>
+          </div>
+        </div>
+        <p className="text-[10px] text-primary-600 mt-3">
+          * Cálculo orientativo. La aprobación definitiva está sujeta a estudio financiero.
+        </p>
+      </div>
+
+      <Link
+        href="/contacto"
+        className="btn-primary w-full justify-center mt-4 text-sm"
+      >
+        Solicitar financiación
+      </Link>
+    </div>
+  )
+}
+
+function SimilarVehicleCard({ vehicle }: { vehicle: Vehicle }) {
+  const [imgError, setImgError] = useState(false)
+  const mainImage = vehicle.images?.[0]
+
+  return (
+    <Link
+      href={`/vehiculos/${vehicle.slug}`}
+      className="bg-white rounded-2xl border border-secondary-100 overflow-hidden hover:shadow-lg transition-shadow group"
+    >
+      <div className="aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 relative overflow-hidden">
+        {mainImage && !imgError ? (
+          <img
+            src={mainImage}
+            alt={vehicle.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center p-4">
+              <Fuel className="w-10 h-10 text-secondary-400 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-secondary-500">{vehicle.brand}</p>
+              <p className="text-xs text-secondary-400">{vehicle.model}</p>
+            </div>
+          </div>
+        )}
+        {vehicle.featured && (
+          <span className="absolute top-2 left-2 badge-primary text-xs">DESTACADO</span>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="font-semibold text-secondary-900 text-sm mb-1 line-clamp-1">
+          {vehicle.title}
+        </h3>
+        <p className="text-lg font-bold text-primary-600 mb-2">
+          {formatPrice(vehicle.price)}
+        </p>
+        <div className="flex items-center gap-3 text-xs text-secondary-500">
+          <span>{formatKilometers(vehicle.km)}</span>
+          <span>·</span>
+          <span>{vehicle.year}</span>
+          <span>·</span>
+          <span>{vehicle.fuel}</span>
+        </div>
+      </div>
+    </Link>
   )
 }

@@ -5,9 +5,9 @@ import { motion, useInView } from 'framer-motion'
 import { Search, Car, Fuel, Gauge, Euro, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { getVehiclesOnSale } from '@/data/vehicles'
+import { vehicles } from '@/data/vehicles'
 
-const vehicleCount = getVehiclesOnSale().length
+const vehicleCount = vehicles.filter(v => v.onSale || v.status === 'disponible').length
 
 const bodyTypes = [
   { id: 'berlina', name: 'Berlina', icon: '🚗' },

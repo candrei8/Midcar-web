@@ -17,6 +17,10 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'midcar.blob.core.windows.net',
+      },
+      {
+        protocol: 'https',
         hostname: '*.supabase.co',
       },
     ],

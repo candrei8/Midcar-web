@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Fuel, Gauge, Calendar, Zap, Car } from 'lucide-react'
+import { ArrowRight, Fuel, Gauge, Calendar, Zap, Camera } from 'lucide-react'
 import { formatPrice, formatKilometers } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { getVehiclesOnSale, getFeaturedVehicles, getVehicleCount, type Vehicle } from '@/lib/vehicles-service'
 import { ScrollAnimation, StaggerContainer, StaggerItem } from '@/components/ui/ScrollAnimation'
 
 function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
+  const [imgError, setImgError] = useState(false)
   const monthlyPayment = vehicle.monthlyPayment || Math.round(vehicle.price / 60)
+  const mainImage = vehicle.images?.[0]
 
   const labelColors: Record<string, string> = {
     'ECO': 'bg-green-500',
@@ -20,20 +22,32 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 
   return (
     <article className="card-vehicle group relative">
-      {/* Placeholder sin imagen */}
-      <div className="relative aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 overflow-hidden flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-2 bg-secondary-300 rounded-full flex items-center justify-center">
-            <Fuel className="w-8 h-8 text-secondary-500" />
+      {/* Vehicle Image */}
+      <div className="relative aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 overflow-hidden">
+        {mainImage && !imgError ? (
+          <img
+            src={mainImage}
+            alt={vehicle.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-2 bg-secondary-300 rounded-full flex items-center justify-center">
+                <Fuel className="w-8 h-8 text-secondary-500" />
+              </div>
+              <p className="text-sm font-medium text-secondary-500">{vehicle.brand}</p>
+            </div>
           </div>
-          <p className="text-sm font-medium text-secondary-500">{vehicle.brand}</p>
-        </div>
+        )}
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {vehicle.onSale && (
             <span className="badge-primary text-xs">
-              ¡OFERTA!
+              DISPONIBLE
             </span>
           )}
           {vehicle.ivaDeducible && (
@@ -54,16 +68,21 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
             </span>
           </div>
         )}
+
+        {/* Photo count */}
+        {vehicle.images && vehicle.images.length > 1 && (
+          <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+            <Camera className="w-3 h-3" />
+            {vehicle.images.length}
+          </span>
+        )}
       </div>
 
       {/* Content */}
       <div className="p-5">
-        {/* Title */}
         <h3 className="font-bold text-lg text-secondary-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
           {vehicle.title}
         </h3>
-
-        {/* Price */}
         <div className="flex items-baseline gap-2 mb-3">
           <span className="text-2xl font-bold text-primary-600">
             {formatPrice(vehicle.price)}
@@ -74,13 +93,9 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
             </span>
           )}
         </div>
-
-        {/* Monthly Payment */}
         <p className="text-sm text-secondary-500 mb-4">
           Desde <span className="font-semibold text-secondary-700">{monthlyPayment}€/mes</span>
         </p>
-
-        {/* Specs */}
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div className="flex items-center gap-2 text-secondary-600">
             <Gauge className="w-4 h-4" />
@@ -118,7 +133,6 @@ export function FeaturedVehicles() {
     async function loadVehicles() {
       setIsLoading(true)
       try {
-        // Get featured first, then fill with on-sale vehicles if needed
         const featured = await getFeaturedVehicles()
         const onSale = await getVehiclesOnSale()
         const count = await getVehicleCount()

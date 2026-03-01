@@ -3,7 +3,13 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import Link from 'next/link'
-import { getBrands } from '@/data/vehicles'
+import { vehicles } from '@/data/vehicles'
+
+// Get unique brands from available vehicles
+function getBrands(): string[] {
+  const onSale = vehicles.filter(v => v.onSale || v.status === 'disponible')
+  return Array.from(new Set(onSale.map(v => v.brand))).sort()
+}
 
 // Generate brand objects from actual stock
 const generateSlug = (brand: string) =>
