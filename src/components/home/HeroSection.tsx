@@ -1,7 +1,7 @@
 'use client'
 
-import { Canvas, useFrame } from '@react-three/fiber'
-import { useGLTF, Float, Environment, ContactShadows, Lightformer } from '@react-three/drei'
+import { Canvas } from '@react-three/fiber'
+import { useGLTF } from '@react-three/drei'
 import { useEffect, useRef, useState, Suspense, useLayoutEffect } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -13,8 +13,6 @@ import { getHeroContent, HeroContent } from '@/lib/content-service'
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
 }
-
-useGLTF.preload('/models/car.glb')
 
 // ============================================
 // 3D Scene - Premium Minimalist Autohaus
@@ -49,16 +47,20 @@ function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement>
 
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
-        // Deep gloss, physically accurate metalness
-        child.material.envMapIntensity = 2.0 // Boosted for better reflections
-        if (child.material.name.toLowerCase().includes('paint') || child.material.name.toLowerCase().includes('body')) {
-          child.material.color.setRGB(0.04, 0.04, 0.04) // Graphite grey so it doesn't blend into black bg
-          child.material.roughness = 0.1
-          child.material.metalness = 0.7
-          child.material.clearcoat = 1.0
-          child.material.clearcoatRoughness = 0.1
+        const mat = child.material as THREE.MeshStandardMaterial
+        // Strip ALL env maps and clearcoat to prevent any WebGL feedback loop
+        mat.envMap = null
+        mat.envMapIntensity = 0
+        if ('clearcoat' in mat) (mat as any).clearcoat = 0
+        if ('clearcoatMap' in mat) (mat as any).clearcoatMap = null
+        if ('sheenColor' in mat) (mat as any).sheen = 0
+
+        if (mat.name.toLowerCase().includes('paint') || mat.name.toLowerCase().includes('body')) {
+          mat.color.setRGB(0.12, 0.12, 0.12)
+          mat.roughness = 0.3
+          mat.metalness = 0.8
         }
-        child.material.needsUpdate = true
+        mat.needsUpdate = true
       }
     })
   }, [scene])
@@ -188,6 +190,7 @@ function SceneLoader() {
 export function HeroSection() {
   const [content, setContent] = useState<HeroContent | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [showCanvas, setShowCanvas] = useState(false)
   const containerRef = useRef<HTMLElement>(null)
 
   // Refs for HTML sections
@@ -208,6 +211,8 @@ export function HeroSection() {
     fetch()
     // Small delay to ensure smooth mounting before animations hook
     setTimeout(() => setIsLoaded(true), 100)
+    // Defer 3D canvas mount so the page loads fast first
+    requestAnimationFrame(() => setShowCanvas(true))
   }, [])
 
   useLayoutEffect(() => {
@@ -289,14 +294,14 @@ export function HeroSection() {
 
           {/* ── 3D Scene ── */}
           <div className="absolute inset-0 z-0 pointer-events-none">
-            <Suspense fallback={<SceneLoader />}>
+            {!showCanvas && <SceneLoader />}
+            {showCanvas && <Suspense fallback={<SceneLoader />}>
               <Canvas
                 shadows={false}
-                dpr={[1, 1.2]} // Lowered DPR for drastic performance gain
+                dpr={1}
                 camera={{ position: [0, 1.5, 8], fov: 30 }}
                 gl={{
-                  toneMapping: THREE.ACESFilmicToneMapping,
-                  toneMappingExposure: 1.1, // Slightly darker, more dramatic
+                  toneMapping: THREE.NoToneMapping,
                   powerPreference: 'high-performance',
                   antialias: false,
                 }}
@@ -304,46 +309,29 @@ export function HeroSection() {
                 <color attach="background" args={['#050505']} />
                 <fog attach="fog" args={['#050505', 8, 30]} />
 
-                {/* Ultra Premium Cinematic Lighting */}
-                <ambientLight intensity={0.4} color="#ffffff" />
-                <spotLight position={[0, 15, 0]} intensity={2.5} angle={0.8} penumbra={1} color="#ffffff" />
-                <directionalLight position={[-10, 5, -5]} intensity={3} color="#ffffff" />
-                {/* Front fill light so the car isn't totally black */}
-                <directionalLight position={[0, 2, 10]} intensity={1.5} color="#ffffff" />
-
-                {/* Minimalist Rim Light */}
-                <pointLight position={[5, 2, -5]} intensity={4} color="#ffffff" distance={20} />
-
-                {/* CRITICAL: Synthetic Environment provides reflections. Disabled blur to prevent WebGL Feedback Loop Error */}
-                <Environment resolution={256}>
-                  <group rotation={[-Math.PI / 2, 0, 0]}>
-                    <Lightformer intensity={4} rotation-x={Math.PI / 2} position={[0, 5, -9]} scale={[10, 10, 1]} />
-                    <Lightformer intensity={2} rotation-y={Math.PI / 2} position={[-5, 1, -1]} scale={[20, 0.5, 1]} />
-                    <Lightformer intensity={2} rotation-y={-Math.PI / 2} position={[5, 1, -1]} scale={[20, 0.5, 1]} />
-                    <Lightformer intensity={2} rotation-x={Math.PI / 2} position={[0, 4, 0]} scale={[5, 5, 1]} />
-                  </group>
-                </Environment>
+                {/* Direct lighting only — no Environment to avoid WebGL feedback loop */}
+                <ambientLight intensity={0.6} color="#ffffff" />
+                <directionalLight position={[-8, 6, -4]} intensity={3} color="#ffffff" />
+                <directionalLight position={[0, 3, 8]} intensity={2} color="#ffffff" />
+                <directionalLight position={[6, 8, -3]} intensity={2.5} color="#ffffff" />
+                <directionalLight position={[-3, 1, 6]} intensity={1} color="#e0e0ff" />
 
                 <CarModel containerRef={containerRef} />
 
-                {/* Highly Performant Showroom Floor */}
+                {/* Floor - uses BasicMaterial to avoid env map feedback loop */}
                 <mesh position={[0, -0.85, 0]} rotation={[-Math.PI / 2, 0, 0]}>
                   <planeGeometry args={[100, 100]} />
-                  <meshStandardMaterial
-                    color="#020202"
-                    roughness={0.15}
-                    metalness={0.8}
-                  />
+                  <meshBasicMaterial color="#020202" />
                 </mesh>
 
-                {/* Fake shadow plane underneath the car */}
+                {/* Shadow under car */}
                 <mesh position={[0, -0.84, 0]} rotation={[-Math.PI / 2, 0, 0]}>
                   <circleGeometry args={[4, 64]} />
                   <meshBasicMaterial color="#000000" transparent opacity={0.6} />
                 </mesh>
 
               </Canvas>
-            </Suspense>
+            </Suspense>}
           </div>
 
           {/* ── UI Layers (Tied to Scroll) ── */}

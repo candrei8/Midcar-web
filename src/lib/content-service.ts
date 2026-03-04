@@ -300,25 +300,20 @@ export async function getCTAContent(): Promise<CTAContent> {
 // ============================================
 
 export async function getBenefits(): Promise<Benefit[]> {
-  if (!isSupabaseConfigured) {
-    return [
-      { id: '1', titulo: 'Vehículos de confianza', descripcion: 'Todos nuestros coches son certificados y garantizados.', icono: 'shield-check' },
-      { id: '2', titulo: '1 año de garantía', descripcion: 'Garantía sin límite de kilómetros.', icono: 'award' },
-    ]
-  }
+  if (!isSupabaseConfigured) return []
 
-  const { data, error } = await supabase
-    .from('web_benefits')
-    .select('*')
-    .eq('activo', true)
-    .order('orden')
+  try {
+    const { data, error } = await supabase
+      .from('web_benefits')
+      .select('*')
+      .eq('activo', true)
+      .order('orden')
 
-  if (error) {
-    console.error('Error fetching benefits:', error)
+    if (error || !data || data.length === 0) return []
+    return data
+  } catch {
     return []
   }
-
-  return data || []
 }
 
 // ============================================
@@ -326,24 +321,20 @@ export async function getBenefits(): Promise<Benefit[]> {
 // ============================================
 
 export async function getTestimonials(): Promise<Testimonial[]> {
-  if (!isSupabaseConfigured) {
-    return [
-      { id: '1', nombre: 'Carlos M.', fecha: 'Hace 2 meses', rating: 5, texto: 'Excelente servicio.' },
-    ]
-  }
+  if (!isSupabaseConfigured) return []
 
-  const { data, error } = await supabase
-    .from('web_testimonials')
-    .select('*')
-    .eq('activo', true)
-    .order('orden')
+  try {
+    const { data, error } = await supabase
+      .from('web_testimonials')
+      .select('*')
+      .eq('activo', true)
+      .order('orden')
 
-  if (error) {
-    console.error('Error fetching testimonials:', error)
+    if (error || !data || data.length === 0) return []
+    return data
+  } catch {
     return []
   }
-
-  return data || []
 }
 
 // ============================================
