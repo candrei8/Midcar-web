@@ -1,21 +1,20 @@
 'use client'
 
+import React, { useEffect, useRef, useState, Suspense, useLayoutEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
-import { useEffect, useRef, useState, Suspense, useLayoutEffect } from 'react'
+import { useGLTF, Environment, ContactShadows, AdaptiveDpr } from '@react-three/drei'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Link from 'next/link'
 import * as THREE from 'three'
 import { getHeroContent, HeroContent } from '@/lib/content-service'
 
-// Ensure we only register ScrollTrigger on client-side
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
 }
 
 // ============================================
-// 3D Scene - Premium Minimalist Autohaus
+// 3D Scene - Premium Rendering with Original Animations
 // ============================================
 
 function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement> }) {
@@ -30,8 +29,8 @@ function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement>
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Setup the model materials to look ULTRA premium but realistic
-  useEffect(() => {
+  // Setup the model materials to look ULTRA premium (Enhanced Lighting & Physical Materials)
+  useLayoutEffect(() => {
     const box = new THREE.Box3().setFromObject(scene)
     const size = new THREE.Vector3()
     box.getSize(size)
@@ -41,54 +40,48 @@ function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement>
     const maxDim = Math.max(size.x, size.y, size.z)
     const scale = 5.5 / maxDim
     scene.scale.setScalar(scale)
-
-    // Center geometry exactly at origin
     scene.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale)
 
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
-        const mat = child.material as THREE.MeshStandardMaterial
-        // Strip ALL env maps and clearcoat to prevent any WebGL feedback loop
-        mat.envMap = null
-        mat.envMapIntensity = 0
-        if ('clearcoat' in mat) (mat as any).clearcoat = 0
-        if ('clearcoatMap' in mat) (mat as any).clearcoatMap = null
-        if ('sheenColor' in mat) (mat as any).sheen = 0
-
+        // Upgrade to Physical Material for premium reflections
+        const mat = child.material as THREE.MeshPhysicalMaterial
+        
         if (mat.name.toLowerCase().includes('paint') || mat.name.toLowerCase().includes('body')) {
-          mat.color.setRGB(0.12, 0.12, 0.12)
-          mat.roughness = 0.3
-          mat.metalness = 0.8
+          mat.color.setHex(0x0a0a0a) // Deeper Obsidian
+          mat.roughness = 0.05
+          mat.metalness = 1.0
+          mat.clearcoat = 1.0
+          mat.clearcoatRoughness = 0.03
+          mat.envMapIntensity = 1.5
+        } else {
+          mat.envMapIntensity = 1.0
         }
-        mat.needsUpdate = true
       }
     })
   }, [scene])
 
-  // GSAP ScrollTrigger Animation for the 3D Model
+  // RESTORED ORIGINAL ANIMATION LOGIC
   useLayoutEffect(() => {
     if (!groupRef.current || !containerRef.current) return
 
     const ctx = gsap.context(() => {
-      // Set initial state (ACT 0 -> 1: Abstract Macro close up on the front wheel / chassis)
       const baseScale = isMobile ? 0.7 : 1.2
-
 
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
           start: 'top top',
           end: 'bottom bottom',
-          scrub: 1.5, // Super smooth scrubbing stable
+          scrub: 1.5,
         }
       })
 
-      // Lock initial state directly into the timeline at progress 0 to prevent React mount desyncs
+      // Lock initial state
       tl.set(groupRef.current.scale, { x: baseScale * 4.5, y: baseScale * 4.5, z: baseScale * 4.5 })
       tl.set(groupRef.current.position, { x: isMobile ? 0 : -4.5, y: isMobile ? -0.8 : -1.2, z: 6 })
       tl.set(groupRef.current.rotation, { y: Math.PI / 4.5 })
 
-      // Set explicit duration to 100 for perfect percentage-based syncing
       tl.to({}, { duration: 100 }, 0)
 
       // 15% to 35% - Acto 1 (Perfil lateral)
@@ -107,7 +100,7 @@ function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement>
           duration: 20
         }, 15)
         .to(groupRef.current.rotation, {
-          y: -Math.PI / 2, // pure side profile
+          y: -Math.PI / 2,
           ease: 'power2.inOut',
           duration: 20
         }, 15)
@@ -128,7 +121,7 @@ function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement>
           duration: 15
         }, 40)
         .to(groupRef.current.rotation, {
-          y: isMobile ? -Math.PI / 3 : -Math.PI / 3.5, // 3/4 front
+          y: isMobile ? -Math.PI / 3 : -Math.PI / 3.5,
           ease: 'power2.inOut',
           duration: 15
         }, 40)
@@ -161,9 +154,7 @@ function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement>
 
   return (
     <group ref={groupRef}>
-
       <primitive object={scene} />
-
     </group>
   )
 }
@@ -184,22 +175,26 @@ function SceneLoader() {
 }
 
 // ============================================
-// Hero Component (The Scroll Container)
+// Hero Component
 // ============================================
 
 export function HeroSection() {
   const [content, setContent] = useState<HeroContent | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const [showCanvas, setShowCanvas] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const containerRef = useRef<HTMLElement>(null)
 
-  // Refs for HTML sections
   const introRef = useRef<HTMLDivElement>(null)
   const act1Ref = useRef<HTMLDivElement>(null)
   const act2Ref = useRef<HTMLDivElement>(null)
   const act3Ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
     async function fetch() {
       try {
         const data = await getHeroContent()
@@ -209,30 +204,28 @@ export function HeroSection() {
       }
     }
     fetch()
-    // Small delay to ensure smooth mounting before animations hook
     setTimeout(() => setIsLoaded(true), 100)
-    // Defer 3D canvas mount so the page loads fast first
     requestAnimationFrame(() => setShowCanvas(true))
+    
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // RESTORED ORIGINAL TEXT ANIMATIONS
   useLayoutEffect(() => {
     if (!isLoaded || !containerRef.current) return
 
     const ctx = gsap.context(() => {
-      // Unified Scrubbing Timeline for Text Layers
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
           start: 'top top',
           end: 'bottom bottom',
-          scrub: 1.5, // Tighter and smoother scrubbing
+          scrub: 1.5,
         }
       })
 
-      // Force explicit 100 duration to match 3D Model perfectly
       tl.to({}, { duration: 100 }, 0)
 
-      // 0% a 15% - Intro "fade out"
       tl.to(introRef.current, {
         opacity: 0,
         filter: 'blur(15px)',
@@ -241,28 +234,25 @@ export function HeroSection() {
         ease: 'power2.inOut'
       }, 0)
 
-      // 15% a 35% - Acto 1
       tl.fromTo(act1Ref.current,
         { opacity: 0, y: 30, filter: 'blur(5px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 7, ease: 'power2.out' }, // Appears 15-22
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 7, ease: 'power2.out' },
         15
       ).to(act1Ref.current, {
-        opacity: 0, y: -30, filter: 'blur(10px)', duration: 7, ease: 'power2.in' // Fades out 28-35
+        opacity: 0, y: -30, filter: 'blur(10px)', duration: 7, ease: 'power2.in'
       }, 28)
 
-      // 40% a 55% - Acto 2
       tl.fromTo(act2Ref.current,
         { opacity: 0, y: 30, filter: 'blur(5px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 5, ease: 'power2.out' }, // Appears 40-45
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 5, ease: 'power2.out' },
         40
       ).to(act2Ref.current, {
-        opacity: 0, y: -30, filter: 'blur(10px)', duration: 5, ease: 'power2.in' // Fades out 50-55
+        opacity: 0, y: -30, filter: 'blur(10px)', duration: 5, ease: 'power2.in'
       }, 50)
 
-      // 60% a 70% - Acto Final
       tl.fromTo(act3Ref.current,
         { opacity: 0, y: 40 },
-        { opacity: 1, y: 0, duration: 6, ease: 'power2.out' }, // Appears 60-66
+        { opacity: 1, y: 0, duration: 6, ease: 'power2.out' },
         60
       )
     })
@@ -284,156 +274,143 @@ export function HeroSection() {
           0% { transform: translateY(-100%); }
           100% { transform: translateY(300%); }
         }
+        .hero-gradient { background: radial-gradient(circle at 50% 50%, rgba(20,20,20,1) 0%, rgba(2,2,2,1) 100%); }
       `}} />
 
-      {/* The 350vh scrolling container (Reduced from 450vh to make the exit faster) */}
       <section ref={containerRef} className="relative h-[350vh] w-full bg-[#000000]">
+        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden">
+          
+          {/* Enhanced Background Contrast */}
+          <div className="absolute inset-0 hero-gradient z-0" />
+          <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] z-10 pointer-events-none" />
 
-        {/* Sticky Viewport (100vh) */}
-        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden bg-[#020202]">
-
-          {/* ── 3D Scene ── */}
-          <div className="absolute inset-0 z-0 pointer-events-none">
+          {/* 3D Scene - ONLY DESKTOP AS REQUESTED */}
+          <div className="absolute inset-0 z-20 pointer-events-none">
             {!showCanvas && <SceneLoader />}
-            {showCanvas && <Suspense fallback={<SceneLoader />}>
-              <Canvas
-                shadows={false}
-                dpr={1}
-                camera={{ position: [0, 1.5, 8], fov: 30 }}
-                gl={{
-                  toneMapping: THREE.NoToneMapping,
-                  powerPreference: 'high-performance',
-                  antialias: false,
-                }}
-              >
-                <color attach="background" args={['#050505']} />
-                <fog attach="fog" args={['#050505', 8, 30]} />
+            {showCanvas && !isMobile && (
+              <Suspense fallback={<SceneLoader />}>
+                <Canvas
+                  shadows
+                  dpr={[1, 2]}
+                  camera={{ position: [0, 1.5, 8], fov: 30 }}
+                  gl={{ 
+                    antialias: true,
+                    toneMapping: THREE.ACESFilmicToneMapping,
+                    toneMappingExposure: 1.2
+                  }}
+                >
+                  <AdaptiveDpr pixelated />
+                  <Environment files="/studio_small_03_1k.hdr" />
+                  
+                  {/* High Contrast Studio Lighting */}
+                  <ambientLight intensity={0.2} />
+                  <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} castShadow />
+                  <pointLight position={[-10, -10, -10]} intensity={1} color="#4444ff" />
 
-                {/* Direct lighting only — no Environment to avoid WebGL feedback loop */}
-                <ambientLight intensity={0.6} color="#ffffff" />
-                <directionalLight position={[-8, 6, -4]} intensity={3} color="#ffffff" />
-                <directionalLight position={[0, 3, 8]} intensity={2} color="#ffffff" />
-                <directionalLight position={[6, 8, -3]} intensity={2.5} color="#ffffff" />
-                <directionalLight position={[-3, 1, 6]} intensity={1} color="#e0e0ff" />
+                  <CarModel containerRef={containerRef} />
 
-                <CarModel containerRef={containerRef} />
-
-                {/* Floor - uses BasicMaterial to avoid env map feedback loop */}
-                <mesh position={[0, -0.85, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                  <planeGeometry args={[100, 100]} />
-                  <meshBasicMaterial color="#020202" />
-                </mesh>
-
-                {/* Shadow under car */}
-                <mesh position={[0, -0.84, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                  <circleGeometry args={[4, 64]} />
-                  <meshBasicMaterial color="#000000" transparent opacity={0.6} />
-                </mesh>
-
-              </Canvas>
-            </Suspense>}
+                  <ContactShadows 
+                    position={[0, -0.85, 0]} 
+                    opacity={0.6} 
+                    scale={20} 
+                    blur={2.5} 
+                    far={4} 
+                    color="#000000" 
+                  />
+                </Canvas>
+              </Suspense>
+            )}
           </div>
 
-          {/* ── UI Layers (Tied to Scroll) ── */}
+          {/* UI Layers */}
+          <div className="absolute inset-0 z-30 pointer-events-none">
 
-          {/* Noise overlay for premium texture (Reduced opacity so it's truly subtle) */}
-          <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
-          <div className="absolute inset-0 z-10 pointer-events-none">
-
-            {/* ACT 0: True Intro (Black screen + Minimal Typography) */}
-            <div ref={introRef} className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#000000] ">
+            {/* ACT 0 */}
+            <div ref={introRef} className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#000000]">
               <div className="flex flex-col items-center w-full px-4">
-                <span className="text-white/40 text-[10px] md:text-[11px] tracking-[0.5em] md:tracking-[0.6em] uppercase font-light mb-8 md:mb-12 text-center w-full">
+                <span className="text-white/40 text-[10px] md:text-[11px] tracking-[0.5em] md:tracking-[0.6em] uppercase font-light mb-8 md:mb-12">
                   La Nueva Era
                 </span>
-
-                {/* Pure, clean text - no cheesy outlines or colors */}
-                <div className="relative mb-6 select-none w-full flex justify-center">
-                  <h1 className="text-white text-[15vw] sm:text-[12vw] md:text-[9vw] font-light font-display tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.3em] leading-none uppercase drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] text-center">
-                    MIDCAR
-                  </h1>
-                </div>
-
-                {/* Intro scroll indicator */}
-                <div className="absolute flex flex-col items-center gap-4 bottom-16 md:bottom-20 opacity-50">
-                  <span className="text-white/40 text-[9px] uppercase tracking-[0.4em] font-light">Descubrir</span>
-                  <div className="w-[1px] h-12 md:h-16 bg-white/10 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1/2 bg-white animate-[slide-down_2s_ease-in-out_infinite]"></div>
+                <h1 className="text-white text-[15vw] md:text-[9vw] font-bold tracking-[0.3em] uppercase text-center">
+                  MIDCAR
+                </h1>
+                <div className="absolute bottom-20 flex flex-col items-center gap-4 opacity-40">
+                  <span className="text-white/40 text-[9px] uppercase tracking-[0.4em]">Descubrir</span>
+                  <div className="w-[1px] h-12 bg-white/20 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1/2 bg-white animate-[slide-down_2s_infinite]"></div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ACT 1: Intro */}
-            <div ref={act1Ref} className="absolute inset-0 flex flex-col items-center justify-center opacity-0 px-4 md:px-0 ">
-              <span className="text-white/50 text-[9px] md:text-[11px] tracking-[0.4em] uppercase font-light mb-2 md:mb-6 text-center w-full">Ingeniería</span>
-              <h1 className="text-white text-[10vw] sm:text-[8vw] md:text-[6vw] font-light tracking-widest leading-none uppercase text-center w-full">
-                SIN LÍMITES
+            {/* ACT 1 */}
+            <div ref={act1Ref} className="absolute inset-0 flex flex-col items-center justify-center opacity-0 px-4 text-center">
+              <span className="text-white/50 text-[9px] md:text-[11px] tracking-[0.4em] uppercase font-light mb-2 md:mb-6">Exploración</span>
+              <h1 className="text-white text-[10vw] md:text-[6vw] font-light tracking-widest uppercase mb-4">
+                DESCUBRE
               </h1>
+              <p className="text-white/40 text-[12px] md:text-[14px] font-light max-w-xs leading-relaxed">
+                Una selección exclusiva de vehículos revisados al detalle en nuestro taller.
+              </p>
             </div>
 
-            {/* ACT 2: Profile */}
-            <div ref={act2Ref} className="absolute inset-0 flex flex-col items-center justify-center opacity-0 px-4 md:px-0 ">
-              <span className="text-white/50 text-[9px] md:text-[11px] tracking-[0.4em] uppercase font-light mb-2 md:mb-6 text-center w-full">Diseño</span>
-              <h1 className="text-white text-[10vw] sm:text-[8vw] md:text-[6vw] font-light tracking-widest leading-none uppercase text-center w-full">
-                PURA ELEGANCIA
+            {/* ACT 2 */}
+            <div ref={act2Ref} className="absolute inset-0 flex flex-col items-center justify-center opacity-0 px-4 text-center">
+              <span className="text-white/50 text-[9px] md:text-[11px] tracking-[0.4em] uppercase font-light mb-2 md:mb-6">Experiencia</span>
+              <h1 className="text-white text-[10vw] md:text-[6vw] font-light tracking-widest uppercase mb-4">
+                SIENTE
               </h1>
+              <p className="text-white/40 text-[12px] md:text-[14px] font-light max-w-xs leading-relaxed">
+                La tranquilidad de conducir un coche garantizado por expertos mecánicos.
+              </p>
             </div>
 
-            {/* ACT 3: Final Landing & Content */}
-            <div ref={act3Ref} className="absolute inset-0 flex flex-col justify-end pb-24 md:pb-0 md:justify-center px-6 md:px-12 lg:px-[8%] opacity-0 pointer-events-auto z-10 ">
+
+            {/* ACT 3: Final Landing */}
+            <div ref={act3Ref} className="absolute inset-0 flex flex-col justify-center px-8 md:px-16 lg:px-[8%] opacity-0 pointer-events-auto">
               {content && (
-                <div className="max-w-4xl w-full mx-auto md:mx-auto lg:mx-0">
-                  <div className="inline-flex items-center gap-3 md:gap-4 mb-6 md:mb-10">
-                    <div className="w-8 md:w-16 h-[1px] bg-white/50"></div>
-                    <span className="text-white/70 font-light tracking-[0.4em] md:tracking-[0.5em] text-[9px] md:text-[10px] uppercase">
-                      Colección Premium
+                <div className="max-w-4xl w-full mx-auto lg:mx-0">
+                  <div className="inline-flex items-center gap-4 mb-10">
+                    <div className="w-12 h-[1px] bg-white/50"></div>
+                    <span className="text-white/70 font-light tracking-[0.5em] text-[10px] uppercase">
+                      Calidad y Confianza
                     </span>
                   </div>
 
-                  {/* Clean, massive, airy typography */}
-                  <h1 className="text-[14vw] sm:text-[10vw] md:text-7xl lg:text-[100px] font-light font-display text-white tracking-[0.05em] sm:tracking-[0.1em] md:tracking-[0.15em] leading-[1.1] uppercase mb-1">
+                  <h1 className="text-[14vw] md:text-7xl lg:text-[100px] font-bold text-white tracking-tight uppercase leading-[0.9]">
                     {content.titulo1 || 'EXCELENCIA'}
                   </h1>
-                  <h1 className="text-[14vw] sm:text-[10vw] md:text-7xl lg:text-[100px] font-medium text-white/90 tracking-[0.05em] sm:tracking-[0.1em] md:tracking-[0.15em] leading-[1.1] uppercase mb-6 md:mb-12">
+                  <h1 className="text-[14vw] md:text-7xl lg:text-[100px] font-light text-white/30 tracking-tight uppercase leading-[0.9] mb-12 text-outline">
                     {content.titulo2 || 'EN ESPERA'}
                   </h1>
 
-                  <p className="text-white/60 text-[11px] sm:text-[12px] md:text-[13px] font-light leading-relaxed sm:leading-loose tracking-widest max-w-[280px] sm:max-w-[340px] md:max-w-[420px] mb-8 md:mb-14">
-                    {content.subtitulo || 'Concesionario de alta gama. Descubra nuestra exclusiva selección de vehículos y experimente un estándar de servicio inigualable.'}
+
+                  <p className="text-white/50 text-[14px] font-light leading-relaxed max-w-sm mb-14 border-l border-white/10 pl-6">
+                    {content.subtitulo || 'Vehículos de ocasión revisados en nuestro taller propio. Encuentre calidad y transparencia en su próxima compra.'}
                   </p>
 
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-5 md:gap-8">
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-8">
                     <Link
                       href="/vehiculos"
-                      className="group relative inline-flex items-center justify-center border border-white/20 hover:border-white/80 bg-black/20 backdrop-blur-md text-white px-10 md:px-14 py-4 md:py-5 overflow-hidden w-full sm:w-auto transition-colors duration-500"
+                      className="group relative bg-white text-black px-12 py-5 text-[10px] font-bold uppercase tracking-[0.3em] text-center overflow-hidden"
                     >
-                      <span className="relative z-10 text-[9px] md:text-[10px] font-medium uppercase tracking-[0.4em] transition-colors duration-500 group-hover:text-black">
-                        {content.ctaPrimario || 'Explorar Stock'}
-                      </span>
-                      <div className="absolute inset-0 bg-white translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.7,0,0.3,1)]"></div>
+                      <span className="relative z-10 group-hover:text-white transition-colors duration-500">Ver Inventario</span>
+                      <div className="absolute inset-0 bg-black translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.85,0,0.15,1)]"></div>
                     </Link>
 
                     <Link
                       href="/contacto"
-                      className="group flex items-center justify-center sm:justify-start gap-4 text-white/50 hover:text-white transition-colors py-3 md:py-0"
+                      className="group flex items-center justify-center gap-4 text-white/40 hover:text-white transition-colors"
                     >
-                      <span className="w-8 h-[1px] bg-white/30 group-hover:bg-white transition-colors"></span>
-                      <span className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-light">
-                        {content.ctaSecundario || 'Agendar Cita'}
-                      </span>
+                      <span className="text-[10px] uppercase tracking-[0.3em] font-medium">Contactar</span>
+                      <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center group-hover:border-white/40 transition-all">
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M1 11L11 1M11 1H1M11 1V11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
                     </Link>
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Global Scroll Indicator for this section */}
-            <div className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 md:gap-4 opacity-70 z-20 mix-blend-difference pointer-events-none">
-              <span className="text-white/40 text-[7px] md:text-[8px] uppercase tracking-[0.5em]">Scroll</span>
-              <div className="w-[1px] h-10 md:h-12 bg-white/20 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1/3 bg-white animate-[slide-down_2s_ease-in-out_infinite]"></div>
-              </div>
             </div>
 
           </div>
