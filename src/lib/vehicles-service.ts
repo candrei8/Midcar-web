@@ -112,12 +112,12 @@ export async function getVehicles(): Promise<Vehicle[]> {
     .order('destacado', { ascending: false })
     .order('created_at', { ascending: false })
 
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching vehicles:', error)
+  if (error) {
+    console.error('Error fetching vehicles:', error)
     return staticVehicles
   }
 
-  return data.map(transformToWebFormat)
+  return (data || []).map(transformToWebFormat)
 }
 
 // Get vehicles on sale
@@ -133,12 +133,12 @@ export async function getVehiclesOnSale(): Promise<Vehicle[]> {
     .order('destacado', { ascending: false })
     .order('created_at', { ascending: false })
 
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching vehicles on sale:', error)
+  if (error) {
+    console.error('Error fetching vehicles on sale:', error)
     return getStaticOnSale()
   }
 
-  return data.map(transformToWebFormat)
+  return (data || []).map(transformToWebFormat)
 }
 
 // Get featured vehicles
@@ -154,12 +154,12 @@ export async function getFeaturedVehicles(): Promise<Vehicle[]> {
     .eq('destacado', true)
     .limit(8)
 
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching featured vehicles:', error)
+  if (error) {
+    console.error('Error fetching featured vehicles:', error)
     return getStaticFeatured()
   }
 
-  return data.map(transformToWebFormat)
+  return (data || []).map(transformToWebFormat)
 }
 
 // Get vehicle by ID
@@ -174,12 +174,12 @@ export async function getVehicleById(id: string): Promise<Vehicle | null> {
     .eq('id', id)
     .single()
 
-  if (error || !data) {
-    if (error && error.code !== 'PGRST116') console.error('Error fetching vehicle by ID:', error)
+  if (error) {
+    console.error('Error fetching vehicle by ID:', error)
     return staticVehicles.find(v => v.id === id) || null
   }
 
-  return transformToWebFormat(data)
+  return data ? transformToWebFormat(data) : null
 }
 
 // Get vehicle by stock_id (original web ID)
@@ -194,12 +194,12 @@ export async function getVehicleByStockId(stockId: string): Promise<Vehicle | nu
     .eq('stock_id', stockId)
     .single()
 
-  if (error || !data) {
-    if (error && error.code !== 'PGRST116') console.error('Error fetching vehicle by stock_id:', error)
+  if (error) {
+    console.error('Error fetching vehicle by stock_id:', error)
     return staticVehicles.find(v => v.id === stockId) || null
   }
 
-  return transformToWebFormat(data)
+  return data ? transformToWebFormat(data) : null
 }
 
 // Get vehicle by slug
@@ -230,13 +230,13 @@ export async function getBrands(): Promise<string[]> {
     .select('marca')
     .eq('estado', 'disponible')
 
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching brands:', error)
+  if (error) {
+    console.error('Error fetching brands:', error)
     const brands = Array.from(new Set(getStaticOnSale().map(v => v.brand)))
     return brands.sort()
   }
 
-  const brands = Array.from(new Set(data.map(v => v.marca)))
+  const brands = Array.from(new Set((data || []).map(v => v.marca)))
   return brands.sort()
 }
 
@@ -252,8 +252,7 @@ export async function getFuelTypes(): Promise<string[]> {
     .select('combustible')
     .eq('estado', 'disponible')
 
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching fuel types:', error)
+  if (error) {
     const fuels = Array.from(new Set(getStaticOnSale().map(v => v.fuel)))
     return fuels.sort()
   }
@@ -267,7 +266,7 @@ export async function getFuelTypes(): Promise<string[]> {
     'gnc': 'Gas',
   }
 
-  const fuels = Array.from(new Set(data.map(v => fuelMap[v.combustible] || v.combustible)))
+  const fuels = Array.from(new Set((data || []).map(v => fuelMap[v.combustible] || v.combustible)))
   return fuels.sort()
 }
 
@@ -283,13 +282,12 @@ export async function getBodyTypes(): Promise<string[]> {
     .select('tipo_carroceria')
     .eq('estado', 'disponible')
 
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching body types:', error)
+  if (error) {
     const types = Array.from(new Set(getStaticOnSale().map(v => v.bodyType)))
     return types.sort()
   }
 
-  const types = Array.from(new Set(data.map(v => v.tipo_carroceria)))
+  const types = Array.from(new Set((data || []).map(v => v.tipo_carroceria)))
   return types.sort()
 }
 
@@ -350,23 +348,12 @@ export async function searchVehicles(filters: {
 
   const { data, error } = await query
 
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error searching vehicles:', error)
-    // Fallback to static search
-    let result = getStaticOnSale()
-    if (filters.brand) result = result.filter(v => v.brand.toLowerCase() === filters.brand!.toLowerCase())
-    if (filters.bodyType) result = result.filter(v => v.bodyType === filters.bodyType!.toLowerCase())
-    if (filters.maxPrice) result = result.filter(v => v.price <= filters.maxPrice!)
-    if (filters.minPrice) result = result.filter(v => v.price >= filters.minPrice!)
-    if (filters.maxKm) result = result.filter(v => v.km <= filters.maxKm!)
-    if (filters.fuel) result = result.filter(v => v.fuel === filters.fuel)
-    if (filters.transmission) result = result.filter(v => v.transmission === filters.transmission)
-    if (filters.minYear) result = result.filter(v => v.year >= filters.minYear!)
-    if (filters.maxYear) result = result.filter(v => v.year <= filters.maxYear!)
-    return result
+  if (error) {
+    console.error('Error searching vehicles:', error)
+    return []
   }
 
-  return data.map(transformToWebFormat)
+  return (data || []).map(transformToWebFormat)
 }
 
 // Get price range
@@ -420,12 +407,12 @@ export async function getVehicleCount(): Promise<number> {
     .select('*', { count: 'exact', head: true })
     .eq('estado', 'disponible')
 
-  if (error || count === 0 || count === null) {
-    if (error) console.error('Error getting vehicle count:', error)
+  if (error) {
+    console.error('Error getting vehicle count:', error)
     return getStaticOnSale().length
   }
 
-  return count
+  return count || 0
 }
 
 // Get similar vehicles
@@ -473,23 +460,7 @@ export async function getSimilarVehicles(vehicle: Vehicle, limit: number = 4): P
 
   if (error) {
     console.error('Error fetching similar vehicles:', error)
-    // Fallback to static data
-    const onSale = getStaticOnSale().filter(v => v.id !== vehicle.id)
-    let similar = onSale.filter(v =>
-      v.bodyType === vehicle.bodyType &&
-      v.price >= minPrice && v.price <= maxPrice
-    )
-    if (similar.length < limit) {
-      const ids = new Set(similar.map(v => v.id))
-      const byFuel = onSale.filter(v => v.fuel === vehicle.fuel && !ids.has(v.id))
-      similar = [...similar, ...byFuel]
-    }
-    if (similar.length < limit) {
-      const ids = new Set(similar.map(v => v.id))
-      const any = onSale.filter(v => !ids.has(v.id))
-      similar = [...similar, ...any]
-    }
-    return similar.slice(0, limit)
+    return []
   }
 
   if (!data || data.length < limit) {
@@ -522,25 +493,5 @@ export async function getSimilarVehicles(vehicle: Vehicle, limit: number = 4): P
     if (!anyError && anyData) data = [...(data || []), ...anyData]
   }
 
-  // If still no data, fallback to static
-  if (!data || data.length === 0) {
-    const onSale = getStaticOnSale().filter(v => v.id !== vehicle.id)
-    let similar = onSale.filter(v =>
-      v.bodyType === vehicle.bodyType &&
-      v.price >= minPrice && v.price <= maxPrice
-    )
-    if (similar.length < limit) {
-      const ids = new Set(similar.map(v => v.id))
-      const byFuel = onSale.filter(v => v.fuel === vehicle.fuel && !ids.has(v.id))
-      similar = [...similar, ...byFuel]
-    }
-    if (similar.length < limit) {
-      const ids = new Set(similar.map(v => v.id))
-      const any = onSale.filter(v => !ids.has(v.id))
-      similar = [...similar, ...any]
-    }
-    return similar.slice(0, limit)
-  }
-
-  return data.slice(0, limit).map(transformToWebFormat)
+  return (data || []).slice(0, limit).map(transformToWebFormat)
 }
