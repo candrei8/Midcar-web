@@ -1,478 +1,456 @@
 'use client'
 
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, useGLTF, ContactShadows } from '@react-three/drei'
-import { useEffect, useRef, useState, Suspense } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { useGLTF, Float, Environment, ContactShadows, Lightformer } from '@react-three/drei'
+import { useEffect, useRef, useState, Suspense, useLayoutEffect } from 'react'
 import gsap from 'gsap'
-import { ArrowRight, Shield, ChevronDown } from 'lucide-react'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Link from 'next/link'
 import * as THREE from 'three'
 import { getHeroContent, HeroContent } from '@/lib/content-service'
 
+// Ensure we only register ScrollTrigger on client-side
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
+
 useGLTF.preload('/models/car.glb')
 
 // ============================================
-// 3D Scene
+// 3D Scene - Premium Minimalist Autohaus
 // ============================================
 
-function CarModel() {
+function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement> }) {
   const { scene } = useGLTF('/models/car.glb')
   const groupRef = useRef<THREE.Group>(null!)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    if (!groupRef.current) return
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
-    // Auto-fit: normalize any model to ~4.5 units
+  // Setup the model materials to look ULTRA premium but realistic
+  useEffect(() => {
     const box = new THREE.Box3().setFromObject(scene)
     const size = new THREE.Vector3()
     box.getSize(size)
-    const autoScale = 4.5 / Math.max(size.x, size.y, size.z)
-    scene.scale.setScalar(autoScale)
-
-    // Center on ground
-    const fitted = new THREE.Box3().setFromObject(scene)
     const center = new THREE.Vector3()
-    fitted.getCenter(center)
-    scene.position.set(-center.x, -fitted.min.y, -center.z)
+    box.getCenter(center)
 
-    // Cinematic drop — visible but fast (0.8s)
-    groupRef.current.position.y = 5
-    groupRef.current.scale.setScalar(0.93)
-    groupRef.current.rotation.y = -0.3
+    const maxDim = Math.max(size.x, size.y, size.z)
+    const scale = 5.5 / maxDim
+    scene.scale.setScalar(scale)
 
-    gsap.to(groupRef.current.position, {
-      y: 0,
-      duration: 0.8,
-      ease: 'power3.out',
-      delay: 0.1,
+    // Center geometry exactly at origin
+    scene.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale)
+
+    scene.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        // Deep gloss, physically accurate metalness
+        child.material.envMapIntensity = 2.0 // Boosted for better reflections
+        if (child.material.name.toLowerCase().includes('paint') || child.material.name.toLowerCase().includes('body')) {
+          child.material.color.setRGB(0.04, 0.04, 0.04) // Graphite grey so it doesn't blend into black bg
+          child.material.roughness = 0.1
+          child.material.metalness = 0.7
+          child.material.clearcoat = 1.0
+          child.material.clearcoatRoughness = 0.1
+        }
+        child.material.needsUpdate = true
+      }
     })
-    gsap.to(groupRef.current.scale, {
-      x: 1, y: 1, z: 1,
-      duration: 0.6,
-      ease: 'power2.out',
-      delay: 0.1,
+  }, [scene])
+
+  // GSAP ScrollTrigger Animation for the 3D Model
+  useLayoutEffect(() => {
+    if (!groupRef.current || !containerRef.current) return
+
+    const ctx = gsap.context(() => {
+      // Set initial state (ACT 0 -> 1: Abstract Macro close up on the front wheel / chassis)
+      const baseScale = isMobile ? 0.7 : 1.2
+
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 1.5, // Super smooth scrubbing stable
+        }
+      })
+
+      // Lock initial state directly into the timeline at progress 0 to prevent React mount desyncs
+      tl.set(groupRef.current.scale, { x: baseScale * 4.5, y: baseScale * 4.5, z: baseScale * 4.5 })
+      tl.set(groupRef.current.position, { x: isMobile ? 0 : -4.5, y: isMobile ? -0.8 : -1.2, z: 6 })
+      tl.set(groupRef.current.rotation, { y: Math.PI / 4.5 })
+
+      // Set explicit duration to 100 for perfect percentage-based syncing
+      tl.to({}, { duration: 100 }, 0)
+
+      // 15% to 35% - Acto 1 (Perfil lateral)
+      tl.to(groupRef.current.scale, {
+        x: baseScale * 1.5,
+        y: baseScale * 1.5,
+        z: baseScale * 1.5,
+        ease: 'power2.inOut',
+        duration: 20
+      }, 15)
+        .to(groupRef.current.position, {
+          x: 0,
+          y: -0.8,
+          z: 0,
+          ease: 'power2.inOut',
+          duration: 20
+        }, 15)
+        .to(groupRef.current.rotation, {
+          y: -Math.PI / 2, // pure side profile
+          ease: 'power2.inOut',
+          duration: 20
+        }, 15)
+
+      // 40% to 55% - Acto 2 (Angulo diagonal clasico)
+      tl.to(groupRef.current.scale, {
+        x: isMobile ? baseScale * 1.1 : baseScale * 1.3,
+        y: isMobile ? baseScale * 1.1 : baseScale * 1.3,
+        z: isMobile ? baseScale * 1.1 : baseScale * 1.3,
+        ease: 'power2.inOut',
+        duration: 15
+      }, 40)
+        .to(groupRef.current.position, {
+          x: isMobile ? 0 : 1.5,
+          y: isMobile ? -0.3 : -0.8,
+          z: 0,
+          ease: 'power2.inOut',
+          duration: 15
+        }, 40)
+        .to(groupRef.current.rotation, {
+          y: isMobile ? -Math.PI / 3 : -Math.PI / 3.5, // 3/4 front
+          ease: 'power2.inOut',
+          duration: 15
+        }, 40)
+
+      // 60% to 70% - Acto Final (Angulo Showroom)
+      tl.to(groupRef.current.scale, {
+        x: isMobile ? baseScale * 0.85 : baseScale,
+        y: isMobile ? baseScale * 0.85 : baseScale,
+        z: isMobile ? baseScale * 0.85 : baseScale,
+        ease: 'power2.out',
+        duration: 10
+      }, 60)
+        .to(groupRef.current.position, {
+          x: isMobile ? 0 : 2,
+          y: isMobile ? 0.2 : -0.8,
+          z: 0,
+          ease: 'power2.out',
+          duration: 10
+        }, 60)
+        .to(groupRef.current.rotation, {
+          y: isMobile ? -Math.PI / 5 : -Math.PI / 7,
+          ease: 'power2.out',
+          duration: 10
+        }, 60)
+
     })
-    gsap.to(groupRef.current.rotation, {
-      y: 0,
-      duration: 1.0,
-      ease: 'power2.out',
-      delay: 0.1,
-    })
-  }, [])
+
+    return () => ctx.revert()
+  }, [containerRef, isMobile])
 
   return (
     <group ref={groupRef}>
+
       <primitive object={scene} />
+
     </group>
-  )
-}
-
-function Platform() {
-  const ref = useRef<THREE.Mesh>(null!)
-
-  useEffect(() => {
-    if (!ref.current) return
-    ref.current.scale.set(0, 0, 0)
-    gsap.to(ref.current.scale, {
-      x: 1, y: 1, z: 1,
-      duration: 0.5,
-      ease: 'power2.out',
-      delay: 0.2,
-    })
-  }, [])
-
-  return (
-    <mesh
-      ref={ref}
-      rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, -0.01, 0]}
-      receiveShadow
-    >
-      <circleGeometry args={[4, 64]} />
-      <meshStandardMaterial
-        color="#6b7a94"
-        metalness={0.6}
-        roughness={0.3}
-      />
-    </mesh>
   )
 }
 
 function SceneLoader() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center z-30">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-amber-200/10 border-t-amber-200/50 rounded-full animate-spin" />
-        <p className="text-amber-100/20 text-[11px] tracking-[0.25em] uppercase">
-          Cargando
-        </p>
+    <div className="absolute inset-0 flex items-center justify-center z-30 bg-[#000000]">
+      <div className="relative flex flex-col items-center justify-center">
+        <div className="w-[120px] h-[1px] bg-white/10 overflow-hidden relative mb-4">
+          <div className="absolute top-0 left-0 h-full w-full bg-white origin-left animate-[scale-x_2s_infinite_ease-in-out]" />
+        </div>
+        <span className="text-white/40 text-[9px] tracking-[0.4em] uppercase font-light">
+          Preparando Experiencia
+        </span>
       </div>
     </div>
   )
 }
 
 // ============================================
-// Content defaults
-// ============================================
-
-const defaultContent: HeroContent = {
-  badge: 'Concesionario de confianza en Madrid',
-  titulo1: 'Tu próximo coche',
-  titulo2: 'está aquí',
-  subtitulo:
-    'Más de 15 años ofreciendo vehículos de ocasión certificados, garantizados y al mejor precio en Torrejón de Ardoz, Madrid.',
-  ctaPrimario: 'Ver vehículos',
-  ctaSecundario: 'Contactar',
-  stats: [
-    { valor: '15+', label: 'años de experiencia' },
-    { valor: '1 año', label: 'de garantía' },
-    { valor: '80+', label: 'vehículos en stock' },
-  ],
-  precioDesde: '7.900€',
-  garantiaBadge: 'Garantía 12 meses',
-  imagenUrl: '',
-}
-
-// ============================================
-// Hero
+// Hero Component (The Scroll Container)
 // ============================================
 
 export function HeroSection() {
-  const sectionRef = useRef<HTMLElement>(null)
-  const lineRef = useRef<HTMLDivElement>(null)
-  const titleRef = useRef<HTMLDivElement>(null)
-  const subtitleRef = useRef<HTMLDivElement>(null)
-  const priceRef = useRef<HTMLDivElement>(null)
-  const guaranteeRef = useRef<HTMLDivElement>(null)
-  const stat0Ref = useRef<HTMLDivElement>(null)
-  const stat1Ref = useRef<HTMLDivElement>(null)
-  const stat2Ref = useRef<HTMLDivElement>(null)
-  const ctaRef = useRef<HTMLDivElement>(null)
-  const mobilePanelRef = useRef<HTMLDivElement>(null)
-  const [content, setContent] = useState<HeroContent>(defaultContent)
+  const [content, setContent] = useState<HeroContent | null>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+  const containerRef = useRef<HTMLElement>(null)
+
+  // Refs for HTML sections
+  const introRef = useRef<HTMLDivElement>(null)
+  const act1Ref = useRef<HTMLDivElement>(null)
+  const act2Ref = useRef<HTMLDivElement>(null)
+  const act3Ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    async function fetchContent() {
+    async function fetch() {
       try {
         const data = await getHeroContent()
         setContent(data)
-      } catch {
-        // defaults
+      } catch (e) {
+        console.error('Failed to load hero content', e)
       }
     }
-    fetchContent()
+    fetch()
+    // Small delay to ensure smooth mounting before animations hook
+    setTimeout(() => setIsLoaded(true), 100)
   }, [])
 
-  // Auto-reveal timeline — plays after car lands
-  useEffect(() => {
-    const statRefs = [stat0Ref, stat1Ref, stat2Ref]
+  useLayoutEffect(() => {
+    if (!isLoaded || !containerRef.current) return
+
     const ctx = gsap.context(() => {
-      // Delay = car drop (0.8s) + small pause
-      const tl = gsap.timeline({ delay: 1.0 })
-
-      // Horizontal accent line draws
-      tl.fromTo(lineRef.current,
-        { scaleX: 0 },
-        { scaleX: 1, duration: 0.8, ease: 'power2.inOut' }
-      )
-
-      // Title reveals with clip-path
-      .fromTo(titleRef.current,
-        { y: 25, opacity: 0, clipPath: 'inset(100% 0 0 0)' },
-        { y: 0, opacity: 1, clipPath: 'inset(0% 0 0 0)', duration: 0.6, ease: 'power3.out' },
-        0.15
-      )
-
-      // Subtitle
-      .fromTo(subtitleRef.current,
-        { y: 12, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
-        0.35
-      )
-
-      // Price (right side)
-      .fromTo(priceRef.current,
-        { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
-        0.45
-      )
-
-      // Stats staggered from left
-      statRefs.forEach((ref, i) => {
-        tl.fromTo(ref.current,
-          { x: -20, opacity: 0 },
-          { x: 0, opacity: 1, duration: 0.4, ease: 'power2.out' },
-          0.55 + i * 0.1
-        )
+      // Unified Scrubbing Timeline for Text Layers
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 1.5, // Tighter and smoother scrubbing
+        }
       })
 
-      // Guarantee badge
-      tl.fromTo(guaranteeRef.current,
-        { y: 10, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' },
-        0.85
-      )
+      // Force explicit 100 duration to match 3D Model perfectly
+      tl.to({}, { duration: 100 }, 0)
 
-      // Mobile panel
-      tl.fromTo(mobilePanelRef.current,
-        { y: 40, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
-        0.4
-      )
+      // 0% a 15% - Intro "fade out"
+      tl.to(introRef.current, {
+        opacity: 0,
+        filter: 'blur(15px)',
+        pointerEvents: 'none',
+        duration: 15,
+        ease: 'power2.inOut'
+      }, 0)
 
-      // CTA
-      tl.fromTo(ctaRef.current,
-        { y: 15, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
-        0.95
+      // 15% a 35% - Acto 1
+      tl.fromTo(act1Ref.current,
+        { opacity: 0, y: 30, filter: 'blur(5px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 7, ease: 'power2.out' }, // Appears 15-22
+        15
+      ).to(act1Ref.current, {
+        opacity: 0, y: -30, filter: 'blur(10px)', duration: 7, ease: 'power2.in' // Fades out 28-35
+      }, 28)
+
+      // 40% a 55% - Acto 2
+      tl.fromTo(act2Ref.current,
+        { opacity: 0, y: 30, filter: 'blur(5px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 5, ease: 'power2.out' }, // Appears 40-45
+        40
+      ).to(act2Ref.current, {
+        opacity: 0, y: -30, filter: 'blur(10px)', duration: 5, ease: 'power2.in' // Fades out 50-55
+      }, 50)
+
+      // 60% a 70% - Acto Final
+      tl.fromTo(act3Ref.current,
+        { opacity: 0, y: 40 },
+        { opacity: 1, y: 0, duration: 6, ease: 'power2.out' }, // Appears 60-66
+        60
       )
     })
 
     return () => ctx.revert()
-  }, [])
-
-  const stats = [
-    { value: content.stats[0]?.valor || '15+', label: content.stats[0]?.label || 'años de experiencia' },
-    { value: content.stats[1]?.valor || '1 año', label: content.stats[1]?.label || 'de garantía' },
-    { value: content.stats[2]?.valor || '80+', label: content.stats[2]?.label || 'vehículos en stock' },
-  ]
-  const statRefs = [stat0Ref, stat1Ref, stat2Ref]
+  }, [isLoaded])
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative h-screen overflow-hidden"
-      style={{ background: '#0c1220' }}
-    >
-      {/* ── Background with warm spotlight center ── */}
-      <div className="absolute inset-0">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'radial-gradient(ellipse 70% 55% at 50% 48%, #1e2d42 0%, #121a2a 45%, #0c1220 80%)',
-          }}
-        />
-        {/* Subtle warm glow behind car position */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'radial-gradient(ellipse 45% 40% at 52% 50%, rgba(200, 180, 140, 0.08) 0%, transparent 70%)',
-          }}
-        />
-      </div>
+    <>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes scale-x {
+          0% { transform: scaleX(0); transform-origin: left; }
+          50% { transform: scaleX(1); transform-origin: left; }
+          50.1% { transform: scaleX(1); transform-origin: right; }
+          100% { transform: scaleX(0); transform-origin: right; }
+        }
+        @keyframes slide-down {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(300%); }
+        }
+      `}} />
 
-      {/* ── 3D Canvas ── */}
-      <div className="absolute inset-0 z-10">
-        <Suspense fallback={<SceneLoader />}>
-          <Canvas
-            camera={{ position: [5.5, 2, 5.5], fov: 38 }}
-            shadows
-            dpr={[1, 2]}
-          >
-            <fog attach="fog" args={['#0c1220', 16, 35]} />
+      {/* The 350vh scrolling container (Reduced from 450vh to make the exit faster) */}
+      <section ref={containerRef} className="relative h-[350vh] w-full bg-[#000000]">
 
-            {/* Bright showroom lighting */}
-            <ambientLight intensity={0.9} />
-            {/* Key light — warm, strong */}
-            <spotLight
-              position={[7, 12, 5]}
-              angle={0.5}
-              penumbra={1}
-              intensity={5}
-              castShadow
-              shadow-mapSize={[1024, 1024]}
-              color="#ffe8cc"
-            />
-            {/* Fill light — cool, adds dimension */}
-            <spotLight
-              position={[-6, 8, -3]}
-              angle={0.6}
-              penumbra={1}
-              intensity={2.5}
-              color="#b0cce8"
-            />
-            {/* Rim light — outlines the car from behind */}
-            <spotLight
-              position={[0, 5, -9]}
-              angle={0.7}
-              penumbra={0.8}
-              intensity={3}
-              color="#d0d8e8"
-            />
-            {/* Top-down fill — opens up the shadows */}
-            <spotLight
-              position={[0, 14, 0]}
-              angle={0.8}
-              penumbra={1}
-              intensity={1.5}
-              color="#e0e4f0"
-            />
-            <hemisphereLight args={['#e8ecf4', '#2a3548', 0.8]} />
-            <directionalLight
-              position={[3, 10, -4]}
-              intensity={0.8}
-              color="#f0e8dc"
-            />
+        {/* Sticky Viewport (100vh) */}
+        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden bg-[#020202]">
 
-            <CarModel />
-            <Platform />
-            <ContactShadows
-              position={[0, -0.01, 0]}
-              opacity={0.5}
-              scale={14}
-              blur={2.5}
-              far={5}
-            />
-            <OrbitControls
-              enableZoom={false}
-              enablePan={false}
-              autoRotate
-              autoRotateSpeed={0.3}
-              minPolarAngle={Math.PI / 3.5}
-              maxPolarAngle={Math.PI / 2.2}
-              makeDefault
-            />
-          </Canvas>
-        </Suspense>
-      </div>
-
-      {/* ── UI Overlay ── */}
-      <div className="absolute inset-0 z-20 pointer-events-none">
-
-        {/* Brand mark — top left */}
-        <div className="absolute top-7 left-8 lg:left-12">
-          <p className="text-slate-400/30 text-[11px] tracking-[0.3em] uppercase font-medium">
-            MID Car · Madrid
-          </p>
-        </div>
-
-        {/* Horizontal accent line */}
-        <div
-          ref={lineRef}
-          className="absolute top-[63%] left-[5%] right-[5%] h-px origin-left"
-          style={{
-            transform: 'scaleX(0)',
-            background: 'linear-gradient(90deg, transparent, rgba(180, 160, 120, 0.12) 20%, rgba(180, 160, 120, 0.12) 80%, transparent)',
-          }}
-        />
-
-        {/* ═══ DESKTOP ═══ */}
-
-        {/* Left column — title, subtitle, stats */}
-        <div className="absolute left-8 xl:left-16 bottom-[18%] hidden lg:block max-w-xs">
-          <div ref={titleRef} className="opacity-0 mb-3">
-            <h1 className="text-3xl xl:text-4xl font-bold font-display text-white leading-[1.15] tracking-tight">
-              {content.titulo1}
-              <br />
-              <span className="text-white/50">{content.titulo2}</span>
-            </h1>
-          </div>
-
-          <div ref={subtitleRef} className="opacity-0 mb-8">
-            <p className="text-white/25 text-sm leading-relaxed max-w-[280px]">
-              {content.subtitulo}
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {stats.map((stat, i) => (
-              <div
-                ref={statRefs[i]}
-                key={stat.label}
-                className="opacity-0 flex items-baseline gap-3"
+          {/* ── 3D Scene ── */}
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            <Suspense fallback={<SceneLoader />}>
+              <Canvas
+                shadows={false}
+                dpr={[1, 1.2]} // Lowered DPR for drastic performance gain
+                camera={{ position: [0, 1.5, 8], fov: 30 }}
+                gl={{
+                  toneMapping: THREE.ACESFilmicToneMapping,
+                  toneMappingExposure: 1.1, // Slightly darker, more dramatic
+                  powerPreference: 'high-performance',
+                  antialias: false,
+                }}
               >
-                <span className="text-xl font-bold text-white tabular-nums tracking-tight">
-                  {stat.value}
-                </span>
-                <span className="text-white/20 text-xs uppercase tracking-wider">
-                  {stat.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+                <color attach="background" args={['#050505']} />
+                <fog attach="fog" args={['#050505', 8, 30]} />
 
-        {/* Right column — price, guarantee */}
-        <div className="absolute right-8 xl:right-16 bottom-[18%] hidden lg:block text-right">
-          <div ref={priceRef} className="opacity-0 mb-5">
-            <p className="text-white/20 text-[10px] tracking-[0.25em] uppercase mb-1">
-              Desde
-            </p>
-            <p className="text-5xl xl:text-6xl font-extrabold text-white tracking-tighter">
-              {content.precioDesde}
-            </p>
+                {/* Ultra Premium Cinematic Lighting */}
+                <ambientLight intensity={0.4} color="#ffffff" />
+                <spotLight position={[0, 15, 0]} intensity={2.5} angle={0.8} penumbra={1} color="#ffffff" />
+                <directionalLight position={[-10, 5, -5]} intensity={3} color="#ffffff" />
+                {/* Front fill light so the car isn't totally black */}
+                <directionalLight position={[0, 2, 10]} intensity={1.5} color="#ffffff" />
+
+                {/* Minimalist Rim Light */}
+                <pointLight position={[5, 2, -5]} intensity={4} color="#ffffff" distance={20} />
+
+                {/* CRITICAL: Synthetic Environment provides reflections. Disabled blur to prevent WebGL Feedback Loop Error */}
+                <Environment resolution={256}>
+                  <group rotation={[-Math.PI / 2, 0, 0]}>
+                    <Lightformer intensity={4} rotation-x={Math.PI / 2} position={[0, 5, -9]} scale={[10, 10, 1]} />
+                    <Lightformer intensity={2} rotation-y={Math.PI / 2} position={[-5, 1, -1]} scale={[20, 0.5, 1]} />
+                    <Lightformer intensity={2} rotation-y={-Math.PI / 2} position={[5, 1, -1]} scale={[20, 0.5, 1]} />
+                    <Lightformer intensity={2} rotation-x={Math.PI / 2} position={[0, 4, 0]} scale={[5, 5, 1]} />
+                  </group>
+                </Environment>
+
+                <CarModel containerRef={containerRef} />
+
+                {/* Highly Performant Showroom Floor */}
+                <mesh position={[0, -0.85, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                  <planeGeometry args={[100, 100]} />
+                  <meshStandardMaterial
+                    color="#020202"
+                    roughness={0.15}
+                    metalness={0.8}
+                  />
+                </mesh>
+
+                {/* Fake shadow plane underneath the car */}
+                <mesh position={[0, -0.84, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                  <circleGeometry args={[4, 64]} />
+                  <meshBasicMaterial color="#000000" transparent opacity={0.6} />
+                </mesh>
+
+              </Canvas>
+            </Suspense>
           </div>
 
-          <div ref={guaranteeRef} className="opacity-0">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/[0.08]">
-              <Shield className="w-3.5 h-3.5 text-white/40" />
-              <span className="text-xs text-white/40 font-medium tracking-wide">
-                {content.garantiaBadge}
-              </span>
-            </div>
-          </div>
-        </div>
+          {/* ── UI Layers (Tied to Scroll) ── */}
 
-        {/* ═══ MOBILE ═══ */}
-        <div
-          ref={mobilePanelRef}
-          className="absolute bottom-24 left-4 right-4 opacity-0 lg:hidden pointer-events-auto"
-        >
-          <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.06] p-5 space-y-4">
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-white/20 text-[10px] tracking-[0.2em] uppercase">Desde</p>
-                <p className="text-3xl font-extrabold text-white tracking-tight">
-                  {content.precioDesde}
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 border border-white/[0.08] rounded-full">
-                <Shield className="w-3 h-3 text-white/30" />
-                <span className="text-[10px] text-white/30 font-medium">
-                  {content.garantiaBadge}
+          {/* Noise overlay for premium texture (Reduced opacity so it's truly subtle) */}
+          <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+          <div className="absolute inset-0 z-10 pointer-events-none">
+
+            {/* ACT 0: True Intro (Black screen + Minimal Typography) */}
+            <div ref={introRef} className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#000000] ">
+              <div className="flex flex-col items-center w-full px-4">
+                <span className="text-white/40 text-[10px] md:text-[11px] tracking-[0.5em] md:tracking-[0.6em] uppercase font-light mb-8 md:mb-12 text-center w-full">
+                  La Nueva Era
                 </span>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              {stats.map((stat) => (
-                <div key={stat.label} className="flex-1 text-center">
-                  <p className="text-base font-bold text-white">{stat.value}</p>
-                  <p className="text-[9px] text-white/25 leading-tight mt-0.5 uppercase tracking-wider">
-                    {stat.label}
-                  </p>
+
+                {/* Pure, clean text - no cheesy outlines or colors */}
+                <div className="relative mb-6 select-none w-full flex justify-center">
+                  <h1 className="text-white text-[15vw] sm:text-[12vw] md:text-[9vw] font-light font-display tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.3em] leading-none uppercase drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] text-center">
+                    MIDCAR
+                  </h1>
                 </div>
-              ))}
+
+                {/* Intro scroll indicator */}
+                <div className="absolute flex flex-col items-center gap-4 bottom-16 md:bottom-20 opacity-50">
+                  <span className="text-white/40 text-[9px] uppercase tracking-[0.4em] font-light">Descubrir</span>
+                  <div className="w-[1px] h-12 md:h-16 bg-white/10 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1/2 bg-white animate-[slide-down_2s_ease-in-out_infinite]"></div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* ACT 1: Intro */}
+            <div ref={act1Ref} className="absolute inset-0 flex flex-col items-center justify-center opacity-0 px-4 md:px-0 ">
+              <span className="text-white/50 text-[9px] md:text-[11px] tracking-[0.4em] uppercase font-light mb-2 md:mb-6 text-center w-full">Ingeniería</span>
+              <h1 className="text-white text-[10vw] sm:text-[8vw] md:text-[6vw] font-light tracking-widest leading-none uppercase text-center w-full">
+                SIN LÍMITES
+              </h1>
+            </div>
+
+            {/* ACT 2: Profile */}
+            <div ref={act2Ref} className="absolute inset-0 flex flex-col items-center justify-center opacity-0 px-4 md:px-0 ">
+              <span className="text-white/50 text-[9px] md:text-[11px] tracking-[0.4em] uppercase font-light mb-2 md:mb-6 text-center w-full">Diseño</span>
+              <h1 className="text-white text-[10vw] sm:text-[8vw] md:text-[6vw] font-light tracking-widest leading-none uppercase text-center w-full">
+                PURA ELEGANCIA
+              </h1>
+            </div>
+
+            {/* ACT 3: Final Landing & Content */}
+            <div ref={act3Ref} className="absolute inset-0 flex flex-col justify-end pb-24 md:pb-0 md:justify-center px-6 md:px-12 lg:px-[8%] opacity-0 pointer-events-auto z-10 ">
+              {content && (
+                <div className="max-w-4xl w-full mx-auto md:mx-auto lg:mx-0">
+                  <div className="inline-flex items-center gap-3 md:gap-4 mb-6 md:mb-10">
+                    <div className="w-8 md:w-16 h-[1px] bg-white/50"></div>
+                    <span className="text-white/70 font-light tracking-[0.4em] md:tracking-[0.5em] text-[9px] md:text-[10px] uppercase">
+                      Colección Premium
+                    </span>
+                  </div>
+
+                  {/* Clean, massive, airy typography */}
+                  <h1 className="text-[14vw] sm:text-[10vw] md:text-7xl lg:text-[100px] font-light font-display text-white tracking-[0.05em] sm:tracking-[0.1em] md:tracking-[0.15em] leading-[1.1] uppercase mb-1">
+                    {content.titulo1 || 'EXCELENCIA'}
+                  </h1>
+                  <h1 className="text-[14vw] sm:text-[10vw] md:text-7xl lg:text-[100px] font-medium text-white/90 tracking-[0.05em] sm:tracking-[0.1em] md:tracking-[0.15em] leading-[1.1] uppercase mb-6 md:mb-12">
+                    {content.titulo2 || 'EN ESPERA'}
+                  </h1>
+
+                  <p className="text-white/60 text-[11px] sm:text-[12px] md:text-[13px] font-light leading-relaxed sm:leading-loose tracking-widest max-w-[280px] sm:max-w-[340px] md:max-w-[420px] mb-8 md:mb-14">
+                    {content.subtitulo || 'Concesionario de alta gama. Descubra nuestra exclusiva selección de vehículos y experimente un estándar de servicio inigualable.'}
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-5 md:gap-8">
+                    <Link
+                      href="/vehiculos"
+                      className="group relative inline-flex items-center justify-center border border-white/20 hover:border-white/80 bg-black/20 backdrop-blur-md text-white px-10 md:px-14 py-4 md:py-5 overflow-hidden w-full sm:w-auto transition-colors duration-500"
+                    >
+                      <span className="relative z-10 text-[9px] md:text-[10px] font-medium uppercase tracking-[0.4em] transition-colors duration-500 group-hover:text-black">
+                        {content.ctaPrimario || 'Explorar Stock'}
+                      </span>
+                      <div className="absolute inset-0 bg-white translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.7,0,0.3,1)]"></div>
+                    </Link>
+
+                    <Link
+                      href="/contacto"
+                      className="group flex items-center justify-center sm:justify-start gap-4 text-white/50 hover:text-white transition-colors py-3 md:py-0"
+                    >
+                      <span className="w-8 h-[1px] bg-white/30 group-hover:bg-white transition-colors"></span>
+                      <span className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-light">
+                        {content.ctaSecundario || 'Agendar Cita'}
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Global Scroll Indicator for this section */}
+            <div className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 md:gap-4 opacity-70 z-20 mix-blend-difference pointer-events-none">
+              <span className="text-white/40 text-[7px] md:text-[8px] uppercase tracking-[0.5em]">Scroll</span>
+              <div className="w-[1px] h-10 md:h-12 bg-white/20 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1/3 bg-white animate-[slide-down_2s_ease-in-out_infinite]"></div>
+              </div>
+            </div>
+
           </div>
         </div>
-
-        {/* ── CTA ── */}
-        <div
-          ref={ctaRef}
-          className="absolute bottom-7 lg:bottom-10 left-1/2 -translate-x-1/2 opacity-0 pointer-events-auto"
-        >
-          <div className="flex items-center gap-3">
-            <Link
-              href="/vehiculos"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-secondary-900 text-sm font-semibold rounded-xl hover:bg-white/90 transition-all duration-200"
-            >
-              {content.ctaPrimario}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/contacto"
-              className="inline-flex items-center gap-2 px-6 py-3 text-white/60 text-sm font-medium rounded-xl border border-white/[0.08] hover:border-white/20 hover:text-white transition-all duration-200"
-            >
-              {content.ctaSecundario}
-            </Link>
-          </div>
-        </div>
-
-        {/* ── Scroll hint ── */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
-          <ChevronDown className="w-4 h-4 text-slate-500/25 animate-bounce" />
-        </div>
-      </div>
-    </section>
+      </section>
+    </>
   )
 }

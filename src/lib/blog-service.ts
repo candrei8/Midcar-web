@@ -24,12 +24,12 @@ export async function getBlogCategories(): Promise<BlogCategory[]> {
     .eq('activo', true)
     .order('orden', { ascending: true })
 
-  if (error) {
-    console.error('Error fetching blog categories:', error)
+  if (error || !data || data.length === 0) {
+    if (error) console.error('Error fetching blog categories:', error)
     return staticBlogCategories
   }
 
-  return data || []
+  return data
 }
 
 export async function getBlogCategoryBySlug(slug: string): Promise<BlogCategory | null> {
@@ -44,8 +44,8 @@ export async function getBlogCategoryBySlug(slug: string): Promise<BlogCategory 
     .eq('activo', true)
     .single()
 
-  if (error) {
-    console.error('Error fetching blog category:', error)
+  if (error || !data) {
+    if (error && error.code !== 'PGRST116') console.error('Error fetching blog category:', error)
     return staticBlogCategories.find(c => c.slug === slug) || null
   }
 
@@ -151,6 +151,31 @@ export async function getBlogPosts(options: BlogPostsOptions = {}): Promise<Blog
     return { posts, total, page, totalPages }
   }
 
+  // If Supabase returns empty, fallback to static data
+  if (!data || data.length === 0) {
+    let filtered = [...staticBlogPosts]
+
+    if (categoryId) {
+      filtered = filtered.filter(p => p.categoria_id === categoryId)
+    }
+    if (destacado !== undefined) {
+      filtered = filtered.filter(p => p.destacado === destacado)
+    }
+    if (search) {
+      const q = search.toLowerCase()
+      filtered = filtered.filter(p =>
+        p.titulo.toLowerCase().includes(q) ||
+        (p.extracto && p.extracto.toLowerCase().includes(q)) ||
+        p.contenido.toLowerCase().includes(q)
+      )
+    }
+
+    const total = filtered.length
+    const totalPages = Math.ceil(total / limit)
+    const posts = filtered.slice(offset, offset + limit)
+    return { posts, total, page, totalPages }
+  }
+
   const total = count || 0
   const totalPages = Math.ceil(total / limit)
 
@@ -177,8 +202,8 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
     .eq('estado', 'publicado')
     .single()
 
-  if (error) {
-    console.error('Error fetching blog post by slug:', error)
+  if (error || !data) {
+    if (error && error.code !== 'PGRST116') console.error('Error fetching blog post by slug:', error)
     // Fallback to static data
     return staticBlogPosts.find(p => p.slug === slug) || null
   }
@@ -188,8 +213,9 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
 
 export async function getFeaturedPosts(limit: number = 3): Promise<BlogPost[]> {
   if (!isSupabaseConfigured) {
-    // No featured posts in MongoDB data, return latest
-    return staticBlogPosts.slice(0, limit)
+    // Return featured or latest from static data
+    const featured = staticBlogPosts.filter(p => p.destacado)
+    return featured.length > 0 ? featured.slice(0, limit) : staticBlogPosts.slice(0, limit)
   }
 
   const { data, error } = await supabase
@@ -203,12 +229,13 @@ export async function getFeaturedPosts(limit: number = 3): Promise<BlogPost[]> {
     .order('fecha_publicacion', { ascending: false })
     .limit(limit)
 
-  if (error) {
-    console.error('Error fetching featured posts:', error)
-    return staticBlogPosts.slice(0, limit)
+  if (error || !data || data.length === 0) {
+    if (error) console.error('Error fetching featured posts:', error)
+    const featured = staticBlogPosts.filter(p => p.destacado)
+    return featured.length > 0 ? featured.slice(0, limit) : staticBlogPosts.slice(0, limit)
   }
 
-  return data || []
+  return data
 }
 
 export async function getLatestPosts(limit: number = 5): Promise<BlogPost[]> {
@@ -226,12 +253,12 @@ export async function getLatestPosts(limit: number = 5): Promise<BlogPost[]> {
     .order('fecha_publicacion', { ascending: false })
     .limit(limit)
 
-  if (error) {
-    console.error('Error fetching latest posts:', error)
+  if (error || !data || data.length === 0) {
+    if (error) console.error('Error fetching latest posts:', error)
     return staticBlogPosts.slice(0, limit)
   }
 
-  return data || []
+  return data
 }
 
 export async function getRelatedPosts(post: BlogPost, limit: number = 4): Promise<BlogPost[]> {
@@ -280,12 +307,19 @@ export async function getRelatedPosts(post: BlogPost, limit: number = 4): Promis
     .order('fecha_publicacion', { ascending: false })
     .limit(limit)
 
-  if (error) {
-    console.error('Error fetching related posts:', error)
+  if (error || !data || data.length === 0) {
+    if (error) console.error('Error fetching related posts:', error)
+    // Fallback to static data
+    if (post.categoria_id) {
+      const sameCat = staticBlogPosts
+        .filter(p => p.id !== post.id && p.categoria_id === post.categoria_id)
+        .slice(0, limit)
+      if (sameCat.length > 0) return sameCat
+    }
     return staticBlogPosts.filter(p => p.id !== post.id).slice(0, limit)
   }
 
-  return data || []
+  return data
 }
 
 export async function getAllPublishedSlugs(): Promise<string[]> {
@@ -298,12 +332,12 @@ export async function getAllPublishedSlugs(): Promise<string[]> {
     .select('slug')
     .eq('estado', 'publicado')
 
-  if (error) {
-    console.error('Error fetching blog slugs:', error)
+  if (error || !data || data.length === 0) {
+    if (error) console.error('Error fetching blog slugs:', error)
     return staticBlogPosts.map(p => p.slug)
   }
 
-  return data?.map(p => p.slug) || []
+  return data.map(p => p.slug)
 }
 
 export async function getAllActiveCategorySlugs(): Promise<string[]> {
@@ -314,12 +348,12 @@ export async function getAllActiveCategorySlugs(): Promise<string[]> {
     .select('slug')
     .eq('activo', true)
 
-  if (error) {
-    console.error('Error fetching category slugs:', error)
-    return []
+  if (error || !data || data.length === 0) {
+    if (error) console.error('Error fetching category slugs:', error)
+    return staticBlogCategories.map(c => c.slug)
   }
 
-  return data?.map(c => c.slug) || []
+  return data.map(c => c.slug)
 }
 
 // ============================================================================
@@ -327,7 +361,7 @@ export async function getAllActiveCategorySlugs(): Promise<string[]> {
 // ============================================================================
 
 export async function getPopularTags(limit: number = 10): Promise<string[]> {
-  if (!isSupabaseConfigured) {
+  const getStaticTags = () => {
     const tagCounts: Record<string, number> = {}
     staticBlogPosts.forEach(post => {
       (post.tags || []).forEach((tag: string) => {
@@ -340,19 +374,23 @@ export async function getPopularTags(limit: number = 10): Promise<string[]> {
       .map(([tag]) => tag)
   }
 
+  if (!isSupabaseConfigured) {
+    return getStaticTags()
+  }
+
   const { data, error } = await supabase
     .from('blog_posts')
     .select('tags')
     .eq('estado', 'publicado')
 
-  if (error) {
-    console.error('Error fetching tags:', error)
-    return []
+  if (error || !data || data.length === 0) {
+    if (error) console.error('Error fetching tags:', error)
+    return getStaticTags()
   }
 
   // Flatten all tags and count them
   const tagCounts: Record<string, number> = {}
-  data?.forEach(post => {
+  data.forEach(post => {
     const tags = post.tags || []
     tags.forEach((tag: string) => {
       tagCounts[tag] = (tagCounts[tag] || 0) + 1
