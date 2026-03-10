@@ -19,6 +19,17 @@ export function VoiceflowChat() {
     if (loaded.current) return
     loaded.current = true
 
+    // Clear stale Voiceflow session to prevent "Session is stale" errors
+    try {
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('voiceflow')) {
+          localStorage.removeItem(key)
+        }
+      })
+    } catch {
+      // localStorage may not be available
+    }
+
     const script = document.createElement('script')
     script.type = 'text/javascript'
     script.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs'
