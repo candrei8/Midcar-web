@@ -1,0 +1,60 @@
+WITH mongo_imgs(brand, model, year, img_url) AS (
+  VALUES
+  ('hyundai', 'ioniq', 2018, 'https://midcar.azureedge.net/vehiculos/1504134154619/(FILEminimizer)%20PXL_20240415_095850502.PORTRAIT.ORIGINAL-15042024134154620-1500px.jpg'),
+  ('hyundai', 'ioniq', 2019, 'https://midcar.azureedge.net/vehiculos/1504134154619/(FILEminimizer)%20PXL_20240415_095850502.PORTRAIT.ORIGINAL-15042024134154620-1500px.jpg'),
+  ('kia', 'niro', 2018, 'https://midcar.azureedge.net/vehiculos/1504143933268/(FILEminimizer)%20PXL_20240415_091255726.PORTRAIT.ORIGINAL-15042024143933269-1500px.jpg'),
+  ('kia', 'niro', 2019, 'https://midcar.azureedge.net/vehiculos/1504143933268/(FILEminimizer)%20PXL_20240415_091255726.PORTRAIT.ORIGINAL-15042024143933269-1500px.jpg'),
+  ('kia', 'niro', 2020, 'https://midcar.azureedge.net/vehiculos/1504143933268/(FILEminimizer)%20PXL_20240415_091255726.PORTRAIT.ORIGINAL-15042024143933269-1500px.jpg'),
+  ('hyundai', 'ioniq', 2020, 'https://midcar.azureedge.net/vehiculos/0305153738174/1-15072024075856374-1500px.jpg'),
+  ('ford', 'focus', 2020, 'https://midcar.azureedge.net/vehiculos/1905080311845/(FILEminimizer)%20PXL_20240517_133329237.PORTRAIT.ORIGINAL-26082024155231788-1500px.jpg'),
+  ('volkswagen', 'golf', 2018, 'https://midcar.azureedge.net/vehiculos/0707091515235/(FILEminimizer)%20(FILEminimizer)%2001VW%20EGolf%20Electrico%20Etiqueta%20O-05082025170933456-1500px.jpg'),
+  ('volkswagen', 'golf', 2019, 'https://midcar.azureedge.net/vehiculos/0707091515235/(FILEminimizer)%20(FILEminimizer)%2001VW%20EGolf%20Electrico%20Etiqueta%20O-05082025170933456-1500px.jpg'),
+  ('volkswagen', 'golf', 2020, 'https://midcar.azureedge.net/vehiculos/0707091515235/(FILEminimizer)%20(FILEminimizer)%2001VW%20EGolf%20Electrico%20Etiqueta%20O-05082025170933456-1500px.jpg'),
+  ('ford', 'grant tourneo connect', 2017, 'https://midcar.azureedge.net/vehiculos/0508114559087/(FILEminimizer)%20PXL_20240808_063723414.PORTRAIT.ORIGINAL~2-08082024091631514-1500px.jpg'),
+  ('ford', 'grant tourneo connect', 2018, 'https://midcar.azureedge.net/vehiculos/0508114559087/(FILEminimizer)%20PXL_20240808_063723414.PORTRAIT.ORIGINAL~2-08082024091631514-1500px.jpg'),
+  ('ford', 'grant tourneo connect', 2019, 'https://midcar.azureedge.net/vehiculos/0508114559087/(FILEminimizer)%20PXL_20240808_063723414.PORTRAIT.ORIGINAL~2-08082024091631514-1500px.jpg'),
+  ('peugeot', 'partner', 2021, 'https://midcar.azureedge.net/vehiculos/0608154415486/(FILEminimizer)%20PXL_20240820_073657507.PORTRAIT.ORIGINAL~2-20082024111831064-1500px.jpg'),
+  ('volkswagen', 'caddy', 2021, 'https://midcar.azureedge.net/vehiculos/0808182253725/(FILEminimizer)%20PXL_20240814_100019641.PORTRAIT.ORIGINAL-14082024153207421-1500px.jpg'),
+  ('citroen', 'jumpy', 2021, 'https://midcar.azureedge.net/vehiculos/0809113226328/(FILEminimizer)%20PXL_20240910_073224249.PORTRAIT.ORIGINAL~2-10092024174658394-1500px.jpg'),
+  ('kia', 'niro', 2021, 'https://midcar.azureedge.net/vehiculos/1509122738330/01-18092024164531726-1500px.jpg'),
+  ('peugeot', '208', 2021, 'https://midcar.azureedge.net/vehiculos/2309204646271/PXL_20240923_175835998.PORTRAIT.ORIGINAL%20(FILEminimizer)-23092024204646272-1500px.jpg'),
+  ('peugeot', '208', 2022, 'https://midcar.azureedge.net/vehiculos/2309204646271/PXL_20240923_175835998.PORTRAIT.ORIGINAL%20(FILEminimizer)-23092024204646272-1500px.jpg'),
+  ('ford', 'transit connect', 2021, 'https://midcar.azureedge.net/vehiculos/2609101431800/(FILEminimizer)%20PXL_20240930_175336669.PORTRAIT.ORIGINAL-30092024181825718-1500px.jpg'),
+  ('peugeot', '5008', 2018, 'https://midcar.azureedge.net/vehiculos/3009192742862/(FILEminimizer)%20PXL_20241003_174257677.PORTRAIT.ORIGINAL-03102024183433732-1500px.jpg'),
+  ('peugeot', '5008', 2019, 'https://midcar.azureedge.net/vehiculos/3009192742862/(FILEminimizer)%20PXL_20241003_174257677.PORTRAIT.ORIGINAL-03102024183433732-1500px.jpg'),
+  ('volkswagen', 'passat', 2021, 'https://midcar.azureedge.net/vehiculos/1110151651593/(FILEminimizer)%20PXL_20241121_162350440.PORTRAIT.ORIGINAL~2-21112024175708916-1500px.jpg'),
+  ('hyundai', 'ioniq', 2021, 'https://midcar.azureedge.net/vehiculos/1310185128292/(FILEminimizer)%20PXL_20241022_170012819.%20HYUNDAI%20%20iONIQ%201.6%20GDI%20HEV%20Style%20DT%20Hybrido%20Etiqueta%20ECO-02122024182523623-1500px.jpg'),
+  ('bmw', 'serie 5', 2018, 'https://midcar.azureedge.net/vehiculos/1410144949506/1%20BMW%20530dA%20Luxury%20Line%20265Cv-02122024123029101-1500px.jpg'),
+  ('bmw', 'serie 5', 2019, 'https://midcar.azureedge.net/vehiculos/1410144949506/1%20BMW%20530dA%20Luxury%20Line%20265Cv-02122024123029101-1500px.jpg'),
+  ('peugeot', '5008', 2020, 'https://midcar.azureedge.net/vehiculos/2510144310293/(FILEminimizer)%20PXL_20241205_081534762.Peugeot%205008%202.0%20BlueHDi%20180Cv%20GT%20Line%20S&S%20%20EAT8,%207%20Plazas-06122024125616041-1500px.jpg'),
+  ('volkswagen', 'passat', 2022, 'https://midcar.azureedge.net/vehiculos/0411183216032/(FILEminimizer)%20PXL_20241119_164143781.PORTRAIT.ORIGINAL~2-19112024185722602-1500px.jpg'),
+  ('ford', 'grant tourneo connect', 2020, 'https://midcar.azureedge.net/vehiculos/1811180741790/(FILEminimizer)%20PXL_20241118_163416635%20Ford%20Grand%20Connect%20%20Kombi%20%20Titanium%201.5%20TDCi%20100Cv%20Monovolumen-02122024174755930-1500px.jpg'),
+  ('ford', 'grant tourneo connect', 2021, 'https://midcar.azureedge.net/vehiculos/1811180741790/(FILEminimizer)%20PXL_20241118_163416635%20Ford%20Grand%20Connect%20%20Kombi%20%20Titanium%201.5%20TDCi%20100Cv%20Monovolumen-02122024174755930-1500px.jpg'),
+  ('ford', 'transit custom', 2021, 'https://midcar.azureedge.net/vehiculos/2811091637447/(FILEminimizer)%20PXL_20241125_161706045.PORTRAIT.ORIGINAL-28112024091637449-1500px.jpg'),
+  ('ford', 'transit custom', 2022, 'https://midcar.azureedge.net/vehiculos/2811091637447/(FILEminimizer)%20PXL_20241125_161706045.PORTRAIT.ORIGINAL-28112024091637449-1500px.jpg'),
+  ('citroen', 'jumpy', 2007, 'https://midcar.azureedge.net/vehiculos/2412130935652/01%20Citroen%20Jumpy%20Combi%206%20Plazas%202.0Hdi-25122024095612592-1500px.jpg'),
+  ('citroen', 'jumpy', 2008, 'https://midcar.azureedge.net/vehiculos/2412130935652/01%20Citroen%20Jumpy%20Combi%206%20Plazas%202.0Hdi-25122024095612592-1500px.jpg'),
+  ('citroen', 'jumpy', 2009, 'https://midcar.azureedge.net/vehiculos/2412130935652/01%20Citroen%20Jumpy%20Combi%206%20Plazas%202.0Hdi-25122024095612592-1500px.jpg'),
+  ('peugeot', 'expert', 2021, 'https://midcar.azureedge.net/vehiculos/0401220227080/(FILEminimizer)%20PXL_20250131_154847202-31012025161807943-1500px.jpg'),
+  ('peugeot', 'expert', 2022, 'https://midcar.azureedge.net/vehiculos/0401220227080/(FILEminimizer)%20PXL_20250131_154847202-31012025161807943-1500px.jpg'),
+  ('ford', 'focus', 2021, 'https://midcar.azureedge.net/vehiculos/1601215436196/(FILEminimizer)%20PXL_20250124_150250947.Ford%20Focus%20SB%201.5EcoBlue%20120Cv%206Velocidades%205%20Puertas,%20Etiqueta%20Medioambiental%20C-24012025153322350-1500px.jpg'),
+  ('volkswagen', 'caddy', 2022, 'https://midcar.azureedge.net/vehiculos/2201184647442/(FILEminimizer)%20PXL_20250124_114503576.Vw%20Caddy%20GNC%20Etiqueta%20ECO%20IVA%20y%20Garant%C3%ADa%20Incl-24012025131620361-1500px.jpg'),
+  ('citroen', 'c5', 2009, 'https://midcar.azureedge.net/vehiculos/2901121618688/(FILEminimizer)%20PXL_20250129_115104737.PORTRAIT-29012025125517379-1500px.jpg'),
+  ('citroen', 'c5', 2010, 'https://midcar.azureedge.net/vehiculos/2901121618688/(FILEminimizer)%20PXL_20250129_115104737.PORTRAIT-29012025125517379-1500px.jpg'),
+  ('citroen', 'c5', 2011, 'https://midcar.azureedge.net/vehiculos/2901121618688/(FILEminimizer)%20PXL_20250129_115104737.PORTRAIT-29012025125517379-1500px.jpg'),
+  ('ford', 'focus', 2022, 'https://midcar.azureedge.net/vehiculos/1002191045682/(FILEminimizer)%20PXL_20250210_160804268.%20Ford%20Focus%20SB%201.5EcoBlue%20120Cv%206Velocidades%205%20Puertas,%20Etiqueta%20Medioambiental%20C%20Nacional%20Unico%20Due%C3%B1o-10022025191045683-1500px.jpg'),
+  ('ford', 'focus', 2023, 'https://midcar.azureedge.net/vehiculos/1002191045682/(FILEminimizer)%20PXL_20250210_160804268.%20Ford%20Focus%20SB%201.5EcoBlue%20120Cv%206Velocidades%205%20Puertas,%20Etiqueta%20Medioambiental%20C%20Nacional%20Unico%20Due%C3%B1o-10022025191045683-1500px.jpg'),
+  ('citroen', 'c4', 2020, 'https://midcar.azureedge.net/vehiculos/2402175751477/(FILEminimizer)%20PXL_20250224_165752521.Citroen%20C4%20Cactus%201.5BlueHdi%20100Cv-24022025175751478-1500px.jpg'),
+  ('toyota', 'corolla', 2021, 'https://midcar.azureedge.net/vehiculos/2502173941139/(FILEminimizer)%20PXL_20250328_095438202.Toyota%20Corolla%20Hybrid%20Etiqueta%20ECO-28032025142707168-1500px.jpg'),
+  ('toyota', 'corolla', 2022, 'https://midcar.azureedge.net/vehiculos/2502173941139/(FILEminimizer)%20PXL_20250328_095438202.Toyota%20Corolla%20Hybrid%20Etiqueta%20ECO-28032025142707168-1500px.jpg'),
+  ('peugeot', '5008', 2021, 'https://midcar.azureedge.net/vehiculos/1303181344902/(FILEminimizer)%20PXL_20250313_164600297.PORTRAIT.ORIGINAL-13032025181344902-1500px.jpg'),
+  ('citroen', 'jumpy', 2022, 'https://midcar.azureedge.net/vehiculos/1603144853016/(FILEminimizer)%20PXL_20250530_071206845.PORTRAIT.ORIGINAL-03092025192659381-1500px.jpg'),
+  ('seat', 'leon', 2021, 'https://midcar.azureedge.net/vehiculos/2803161146327/(FILEminimizer)%20PXL_20250218_160632398.PORTRAIT.ORIGINAL-28032025161146327-1500px.jpg')
+)
+UPDATE vehicles v
+SET imagen_principal = mi.img_url
+FROM mongo_imgs mi
+WHERE LOWER(v.marca) = mi.brand
+  AND LOWER(v.modelo) = mi.model
+  AND v."año_matriculacion" = mi.year
+  AND (v.imagen_principal IS NULL OR v.imagen_principal = '');

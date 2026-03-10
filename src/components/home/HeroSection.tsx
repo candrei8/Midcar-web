@@ -189,11 +189,15 @@ export function HeroSection() {
   const act1Ref = useRef<HTMLDivElement>(null)
   const act2Ref = useRef<HTMLDivElement>(null)
   const act3Ref = useRef<HTMLDivElement>(null)
+  const shouldRenderCanvas = showCanvas && !isMobile
+  const shouldShowCanvasLoader = !showCanvas && !isMobile
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024)
     checkMobile()
     window.addEventListener('resize', checkMobile)
+    const loadTimeout = window.setTimeout(() => setIsLoaded(true), 100)
+    let frameId: number | null = null
     
     async function fetch() {
       try {
@@ -204,10 +208,16 @@ export function HeroSection() {
       }
     }
     fetch()
-    setTimeout(() => setIsLoaded(true), 100)
-    requestAnimationFrame(() => setShowCanvas(true))
+
+    frameId = window.requestAnimationFrame(() => setShowCanvas(true))
     
-    return () => window.removeEventListener('resize', checkMobile)
+    return () => {
+      window.removeEventListener('resize', checkMobile)
+      window.clearTimeout(loadTimeout)
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId)
+      }
+    }
   }, [])
 
   // RESTORED ORIGINAL TEXT ANIMATIONS
@@ -286,8 +296,8 @@ export function HeroSection() {
 
           {/* 3D Scene - ONLY DESKTOP AS REQUESTED */}
           <div className="absolute inset-0 z-20 pointer-events-none">
-            {!showCanvas && <SceneLoader />}
-            {showCanvas && !isMobile && (
+            {shouldShowCanvasLoader && <SceneLoader />}
+            {shouldRenderCanvas && (
               <Suspense fallback={<SceneLoader />}>
                 <Canvas
                   shadows

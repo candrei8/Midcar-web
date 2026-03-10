@@ -1,0 +1,60 @@
+WITH mongo_imgs(brand, model, year, img_url) AS (
+  VALUES
+  ('skoda', 'octavia', 2012, 'https://midcar.azureedge.net/vehiculos/2111124253378/(FILEminimizer)%2020211121_130802-21112021124253379-1500px.jpg'),
+  ('skoda', 'octavia', 2013, 'https://midcar.azureedge.net/vehiculos/2111124253378/(FILEminimizer)%2020211121_130802-21112021124253379-1500px.jpg'),
+  ('skoda', 'octavia', 2014, 'https://midcar.azureedge.net/vehiculos/2111124253378/(FILEminimizer)%2020211121_130802-21112021124253379-1500px.jpg'),
+  ('citroen', 'c4', 2014, 'https://midcar.azureedge.net/vehiculos/2211105830738/(FILEminimizer)%2020211122_110701-22112021105830747-1500px.jpg'),
+  ('citroen', 'c4', 2015, 'https://midcar.azureedge.net/vehiculos/2211105830738/(FILEminimizer)%2020211122_110701-22112021105830747-1500px.jpg'),
+  ('citroen', 'c4', 2016, 'https://midcar.azureedge.net/vehiculos/2211105830738/(FILEminimizer)%2020211122_110701-22112021105830747-1500px.jpg'),
+  ('citroen', 'jumpy', 2014, 'https://midcar.azureedge.net/vehiculos/0512155044753/(FILEminimizer)%2020211203_165846-05122021155044753-1500px.jpg'),
+  ('citroen', 'jumpy', 2015, 'https://midcar.azureedge.net/vehiculos/0512155044753/(FILEminimizer)%2020211203_165846-05122021155044753-1500px.jpg'),
+  ('volkswagen', 'passat', 2019, 'https://midcar.azureedge.net/vehiculos/3012182510841/(FILEminimizer)%2020211230_173202-30122021182510842-1500px.jpg'),
+  ('renault', 'kangoo', 2018, 'https://midcar.azureedge.net/vehiculos/3012222348295/(FILEminimizer)%2020220111_091951-11012022084513809-1500px.jpg'),
+  ('dacia', 'dokker', 2018, 'https://midcar.azureedge.net/vehiculos/3012230648986/(FILEminimizer)%2020220220_110544-20022022104356042-1500px.jpg'),
+  ('dacia', 'dokker', 2019, 'https://midcar.azureedge.net/vehiculos/3012230648986/(FILEminimizer)%2020220220_110544-20022022104356042-1500px.jpg'),
+  ('ford', 'focus', 2019, 'https://midcar.azureedge.net/vehiculos/2801124205535/(FILEminimizer)%2020220128_091159-28012022124205535-1500px.jpg'),
+  ('peugeot', 'partner', 2019, 'https://midcar.azureedge.net/vehiculos/0802110629853/(FILEminimizer)%2020220208_090459-08022022110629854-1500px.jpg'),
+  ('renault', 'master', 2016, 'https://midcar.azureedge.net/vehiculos/2202180750319/01-22022022180750319-1500px.jpeg'),
+  ('renault', 'master', 2017, 'https://midcar.azureedge.net/vehiculos/2202180750319/01-22022022180750319-1500px.jpeg'),
+  ('renault', 'master', 2018, 'https://midcar.azureedge.net/vehiculos/2202180750319/01-22022022180750319-1500px.jpeg'),
+  ('fiat', 'fiorino', 2017, 'https://midcar.azureedge.net/vehiculos/0603155352354/(FILEminimizer)%2020220321_153532-21032022155601016-1500px.jpg'),
+  ('renault', 'clio', 2014, 'https://midcar.azureedge.net/vehiculos/0603160649894/(FILEminimizer)%2020220325_114851-25032022172135203-1500px.jpg'),
+  ('dacia', 'dokker', 2020, 'https://midcar.azureedge.net/vehiculos/2904112355243/(FILEminimizer)%2020220426_084712-29042022112355856-1500px.jpg'),
+  ('citroen', 'jumper', 2018, 'https://midcar.azureedge.net/vehiculos/2005171312058/(FILEminimizer)%2020220527_091102-27052022074753612-1500px.jpg'),
+  ('citroen', 'jumper', 2019, 'https://midcar.azureedge.net/vehiculos/2005171312058/(FILEminimizer)%2020220527_091102-27052022074753612-1500px.jpg'),
+  ('citroen', 'jumper', 2020, 'https://midcar.azureedge.net/vehiculos/2005171312058/(FILEminimizer)%2020220527_091102-27052022074753612-1500px.jpg'),
+  ('opel', 'corsa', 2016, 'https://midcar.azureedge.net/vehiculos/1306170217778/(FILEminimizer)%2020220612_105550-13062022170217779-1500px.jpg'),
+  ('opel', 'corsa', 2017, 'https://midcar.azureedge.net/vehiculos/1306170217778/(FILEminimizer)%2020220612_105550-13062022170217779-1500px.jpg'),
+  ('opel', 'corsa', 2018, 'https://midcar.azureedge.net/vehiculos/1306170217778/(FILEminimizer)%2020220612_105550-13062022170217779-1500px.jpg'),
+  ('fiat', 'fiorino', 2018, 'https://midcar.azureedge.net/vehiculos/2806085555262/(FILEminimizer)%2020220705_083026-05072022090559400-1500px.jpg'),
+  ('seat', 'leon', 2018, 'https://midcar.azureedge.net/vehiculos/2806172534270/(FILEminimizer)%2020220708_081045-08072022162204574-1500px.jpg'),
+  ('seat', 'leon', 2019, 'https://midcar.azureedge.net/vehiculos/2806172534270/(FILEminimizer)%2020220708_081045-08072022162204574-1500px.jpg'),
+  ('seat', 'leon', 2020, 'https://midcar.azureedge.net/vehiculos/2806172534270/(FILEminimizer)%2020220708_081045-08072022162204574-1500px.jpg'),
+  ('ford', 'transit custom', 2018, 'https://midcar.azureedge.net/vehiculos/3006175945563/01-30062022175945563-1500px.jpg'),
+  ('opel', 'corsa', 2019, 'https://midcar.azureedge.net/vehiculos/2907081925301/(FILEminimizer)%2020220729_081545-29072022081925301-1500px.jpg'),
+  ('opel', 'corsa', 2020, 'https://midcar.azureedge.net/vehiculos/2907081925301/(FILEminimizer)%2020220729_081545-29072022081925301-1500px.jpg'),
+  ('ford', 'transit custom', 2019, 'https://midcar.azureedge.net/vehiculos/0808075643549/(FILEminimizer)%2020220808_081733-08082022081856096-1500px.jpg'),
+  ('ford', 'focus', 2014, 'https://midcar.azureedge.net/vehiculos/0908145942152/(FILEminimizer)%2020220816_081855-16082022085357574-1500px.jpg'),
+  ('opel', 'corsa', 2015, 'https://midcar.azureedge.net/vehiculos/0210101934202/(FILEminimizer)%2020220926_171450-02102022101934204-1500px.jpg'),
+  ('ford', 'transit custom', 2014, 'https://midcar.azureedge.net/vehiculos/1910141253402/(FILEminimizer)%2020221019_100911-19102022170341828-1500px.jpg'),
+  ('peugeot', 'expert', 2013, 'https://midcar.azureedge.net/vehiculos/2310103022463/(FILEminimizer)%2020221023_105313-23102022103022464-1500px.jpg'),
+  ('peugeot', 'expert', 2014, 'https://midcar.azureedge.net/vehiculos/2310103022463/(FILEminimizer)%2020221023_105313-23102022103022464-1500px.jpg'),
+  ('peugeot', 'expert', 2015, 'https://midcar.azureedge.net/vehiculos/2310103022463/(FILEminimizer)%2020221023_105313-23102022103022464-1500px.jpg'),
+  ('peugeot', '5008', 2009, 'https://midcar.azureedge.net/vehiculos/2810092207316/(FILEminimizer)%2020220915_193355-28102022092207317-1500px.jpg'),
+  ('peugeot', '5008', 2010, 'https://midcar.azureedge.net/vehiculos/2810092207316/(FILEminimizer)%2020220915_193355-28102022092207317-1500px.jpg'),
+  ('peugeot', '5008', 2011, 'https://midcar.azureedge.net/vehiculos/2810092207316/(FILEminimizer)%2020220915_193355-28102022092207317-1500px.jpg'),
+  ('toyota', 'proace', 2019, 'https://midcar.azureedge.net/vehiculos/1011145706932/1-02122022114312825-1500px.JPG'),
+  ('toyota', 'proace', 2020, 'https://midcar.azureedge.net/vehiculos/1011145706932/1-02122022114312825-1500px.JPG'),
+  ('toyota', 'proace', 2021, 'https://midcar.azureedge.net/vehiculos/1011145706932/1-02122022114312825-1500px.JPG'),
+  ('fiat', 'fiorino', 2019, 'https://midcar.azureedge.net/vehiculos/2111160648378/01-21112022160648379-1500px.JPG'),
+  ('volkswagen', 'golf', 2012, 'https://midcar.azureedge.net/vehiculos/2111175711232/01-21112022175711233-1500px.JPG'),
+  ('volkswagen', 'golf', 2013, 'https://midcar.azureedge.net/vehiculos/2111175711232/01-21112022175711233-1500px.JPG'),
+  ('volkswagen', 'golf', 2014, 'https://midcar.azureedge.net/vehiculos/2111175711232/01-21112022175711233-1500px.JPG')
+)
+UPDATE vehicles v
+SET imagen_principal = mi.img_url
+FROM mongo_imgs mi
+WHERE LOWER(v.marca) = mi.brand
+  AND LOWER(v.modelo) = mi.model
+  AND v."año_matriculacion" = mi.year
+  AND (v.imagen_principal IS NULL OR v.imagen_principal = '');

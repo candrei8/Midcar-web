@@ -1,0 +1,60 @@
+WITH mongo_imgs(brand, model, year, img_url) AS (
+  VALUES
+  ('ford', 'transit courier', 2020, 'https://midcar.azureedge.net/vehiculos/2903214946252/(FILEminimizer)%20PXL_20250908_145703397.PORTRAIT-15092025104912329-1500px.jpg'),
+  ('ford', 'transit courier', 2021, 'https://midcar.azureedge.net/vehiculos/2903214946252/(FILEminimizer)%20PXL_20250908_145703397.PORTRAIT-15092025104912329-1500px.jpg'),
+  ('ford', 'transit courier', 2022, 'https://midcar.azureedge.net/vehiculos/2903214946252/(FILEminimizer)%20PXL_20250908_145703397.PORTRAIT-15092025104912329-1500px.jpg'),
+  ('ford', 'transit', 2022, 'https://midcar.azureedge.net/vehiculos/0605194041558/(FILEminimizer)%20PXL_20250506_180810091%20Ford%20Transit%202.0Tdci%20L3H2%20Van%20Trend%20FWD%20furg%C3%B3n-07052025111227388-1500px.jpg'),
+  ('dacia', 'dokker', 2021, 'https://midcar.azureedge.net/vehiculos/1805102029970/(FILEminimizer)%20Dacia%20Dokker%20Combi%20GLP-20052025151736397-1500px.jpg'),
+  ('dacia', 'dokker', 2022, 'https://midcar.azureedge.net/vehiculos/1805102029970/(FILEminimizer)%20Dacia%20Dokker%20Combi%20GLP-20052025151736397-1500px.jpg'),
+  ('kia', 'rio', 2013, 'https://midcar.azureedge.net/vehiculos/2205180502983/(FILEminimizer)%20PXL_20250521_173202924.PORTRAIT.ORIGINAL-22052025180502984-1500px.jpg'),
+  ('kia', 'rio', 2014, 'https://midcar.azureedge.net/vehiculos/2205180502983/(FILEminimizer)%20PXL_20250521_173202924.PORTRAIT.ORIGINAL-22052025180502984-1500px.jpg'),
+  ('kia', 'rio', 2015, 'https://midcar.azureedge.net/vehiculos/2205180502983/(FILEminimizer)%20PXL_20250521_173202924.PORTRAIT.ORIGINAL-22052025180502984-1500px.jpg'),
+  ('toyota', 'proace', 2022, 'https://midcar.azureedge.net/vehiculos/0306161914302/(FILEminimizer)%20PXL_20250723_121019817.PORTRAIT-25072025104958491-1500px.jpg'),
+  ('renault', 'master', 2021, 'https://midcar.azureedge.net/vehiculos/0506161121321/(FILEminimizer)%20PXL_20250611_081234422.Renault%20Mater%203500%20Automatica%20L2H2%20%20180Cv-11062025140931331-1500px.jpg'),
+  ('ford', 'transit connect', 2022, 'https://midcar.azureedge.net/vehiculos/1206142215667/(FILEminimizer)%20PXL_20250620_092938144%20Ford%20Transit%20Connect%20Furg%C3%B3n%20Van%20%20Trend%20200%20L1%20Automatico-20062025161610783-1500px.jpg'),
+  ('peugeot', '5008', 2022, 'https://midcar.azureedge.net/vehiculos/0607085200332/1-14072025095410632-1500px.jpg'),
+  ('volkswagen', 'transporter', 2020, 'https://midcar.azureedge.net/vehiculos/0607090342547/(FILEminimizer)%20PXL_20250819_174532686.%20Volkswagen%20Transporter%20Pro%202.0TDI%20110Cv%20BMT%20Furg%C3%B3n%20Etiqueta%20C%20IVA%20y%20Garant%C3%ADa%20Incl-19082025180725196-1500px.jpg'),
+  ('volkswagen', 'transporter', 2021, 'https://midcar.azureedge.net/vehiculos/0607090342547/(FILEminimizer)%20PXL_20250819_174532686.%20Volkswagen%20Transporter%20Pro%202.0TDI%20110Cv%20BMT%20Furg%C3%B3n%20Etiqueta%20C%20IVA%20y%20Garant%C3%ADa%20Incl-19082025180725196-1500px.jpg'),
+  ('volkswagen', 'transporter', 2022, 'https://midcar.azureedge.net/vehiculos/0607090342547/(FILEminimizer)%20PXL_20250819_174532686.%20Volkswagen%20Transporter%20Pro%202.0TDI%20110Cv%20BMT%20Furg%C3%B3n%20Etiqueta%20C%20IVA%20y%20Garant%C3%ADa%20Incl-19082025180725196-1500px.jpg'),
+  ('volkswagen', 'crafter', 2020, 'https://midcar.azureedge.net/vehiculos/0607112959325/Volkswagen%20Crafter%2030%20Furgon%20BM%20TN%20L3H2%202.0TDI%201-08012026203139188-1500px.jpg'),
+  ('hyundai', 'ioniq', 2022, 'https://midcar.azureedge.net/vehiculos/2807073655483/(FILEminimizer)%20PXL_20250814_091851581.HYUNDAI%20%20iONIQ%201.6%20GDI%20HEV%20Tecno%20DCT%20Hybrido%20Etiqueta%20ECO%20nacional%20IVA%20y%20Garant%C3%ADa%20Incl-14082025125454567-1500px.jpg'),
+  ('citroen', 'berlingo xl', 2020, 'https://midcar.azureedge.net/vehiculos/0408140506765/(FILEminimizer)%20PXL_20250806_161113627.Citroen%20Berlingo%20XL%20Negra-22082025113547788-1500px.jpg'),
+  ('citroen', 'berlingo xl', 2021, 'https://midcar.azureedge.net/vehiculos/0408140506765/(FILEminimizer)%20PXL_20250806_161113627.Citroen%20Berlingo%20XL%20Negra-22082025113547788-1500px.jpg'),
+  ('citroen', 'berlingo xl', 2022, 'https://midcar.azureedge.net/vehiculos/0408140506765/(FILEminimizer)%20PXL_20250806_161113627.Citroen%20Berlingo%20XL%20Negra-22082025113547788-1500px.jpg'),
+  ('dacia', 'lodgy', 2018, 'https://midcar.azureedge.net/vehiculos/1308091003359/(FILEminimizer)%20PXL_20251203_162612893.Dacia%20Lodgy%201.6%20SCe%20Gasolina%20%20LPG%20Stepway%20%20Combi%207%20Plazas,%20110Cv,%20H%C3%ADbrido-05122025094038991-1500px.jpg'),
+  ('dacia', 'lodgy', 2019, 'https://midcar.azureedge.net/vehiculos/1308091003359/(FILEminimizer)%20PXL_20251203_162612893.Dacia%20Lodgy%201.6%20SCe%20Gasolina%20%20LPG%20Stepway%20%20Combi%207%20Plazas,%20110Cv,%20H%C3%ADbrido-05122025094038991-1500px.jpg'),
+  ('dacia', 'lodgy', 2020, 'https://midcar.azureedge.net/vehiculos/1308091003359/(FILEminimizer)%20PXL_20251203_162612893.Dacia%20Lodgy%201.6%20SCe%20Gasolina%20%20LPG%20Stepway%20%20Combi%207%20Plazas,%20110Cv,%20H%C3%ADbrido-05122025094038991-1500px.jpg'),
+  ('kia', 'niro', 2022, 'https://midcar.azureedge.net/vehiculos/2109082536383/(FILEminimizer)%20PXL_20250911_175821730.PORTRAIT-21092025082536384-1500px.jpg'),
+  ('ford', 'transit', 2023, 'https://midcar.azureedge.net/vehiculos/1310173908369/Ford%20Transit%20L4H3%20Van%20Trend%20RWD%20170Cv%20Nacional%20IVA%20y%20Garant%C3%ADa%20Incl%20Etiqueta%20C%201-08012026205800263-1500px.jpg'),
+  ('ford', 'transit', 2024, 'https://midcar.azureedge.net/vehiculos/1310173908369/Ford%20Transit%20L4H3%20Van%20Trend%20RWD%20170Cv%20Nacional%20IVA%20y%20Garant%C3%ADa%20Incl%20Etiqueta%20C%201-08012026205800263-1500px.jpg'),
+  ('ford', 'transit', 2025, 'https://midcar.azureedge.net/vehiculos/1310173908369/Ford%20Transit%20L4H3%20Van%20Trend%20RWD%20170Cv%20Nacional%20IVA%20y%20Garant%C3%ADa%20Incl%20Etiqueta%20C%201-08012026205800263-1500px.jpg'),
+  ('bmw', 'serie 3', 2020, 'https://midcar.azureedge.net/vehiculos/1710152204337/PXL_20251017_072917167.PORTRAIT-17102025155911287-1500px.jpg'),
+  ('bmw', 'serie 3', 2021, 'https://midcar.azureedge.net/vehiculos/1710152204337/PXL_20251017_072917167.PORTRAIT-17102025155911287-1500px.jpg'),
+  ('bmw', 'serie 3', 2022, 'https://midcar.azureedge.net/vehiculos/1710152204337/PXL_20251017_072917167.PORTRAIT-17102025155911287-1500px.jpg'),
+  ('volvo', 'xc40', 2017, 'https://midcar.azureedge.net/vehiculos/1811165157199/(FILEminimizer)%20PXL_20251112_170713107.PORTRAIT-18112025165157199-1500px.jpg'),
+  ('volvo', 'xc40', 2018, 'https://midcar.azureedge.net/vehiculos/1811165157199/(FILEminimizer)%20PXL_20251112_170713107.PORTRAIT-18112025165157199-1500px.jpg'),
+  ('volvo', 'xc40', 2019, 'https://midcar.azureedge.net/vehiculos/1811165157199/(FILEminimizer)%20PXL_20251112_170713107.PORTRAIT-18112025165157199-1500px.jpg'),
+  ('peugeot', '508', 2021, 'https://midcar.azureedge.net/vehiculos/2611183144600/(FILEminimizer)%201-31122025112932313-1500px.jpg'),
+  ('dacia', 'sandero', 2018, 'https://midcar.azureedge.net/vehiculos/0612215601211/(FILEminimizer)%20PXL_20251204_160801710.PORTRAIT.ORIGINAL-06122025215601212-1500px.jpg'),
+  ('dacia', 'sandero', 2019, 'https://midcar.azureedge.net/vehiculos/0612215601211/(FILEminimizer)%20PXL_20251204_160801710.PORTRAIT.ORIGINAL-06122025215601212-1500px.jpg'),
+  ('dacia', 'sandero', 2020, 'https://midcar.azureedge.net/vehiculos/0612215601211/(FILEminimizer)%20PXL_20251204_160801710.PORTRAIT.ORIGINAL-06122025215601212-1500px.jpg'),
+  ('dacia', 'logan', 2007, 'https://midcar.azureedge.net/vehiculos/0612222957479/(FILEminimizer)%20PXL_20251205_142534511.PORTRAIT.ORIGINAL-06122025222957479-1500px.jpg'),
+  ('dacia', 'logan', 2008, 'https://midcar.azureedge.net/vehiculos/0612222957479/(FILEminimizer)%20PXL_20251205_142534511.PORTRAIT.ORIGINAL-06122025222957479-1500px.jpg'),
+  ('dacia', 'logan', 2009, 'https://midcar.azureedge.net/vehiculos/0612222957479/(FILEminimizer)%20PXL_20251205_142534511.PORTRAIT.ORIGINAL-06122025222957479-1500px.jpg'),
+  ('ford', 'mondeo', 2021, 'https://midcar.azureedge.net/vehiculos/2612144413405/01%20FORD%20MONDEO%202.0%20H%C3%ADbrido%20138kW%20ST-Line%20HEV%20AT%20SB-30122025112511017-1500px.jpg'),
+  ('ford', 'mondeo', 2022, 'https://midcar.azureedge.net/vehiculos/2612144413405/01%20FORD%20MONDEO%202.0%20H%C3%ADbrido%20138kW%20ST-Line%20HEV%20AT%20SB-30122025112511017-1500px.jpg'),
+  ('peugeot', 'partner', 2022, 'https://midcar.azureedge.net/vehiculos/0302110758770/Peugeot%20Partner%20Premium%201.6%20BlueHDi%20100Cv%20Etiqueta%20C%20IVA%20y%20Grant%C3%ADa%20Incl%20nacional%201Due%C3%B1o%201-10022026174620555-1500px.jpg'),
+  ('citroen', 'berlingo xl', 2019, 'https://midcar.azureedge.net/vehiculos/0302113939015/Citroen%20Berlingo%201.5BlueHdi%20100CV%20XL%203%20Plazas%20IVA%20y%20Garant%C3%ADa%20Inc%20larga%201-15022026120937503-1500px.jpg'),
+  ('ford', 'custom', 2021, 'https://midcar.azureedge.net/vehiculos/0702221028498/Ford%20Tourneo%20Custom%20%202.0EcoBlue%20185Cv%20Hybrid%20MHEV%20Titanium%208%20Plazas%20Etiqueta%20medioambiental%20ECO%20IVA%20Garant%C3%ADa%20Incl%201-19022026190407597-1500px.jpg'),
+  ('ford', 'custom', 2022, 'https://midcar.azureedge.net/vehiculos/0702221028498/Ford%20Tourneo%20Custom%20%202.0EcoBlue%20185Cv%20Hybrid%20MHEV%20Titanium%208%20Plazas%20Etiqueta%20medioambiental%20ECO%20IVA%20Garant%C3%ADa%20Incl%201-19022026190407597-1500px.jpg'),
+  ('ford', 'custom', 2023, 'https://midcar.azureedge.net/vehiculos/0702221028498/Ford%20Tourneo%20Custom%20%202.0EcoBlue%20185Cv%20Hybrid%20MHEV%20Titanium%208%20Plazas%20Etiqueta%20medioambiental%20ECO%20IVA%20Garant%C3%ADa%20Incl%201-19022026190407597-1500px.jpg'),
+  ('fiat', 'fiorino', 2022, 'https://midcar.azureedge.net/vehiculos/1702190845862/Fiat%20Fiorino%201.3Mjet%2080Cv%20Etiqueta%20C%20IVA%20y%20Garant%C3%ADa%20Incluido%201-17022026190845862-1500px.jpg'),
+  ('fiat', 'fiorino', 2023, 'https://midcar.azureedge.net/vehiculos/1702190845862/Fiat%20Fiorino%201.3Mjet%2080Cv%20Etiqueta%20C%20IVA%20y%20Garant%C3%ADa%20Incluido%201-17022026190845862-1500px.jpg')
+)
+UPDATE vehicles v
+SET imagen_principal = mi.img_url
+FROM mongo_imgs mi
+WHERE LOWER(v.marca) = mi.brand
+  AND LOWER(v.modelo) = mi.model
+  AND v."año_matriculacion" = mi.year
+  AND (v.imagen_principal IS NULL OR v.imagen_principal = '');

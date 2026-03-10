@@ -3,7 +3,8 @@
  * Allows content to be edited from the dashboard
  */
 
-import { supabase, isSupabaseConfigured } from './supabase'
+import { getSupabaseClient, isSupabaseConfigured } from './supabase-lazy'
+import type { ContactInfo } from './contact-info'
 
 // ============================================
 // Types
@@ -50,6 +51,9 @@ export interface Benefit {
 export async function getSectionContent(seccion: string): Promise<Record<string, string>> {
   if (!isSupabaseConfigured) return {}
 
+  const supabase = await getSupabaseClient()
+  if (!supabase) return {}
+
   const { data, error } = await supabase
     .from('web_content')
     .select('*')
@@ -74,6 +78,9 @@ export async function getSectionContent(seccion: string): Promise<Record<string,
 export async function getConfig(clave: string): Promise<string | null> {
   if (!isSupabaseConfigured) return null
 
+  const supabase = await getSupabaseClient()
+  if (!supabase) return null
+
   const { data, error } = await supabase
     .from('web_config')
     .select('valor')
@@ -91,6 +98,9 @@ export async function getConfig(clave: string): Promise<string | null> {
 // Get multiple config values
 export async function getConfigs(claves: string[]): Promise<Record<string, string>> {
   if (!isSupabaseConfigured) return {}
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) return {}
 
   const { data, error } = await supabase
     .from('web_config')
@@ -113,6 +123,9 @@ export async function getConfigs(claves: string[]): Promise<Record<string, strin
 // Get all config values
 export async function getAllConfigs(): Promise<Record<string, string>> {
   if (!isSupabaseConfigured) return {}
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) return {}
 
   const { data, error } = await supabase
     .from('web_config')
@@ -302,6 +315,9 @@ export async function getCTAContent(): Promise<CTAContent> {
 export async function getBenefits(): Promise<Benefit[]> {
   if (!isSupabaseConfigured) return []
 
+  const supabase = await getSupabaseClient()
+  if (!supabase) return []
+
   try {
     const { data, error } = await supabase
       .from('web_benefits')
@@ -322,6 +338,9 @@ export async function getBenefits(): Promise<Benefit[]> {
 
 export async function getTestimonials(): Promise<Testimonial[]> {
   if (!isSupabaseConfigured) return []
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) return []
 
   try {
     const { data, error } = await supabase
@@ -344,6 +363,9 @@ export async function getTestimonials(): Promise<Testimonial[]> {
 export async function getFAQs(seccion: string = 'general'): Promise<FAQ[]> {
   if (!isSupabaseConfigured) return []
 
+  const supabase = await getSupabaseClient()
+  if (!supabase) return []
+
   const { data, error } = await supabase
     .from('web_faqs')
     .select('*')
@@ -362,31 +384,6 @@ export async function getFAQs(seccion: string = 'general'): Promise<FAQ[]> {
 // ============================================
 // Contact Info
 // ============================================
-
-export interface ContactInfo {
-  telefono: string
-  whatsapp: string
-  email: string
-  direccion: {
-    calle: string
-    cp: string
-    ciudad: string
-    provincia: string
-  }
-  horario: {
-    lunesJueves: string
-    viernes: string
-    sabado: string
-    domingo: string
-  }
-  googleMapsUrl: string
-  redes: {
-    facebook: string
-    instagram: string
-    youtube: string
-    twitter: string
-  }
-}
 
 export async function getContactInfo(): Promise<ContactInfo> {
   const configs = await getAllConfigs()

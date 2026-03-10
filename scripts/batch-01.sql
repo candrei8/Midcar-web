@@ -1,0 +1,60 @@
+WITH mongo_imgs(brand, model, year, img_url) AS (
+  VALUES
+  ('peugeot', 'partner', 2018, 'https://midcar.blob.core.windows.net/production/vehiculos/1910162129632/(FILEminimizer) 20200825_085347.jpg'),
+  ('renault', 'clio', 2010, 'https://midcar.blob.core.windows.net/production/vehiculos/1910170622107/(FILEminimizer) 20191121_095506.jpg'),
+  ('renault', 'clio', 2011, 'https://midcar.blob.core.windows.net/production/vehiculos/1910170622107/(FILEminimizer) 20191121_095506.jpg'),
+  ('renault', 'clio', 2012, 'https://midcar.blob.core.windows.net/production/vehiculos/1910170622107/(FILEminimizer) 20191121_095506.jpg'),
+  ('renault', 'clio', 2008, 'https://midcar.blob.core.windows.net/production/vehiculos/1910170731728/(FILEminimizer) 20191127_171408.jpg'),
+  ('renault', 'clio', 2009, 'https://midcar.blob.core.windows.net/production/vehiculos/1910170731728/(FILEminimizer) 20191127_171408.jpg'),
+  ('skoda', 'octavia', 2007, 'https://midcar.blob.core.windows.net/production/vehiculos/1910171104505/(FILEminimizer) 20200831_164257.jpg'),
+  ('skoda', 'octavia', 2008, 'https://midcar.blob.core.windows.net/production/vehiculos/1910171104505/(FILEminimizer) 20200831_164257.jpg'),
+  ('skoda', 'octavia', 2009, 'https://midcar.blob.core.windows.net/production/vehiculos/1910171104505/(FILEminimizer) 20200831_164257.jpg'),
+  ('skoda', 'octavia', 2015, 'https://midcar.blob.core.windows.net/production/vehiculos/1910171253725/(FILEminimizer) 20200623_082830.jpg'),
+  ('skoda', 'octavia', 2016, 'https://midcar.blob.core.windows.net/production/vehiculos/1910171253725/(FILEminimizer) 20200623_082830.jpg'),
+  ('skoda', 'octavia', 2017, 'https://midcar.blob.core.windows.net/production/vehiculos/1910171253725/(FILEminimizer) 20200623_082830.jpg'),
+  ('skoda', 'octavia', 2018, 'https://midcar.blob.core.windows.net/production/vehiculos/1910171421163/(FILEminimizer) 20200724_135510.jpg'),
+  ('volkswagen', 'passat', 2012, 'https://midcar.blob.core.windows.net/production/vehiculos/1910174503944/(FILEminimizer)-20191205_090832.jpg'),
+  ('volkswagen', 'passat', 2013, 'https://midcar.blob.core.windows.net/production/vehiculos/1910174503944/(FILEminimizer)-20191205_090832.jpg'),
+  ('volkswagen', 'passat', 2014, 'https://midcar.blob.core.windows.net/production/vehiculos/1910174503944/(FILEminimizer)-20191205_090832.jpg'),
+  ('volkswagen', 'passat', 2011, 'https://midcar.blob.core.windows.net/production/vehiculos/1910174747822/20180206_181614 dsc.jpg'),
+  ('volkswagen', 'passat', 2015, 'https://midcar.blob.core.windows.net/production/vehiculos/1910175134740/(FILEminimizer) 20200319_092736.jpg'),
+  ('volkswagen', 'passat', 2016, 'https://midcar.blob.core.windows.net/production/vehiculos/1910175134740/(FILEminimizer) 20200319_092736.jpg'),
+  ('volkswagen', 'crafter', 2015, 'https://midcar.blob.core.windows.net/production/vehiculos/1910175719521/(FILEminimizer) 20200721_172853.jpg'),
+  ('volkswagen', 'crafter', 2016, 'https://midcar.blob.core.windows.net/production/vehiculos/1910175719521/(FILEminimizer) 20200721_172853.jpg'),
+  ('volkswagen', 'crafter', 2017, 'https://midcar.blob.core.windows.net/production/vehiculos/1910175719521/(FILEminimizer) 20200721_172853.jpg'),
+  ('bmw', 'serie 5', 2011, 'https://midcar.blob.core.windows.net/production/vehiculos/2010172453624/(FILEminimizer) 20190819_200036.jpg'),
+  ('ford', 'transit', 2016, 'https://midcar.blob.core.windows.net/production/vehiculos/2510104121642/(FILEminimizer) 20201025_101722.jpg'),
+  ('ford', 'transit', 2017, 'https://midcar.blob.core.windows.net/production/vehiculos/2510104121642/(FILEminimizer) 20201025_101722.jpg'),
+  ('ford', 'transit', 2018, 'https://midcar.blob.core.windows.net/production/vehiculos/2510104121642/(FILEminimizer) 20201025_101722.jpg'),
+  ('ford', 'focus', 2015, 'https://midcar.blob.core.windows.net/production/vehiculos/1011190150288/(FILEminimizer) 20201110_174728.jpg'),
+  ('ford', 'focus', 2016, 'https://midcar.blob.core.windows.net/production/vehiculos/1011190150288/(FILEminimizer) 20201110_174728.jpg'),
+  ('ford', 'focus', 2017, 'https://midcar.blob.core.windows.net/production/vehiculos/1011190150288/(FILEminimizer) 20201110_174728.jpg'),
+  ('peugeot', '308', 2014, 'https://midcar.blob.core.windows.net/production/vehiculos/1611202547938/(FILEminimizer) 20201116_175315.jpg'),
+  ('peugeot', '308', 2015, 'https://midcar.blob.core.windows.net/production/vehiculos/1611202547938/(FILEminimizer) 20201116_175315.jpg'),
+  ('peugeot', '308', 2016, 'https://midcar.blob.core.windows.net/production/vehiculos/1611202547938/(FILEminimizer) 20201116_175315.jpg'),
+  ('volkswagen', 'passat', 2017, 'https://midcar.blob.core.windows.net/production/vehiculos/1811190416306/(FILEminimizer) 20201207_122144.jpg'),
+  ('volkswagen', 'caddy', 2015, 'https://midcar.blob.core.windows.net/production/vehiculos/2911131429073/(FILEminimizer) 20201129_113157.jpg'),
+  ('volkswagen', 'caddy', 2016, 'https://midcar.blob.core.windows.net/production/vehiculos/2911131429073/(FILEminimizer) 20201129_113157.jpg'),
+  ('volkswagen', 'caddy', 2017, 'https://midcar.blob.core.windows.net/production/vehiculos/2911131429073/(FILEminimizer) 20201129_113157.jpg'),
+  ('ford', 'mondeo', 2017, 'https://midcar.blob.core.windows.net/production/vehiculos/1912212435684/(FILEminimizer) 20210201_181828.jpg'),
+  ('citroen', 'c5', 2013, 'https://midcar.blob.core.windows.net/production/vehiculos/2112185941683/(FILEminimizer) 20201218_120012.jpg'),
+  ('fiat', 'doblo', 2014, 'https://midcar.blob.core.windows.net/production/vehiculos/2312212608709/(FILEminimizer) 20201223_160501.jpg'),
+  ('citroen', 'berlingo', 2012, 'https://midcar.blob.core.windows.net/production/vehiculos/2612223458285/(FILEminimizer) 20201230_174845.jpg'),
+  ('citroen', 'berlingo', 2013, 'https://midcar.blob.core.windows.net/production/vehiculos/2612223458285/(FILEminimizer) 20201230_174845.jpg'),
+  ('citroen', 'berlingo', 2014, 'https://midcar.blob.core.windows.net/production/vehiculos/2612223458285/(FILEminimizer) 20201230_174845.jpg'),
+  ('ford', 'focus', 2018, 'https://midcar.blob.core.windows.net/production/vehiculos/2601185805634/(FILEminimizer) 20210126_122554.jpg'),
+  ('citroen', 'c5', 2017, 'https://midcar.blob.core.windows.net/production/vehiculos/2901134752590/(FILEminimizer) 20210129_090255.jpg'),
+  ('ford', 'transit connect', 2018, 'https://midcar.blob.core.windows.net/production/vehiculos/0102182643867/(FILEminimizer) 20210201_174540.jpg'),
+  ('ford', 'transit', 2015, 'https://midcar.blob.core.windows.net/production/vehiculos/1202081713515/(FILEminimizer) 20210211_174653.jpg'),
+  ('renault', 'clio', 2015, 'https://midcar.blob.core.windows.net/production/vehiculos/1802182617588/(FILEminimizer) 20210218_185112.jpg'),
+  ('renault', 'clio', 2016, 'https://midcar.blob.core.windows.net/production/vehiculos/1802182617588/(FILEminimizer) 20210218_185112.jpg'),
+  ('renault', 'clio', 2017, 'https://midcar.blob.core.windows.net/production/vehiculos/1802182617588/(FILEminimizer) 20210218_185112.jpg'),
+  ('volkswagen', 'transporter', 2014, 'https://midcar.blob.core.windows.net/production/vehiculos/2102105220206/(FILEminimizer) 20210219_181515.jpg')
+)
+UPDATE vehicles v
+SET imagen_principal = mi.img_url
+FROM mongo_imgs mi
+WHERE LOWER(v.marca) = mi.brand
+  AND LOWER(v.modelo) = mi.model
+  AND v."año_matriculacion" = mi.year
+  AND (v.imagen_principal IS NULL OR v.imagen_principal = '');

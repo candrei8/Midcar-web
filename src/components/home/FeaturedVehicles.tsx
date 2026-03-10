@@ -8,10 +8,14 @@ import { cn } from '@/lib/utils'
 import { getVehiclesOnSale, getFeaturedVehicles, getVehicleCount, type Vehicle } from '@/lib/vehicles-service'
 import { ScrollAnimation, StaggerContainer, StaggerItem } from '@/components/ui/ScrollAnimation'
 
+const MAX_IMAGE_RETRIES = 3
+
 function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
   const [imgError, setImgError] = useState(false)
+  const [imageIndex, setImageIndex] = useState(0)
   const monthlyPayment = vehicle.monthlyPayment || Math.round(vehicle.price / 60)
-  const mainImage = vehicle.images?.[0]
+  const images = vehicle.images || []
+  const mainImage = images[imageIndex]
 
   const labelColors: Record<string, string> = {
     'ECO': 'bg-green-500',
@@ -30,7 +34,13 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
             alt={vehicle.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
-            onError={() => setImgError(true)}
+            onError={() => {
+              if (imageIndex < images.length - 1 && imageIndex < MAX_IMAGE_RETRIES - 1) {
+                setImageIndex((prev) => prev + 1)
+                return
+              }
+              setImgError(true)
+            }}
           />
         ) : (
           <div className="flex items-center justify-center h-full">
@@ -70,10 +80,10 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
         )}
 
         {/* Photo count */}
-        {vehicle.images && vehicle.images.length > 1 && (
+        {images.length > 1 && (
           <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
             <Camera className="w-3 h-3" />
-            {vehicle.images.length}
+            {images.length}
           </span>
         )}
       </div>
@@ -124,12 +134,20 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
   )
 }
 
-export function FeaturedVehicles() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [totalCount, setTotalCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
+interface FeaturedVehiclesProps {
+  initialVehicles?: Vehicle[]
+  initialCount?: number
+}
+
+export function FeaturedVehicles({ initialVehicles, initialCount }: FeaturedVehiclesProps = {}) {
+  const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles || [])
+  const [totalCount, setTotalCount] = useState(initialCount || 0)
+  const [isLoading, setIsLoading] = useState(!initialVehicles)
 
   useEffect(() => {
+    // Skip fetch if server already provided data
+    if (initialVehicles && initialVehicles.length > 0) return
+
     async function loadVehicles() {
       setIsLoading(true)
       try {
@@ -150,7 +168,7 @@ export function FeaturedVehicles() {
       }
     }
     loadVehicles()
-  }, [])
+  }, [initialVehicles])
 
   if (isLoading) {
     return (

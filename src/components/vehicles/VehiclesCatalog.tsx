@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Fuel, Gauge, Calendar, Zap, SlidersHorizontal, X, ChevronDown, Grid, List } from 'lucide-react'
+import { Fuel, Gauge, Calendar, Zap, SlidersHorizontal, X, ChevronDown, Grid, List, Search } from 'lucide-react'
 import { formatPrice, formatKilometers, cn } from '@/lib/utils'
 import { getVehiclesOnSale, getBrands, getFuelTypes, type Vehicle } from '@/lib/vehicles-service'
 
@@ -60,6 +60,7 @@ export function VehiclesCatalog() {
     maxKm: 'Sin límite',
     minYear: 'Sin límite',
   })
+  const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('relevancia')
 
   // Load data on mount
@@ -125,6 +126,15 @@ export function VehiclesCatalog() {
   const filteredVehicles = useMemo(() => {
     let result = [...vehicles]
 
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      result = result.filter(v =>
+        v.title.toLowerCase().includes(q) ||
+        v.brand.toLowerCase().includes(q) ||
+        v.model.toLowerCase().includes(q)
+      )
+    }
+
     if (filters.brand !== 'Todas') {
       result = result.filter(v => v.brand === filters.brand)
     }
@@ -169,9 +179,10 @@ export function VehiclesCatalog() {
     }
 
     return result
-  }, [vehicles, filters, sortBy])
+  }, [vehicles, filters, sortBy, searchQuery])
 
   const resetFilters = () => {
+    setSearchQuery('')
     setFilters({
       brand: 'Todas',
       fuel: 'Todos',
@@ -223,6 +234,25 @@ export function VehiclesCatalog() {
         <aside className="hidden lg:block lg:w-72 flex-shrink-0">
           <div className="bg-white rounded-2xl border border-secondary-100 p-6 sticky top-24">
             <h2 className="font-bold text-lg text-secondary-900 mb-6">Filtros</h2>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-secondary-700 mb-2">Buscar</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar por nombre..."
+                  className="select-modern pl-10 pr-3"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <X className="w-4 h-4 text-secondary-400 hover:text-secondary-600" />
+                  </button>
+                )}
+              </div>
+            </div>
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-secondary-700 mb-2">Carrocería</label>
@@ -292,6 +322,23 @@ export function VehiclesCatalog() {
 
         {/* Main Content */}
         <div className="flex-1">
+          {/* Search Bar */}
+          <div className="relative mb-4">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar vehículo por nombre, marca o modelo..."
+              className="w-full pl-12 pr-10 py-3 rounded-xl border border-secondary-200 bg-white text-secondary-900 placeholder:text-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2">
+                <X className="w-5 h-5 text-secondary-400 hover:text-secondary-600" />
+              </button>
+            )}
+          </div>
+
           {/* Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <p className="text-secondary-600">
@@ -362,6 +409,24 @@ export function VehiclesCatalog() {
             </div>
             <div className="p-4 space-y-6 overflow-y-auto h-[calc(100%-60px)]">
               <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-2">Buscar</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar por nombre..."
+                    className="select-modern pl-10 pr-3"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <X className="w-4 h-4 text-secondary-400 hover:text-secondary-600" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-2">Carrocería</label>
                 <select value={filters.bodyType} onChange={(e) => setFilters({ ...filters, bodyType: e.target.value })} className="select-modern">
                   {bodyTypes.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -408,10 +473,14 @@ export function VehiclesCatalog() {
   )
 }
 
+const MAX_IMAGE_RETRIES = 3
+
 function VehicleCard({ vehicle, viewMode }: { vehicle: Vehicle, viewMode: 'grid' | 'list' }) {
   const [imgError, setImgError] = useState(false)
+  const [imageIndex, setImageIndex] = useState(0)
   const monthlyPayment = vehicle.monthlyPayment || Math.round(vehicle.price / 60)
-  const mainImage = vehicle.images?.[0]
+  const images = vehicle.images || []
+  const mainImage = images[imageIndex]
 
   const labelColors: Record<string, string> = {
     'ECO': 'bg-green-500',
@@ -428,7 +497,13 @@ function VehicleCard({ vehicle, viewMode }: { vehicle: Vehicle, viewMode: 'grid'
           alt={vehicle.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
-          onError={() => setImgError(true)}
+          onError={() => {
+            if (imageIndex < images.length - 1 && imageIndex < MAX_IMAGE_RETRIES - 1) {
+              setImageIndex((prev) => prev + 1)
+              return
+            }
+            setImgError(true)
+          }}
         />
       )
     }
@@ -508,9 +583,9 @@ function VehicleCard({ vehicle, viewMode }: { vehicle: Vehicle, viewMode: 'grid'
             {vehicle.label}
           </span>
         )}
-        {vehicle.images.length > 1 && (
+        {images.length > 1 && (
           <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
-            {vehicle.images.length} fotos
+            {images.length} fotos
           </span>
         )}
       </div>

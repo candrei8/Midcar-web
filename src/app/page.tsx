@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { HeroSection } from '@/components/home/HeroSection'
+import dynamic from 'next/dynamic'
 import { SearchSection } from '@/components/home/SearchSection'
 import { FeaturedVehicles } from '@/components/home/FeaturedVehicles'
 import { BenefitsSection } from '@/components/home/BenefitsSection'
@@ -9,6 +9,29 @@ import { CTASection } from '@/components/home/CTASection'
 import { TrustBadges } from '@/components/home/TrustBadges'
 import { AboutSection } from '@/components/home/AboutSection'
 import { WarrantySection } from '@/components/home/WarrantySection'
+import { getFeaturedVehicles, getVehiclesOnSale, getVehicleCount } from '@/lib/vehicles-service'
+
+// Dynamic import: 3D Hero loads asynchronously — doesn't block page render
+const HeroSection = dynamic(
+  () => import('@/components/home/HeroSection').then(mod => ({ default: mod.HeroSection })),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="relative h-[350vh] w-full bg-[#000000]">
+        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-[#000000]">
+          <div className="flex flex-col items-center">
+            <h1 className="text-white text-[15vw] md:text-[9vw] font-bold tracking-[0.3em] uppercase text-center">
+              MIDCAR
+            </h1>
+            <span className="text-white/40 text-[10px] md:text-[11px] tracking-[0.5em] md:tracking-[0.6em] uppercase font-light mt-4">
+              La Nueva Era
+            </span>
+          </div>
+        </div>
+      </section>
+    ),
+  }
+)
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
 
@@ -74,7 +97,18 @@ const homePageSchema = {
   },
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Fetch data server-side — no client-side loading spinner needed
+  const [featured, onSale, count] = await Promise.all([
+    getFeaturedVehicles(),
+    getVehiclesOnSale(),
+    getVehicleCount(),
+  ])
+
+  const featuredVehicles = featured.length >= 4
+    ? featured.slice(0, 8)
+    : [...featured, ...onSale.filter(v => !v.featured)].slice(0, 8)
+
   return (
     <>
       {/* Datos estructurados de la página */}
@@ -86,7 +120,7 @@ export default function HomePage() {
       <HeroSection />
       <SearchSection />
       <TrustBadges />
-      <FeaturedVehicles />
+      <FeaturedVehicles initialVehicles={featuredVehicles} initialCount={count} />
       <BenefitsSection />
       <AboutSection />
       <WarrantySection />

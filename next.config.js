@@ -72,20 +72,20 @@ const nextConfig = {
           // Permissions Policy
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()',
+            value: 'camera=(), microphone=(self), geolocation=(self), interest-cohort=()',
           },
           // Content Security Policy
           {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google-analytics.com https://www.googletagmanager.com https://www.google.com https://www.gstatic.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.google-analytics.com https://www.googletagmanager.com https://www.google.com https://www.gstatic.com https://cdn.voiceflow.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.voiceflow.com",
+              "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai https://cdn.voiceflow.com data:",
               "img-src 'self' data: blob: https: http:",
               "worker-src 'self' blob:",
-              "connect-src 'self' blob: https://*.supabase.co https://www.google-analytics.com https://www.googletagmanager.com",
-              "frame-src 'self' https://www.google.com https://www.youtube.com https://www.youtube-nocookie.com",
+              "connect-src 'self' blob: https://*.supabase.co https://www.google-analytics.com https://www.googletagmanager.com https://general-runtime.voiceflow.com https://runtime-api.voiceflow.com https://*.voiceflow.com wss://general-runtime.voiceflow.com wss://*.voiceflow.com",
+              "frame-src 'self' https://www.google.com https://maps.google.com https://www.openstreetmap.org https://www.youtube.com https://www.youtube-nocookie.com https://*.voiceflow.com",
               "media-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
@@ -95,10 +95,6 @@ const nextConfig = {
             ].join('; '),
           },
           // Cross-Origin policies
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'credentialless',
-          },
           {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',

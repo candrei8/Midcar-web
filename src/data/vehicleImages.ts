@@ -2645,22 +2645,42 @@ export const vehicleAllImages: Record<string, string[]> = {
   "3110153927915": ["https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_092938144%20Ford%20Transit%20Connect%20Furg%C3%B3n%20Van%20%20Trend%20200%20L1%20Automatico-31102025153927915-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093029153.Ford%20Transit%20Connect%20Automatico%20IVA%20y%20Garant%C3%ADa%20Inc-31102025153928028-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093124684.Ford%20Transit%20Connect%20Nacional%20Automatico-31102025153928080-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093151583.PORTRAIT.ORIGINAL-31102025153928131-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093155329.PORTRAIT-31102025153928187-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093209275.PORTRAIT.ORIGINAL-31102025153928239-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093214117.PORTRAIT-31102025153928284-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093240524.PORTRAIT.ORIGINAL-31102025153928332-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093253073.PORTRAIT.ORIGINAL-31102025153928383-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093306689.PORTRAIT.ORIGINAL-31102025153928424-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093324387.Ford%20Transit%20Connect%20Historial%20Mantenimiento%20CarfaxAutomatico-31102025153928513-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093332160.PORTRAIT-31102025153928556-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093339513.PORTRAIT-31102025153928606-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093348902.PORTRAIT-31102025153928640-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093355207.PORTRAIT-31102025153928691-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093702825-31102025153928725-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093706687-31102025153928767-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093709732-31102025153928807-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093719378-31102025153928857-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093816520-31102025153928935-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093839055-31102025153928975-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093916381.PORTRAIT-31102025153929064-1500px.jpg","https://midcar.azureedge.net/vehiculos/3110153927915/(FILEminimizer)%20PXL_20250620_093916382.PORTRAIT-31102025153929119-1500px.jpg"],
 }
 
+export const knownBrokenVehicleImageIds = new Set<string>([
+  "1902162642681",  // Volkswagen Caddy Maxi - images 404 on Azure CDN
+  "1902164619196",  // Vehicle with numeric filenames - images 404 on Azure CDN
+  "1202171353904",  // Ford Mondeo Híbrido - images 404 on Azure CDN
+])
+
+const getFilteredVehicleImages = (id: string): string[] => {
+  if (knownBrokenVehicleImageIds.has(id)) return []
+
+  const allImages = vehicleAllImages[id] || (customFirstImages[id] ? [customFirstImages[id]] : [])
+
+  return allImages.filter((url, index, urls) => {
+    return Boolean(url) && urls.indexOf(url) === index
+  })
+}
+
+export const isKnownBrokenVehicleImage = (id: string): boolean => {
+  return knownBrokenVehicleImageIds.has(id)
+}
+
 // Helper function to get the first/main image for a vehicle
 export const getMainVehicleImage = (id: string): string => {
-  return customFirstImages[id] || ''
+  return getFilteredVehicleImages(id)[0] || ''
 }
 
 // Helper function to get image count for a vehicle
 export const getVehicleImageCount = (id: string): number => {
-  return vehicleImageCounts[id] || 0
+  return getFilteredVehicleImages(id).length
 }
 
 // Helper to check if vehicle has multiple images
 export const hasMultipleImages = (id: string): boolean => {
-  return (vehicleImageCounts[id] || 0) > 1
+  return getFilteredVehicleImages(id).length > 1
 }
 
 // Helper to get all image URLs for a vehicle (from MongoDB data)
 export const getAllVehicleImages = (id: string): string[] => {
-  return vehicleAllImages[id] || (customFirstImages[id] ? [customFirstImages[id]] : [])
+  return getFilteredVehicleImages(id)
 }

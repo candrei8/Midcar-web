@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-import { WhatsAppButton } from '@/components/ui/WhatsAppButton'
+import { VoiceflowChat } from '@/components/ui/VoiceflowChat'
+import { getContactInfo } from '@/lib/content-service'
+import { defaultContactInfo } from '@/lib/contact-info'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
 
@@ -249,11 +251,13 @@ const websiteJsonLd = {
   inLanguage: 'es-ES',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const contactInfo = await getContactInfo().catch(() => defaultContactInfo)
+
   return (
     <html lang="es" dir="ltr">
       <head>
@@ -277,12 +281,12 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col antialiased" suppressHydrationWarning>
-        <Header />
+        <Header contactInfo={contactInfo} />
         <main className="flex-1" id="main-content">
           {children}
         </main>
-        <Footer />
-        <WhatsAppButton />
+        <Footer contactInfo={contactInfo} />
+        <VoiceflowChat />
       </body>
     </html>
   )

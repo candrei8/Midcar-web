@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Send, Check } from 'lucide-react'
+import { Send, Check, AlertCircle } from 'lucide-react'
 
 const asuntoOptions = [
   { value: 'vehiculo', label: 'Información sobre un vehículo' },
@@ -10,6 +10,8 @@ const asuntoOptions = [
   { value: 'tasacion', label: 'Tasación de mi vehículo' },
   { value: 'otro', label: 'Otro' },
 ]
+
+const inputClasses = 'w-full rounded-xl border border-secondary-200 bg-white px-4 py-3.5 text-secondary-900 text-sm placeholder:text-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-200'
 
 export function ContactForm() {
   const [formData, setFormData] = useState({
@@ -70,23 +72,25 @@ export function ContactForm() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-secondary-100 p-8">
-      <h2 className="text-2xl font-bold text-secondary-900 mb-2">
-        Envíanos un mensaje
-      </h2>
-      <p className="text-secondary-500 mb-8">
-        Rellena el formulario y te responderemos lo antes posible.
-      </p>
+    <div>
+      <div className="mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-secondary-900 font-display mb-2">
+          Envíanos un mensaje
+        </h2>
+        <p className="text-secondary-500">
+          Rellena el formulario y te responderemos lo antes posible.
+        </p>
+      </div>
 
       {submitStatus === 'success' && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+        <div className="mb-8 p-5 bg-green-50 border border-green-100 rounded-2xl">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
               <Check className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="font-semibold text-green-800">Mensaje enviado</p>
-              <p className="text-green-600 text-sm">
+              <p className="font-semibold text-green-800">Mensaje enviado correctamente</p>
+              <p className="text-green-600 text-sm mt-1">
                 Nos pondremos en contacto contigo lo antes posible.
               </p>
             </div>
@@ -95,19 +99,26 @@ export function ContactForm() {
       )}
 
       {submitStatus === 'error' && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="font-semibold text-red-800">Error al enviar</p>
-          <p className="text-red-600 text-sm">
-            Ha ocurrido un error. Por favor, inténtalo de nuevo o contáctanos por teléfono.
-          </p>
+        <div className="mb-8 p-5 bg-red-50 border border-red-100 rounded-2xl">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+            </div>
+            <div>
+              <p className="font-semibold text-red-800">Error al enviar</p>
+              <p className="text-red-600 text-sm mt-1">
+                Ha ocurrido un error. Por favor, inténtalo de nuevo o contáctanos por teléfono.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid sm:grid-cols-2 gap-5">
           <div>
             <label htmlFor="nombre" className="block text-sm font-medium text-secondary-700 mb-2">
-              Nombre *
+              Nombre <span className="text-primary-500">*</span>
             </label>
             <input
               type="text"
@@ -117,13 +128,13 @@ export function ContactForm() {
               autoComplete="name"
               value={formData.nombre}
               onChange={handleChange}
-              className="input-modern"
+              className={inputClasses}
               placeholder="Tu nombre"
             />
           </div>
           <div>
             <label htmlFor="telefono" className="block text-sm font-medium text-secondary-700 mb-2">
-              Teléfono *
+              Teléfono <span className="text-primary-500">*</span>
             </label>
             <input
               type="tel"
@@ -133,7 +144,7 @@ export function ContactForm() {
               autoComplete="tel"
               value={formData.telefono}
               onChange={handleChange}
-              className="input-modern"
+              className={inputClasses}
               placeholder="Tu teléfono"
             />
           </div>
@@ -141,7 +152,7 @@ export function ContactForm() {
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-secondary-700 mb-2">
-            Email *
+            Email <span className="text-primary-500">*</span>
           </label>
           <input
             type="email"
@@ -151,7 +162,7 @@ export function ContactForm() {
             autoComplete="email"
             value={formData.email}
             onChange={handleChange}
-            className="input-modern"
+            className={inputClasses}
             placeholder="tu@email.com"
           />
         </div>
@@ -165,7 +176,7 @@ export function ContactForm() {
             name="asunto"
             value={formData.asunto}
             onChange={handleChange}
-            className="select-modern"
+            className={inputClasses + ' appearance-none bg-[url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E")] bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-10'}
           >
             {asuntoOptions.map(option => (
               <option key={option.value} value={option.value}>{option.label}</option>
@@ -175,7 +186,7 @@ export function ContactForm() {
 
         <div>
           <label htmlFor="mensaje" className="block text-sm font-medium text-secondary-700 mb-2">
-            Mensaje *
+            Mensaje <span className="text-primary-500">*</span>
           </label>
           <textarea
             id="mensaje"
@@ -184,7 +195,7 @@ export function ContactForm() {
             rows={5}
             value={formData.mensaje}
             onChange={handleChange}
-            className="input-modern resize-none"
+            className={inputClasses + ' resize-none'}
             placeholder="¿En qué podemos ayudarte?"
           />
         </div>
@@ -197,27 +208,30 @@ export function ContactForm() {
             required
             checked={formData.privacy}
             onChange={handleChange}
-            className="mt-1"
+            className="mt-0.5 h-4 w-4 rounded border-secondary-300 text-primary-600 focus:ring-primary-500"
           />
-          <label htmlFor="privacy" className="text-sm text-secondary-600">
-            Acepto la <a href="/politica-privacidad" className="text-primary-600 hover:underline">política de privacidad</a> y
-            el tratamiento de mis datos para la gestión de mi consulta.
+          <label htmlFor="privacy" className="text-sm text-secondary-500 leading-relaxed">
+            Acepto la{' '}
+            <a href="/politica-privacidad" className="text-primary-600 hover:text-primary-700 underline underline-offset-2">
+              política de privacidad
+            </a>{' '}
+            y el tratamiento de mis datos para la gestión de mi consulta.
           </label>
         </div>
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="btn-primary w-full justify-center text-lg py-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="group relative w-full bg-secondary-900 text-white rounded-xl px-8 py-4 text-sm font-semibold tracking-wide uppercase overflow-hidden hover:bg-secondary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-3"
         >
           {isSubmitting ? (
             <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               Enviando...
             </>
           ) : (
             <>
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
               Enviar mensaje
             </>
           )}

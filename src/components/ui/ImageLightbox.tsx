@@ -16,6 +16,19 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose, alt =
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [isZoomed, setIsZoomed] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
+  const visibleImages = images.filter((image) => !failedImages.has(image))
+  const safeCurrentIndex = visibleImages.length > 0 ? Math.min(currentIndex, visibleImages.length - 1) : 0
+  const currentImage = visibleImages[safeCurrentIndex]
+
+  const handleImageError = (image: string) => {
+    setImageLoaded(false)
+    setFailedImages((prev) => {
+      const next = new Set(prev)
+      next.add(image)
+      return next
+    })
+  }
 
   // Reset state when opening
   useEffect(() => {
@@ -23,8 +36,38 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose, alt =
       setCurrentIndex(initialIndex)
       setIsZoomed(false)
       setImageLoaded(false)
+      setFailedImages(new Set())
     }
-  }, [isOpen, initialIndex])
+  }, [images, initialIndex, isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    if (visibleImages.length === 0) {
+      onClose()
+      return
+    }
+
+    if (currentIndex >= visibleImages.length) {
+      setCurrentIndex(visibleImages.length - 1)
+    }
+  }, [currentIndex, isOpen, onClose, visibleImages.length])
+
+  const goToPrevious = useCallback(() => {
+    setImageLoaded(false)
+    setIsZoomed(false)
+    setCurrentIndex((prev) => (prev === 0 ? visibleImages.length - 1 : prev - 1))
+  }, [visibleImages.length])
+
+  const goToNext = useCallback(() => {
+    setImageLoaded(false)
+    setIsZoomed(false)
+    setCurrentIndex((prev) => (prev === visibleImages.length - 1 ? 0 : prev + 1))
+  }, [visibleImages.length])
+
+  const toggleZoom = () => {
+    setIsZoomed(!isZoomed)
+  }
 
   // Keyboard navigation
   useEffect(() => {
@@ -51,25 +94,9 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose, alt =
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
     }
-  }, [isOpen, currentIndex])
+  }, [goToNext, goToPrevious, isOpen, onClose])
 
-  const goToPrevious = useCallback(() => {
-    setImageLoaded(false)
-    setIsZoomed(false)
-    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
-  }, [images.length])
-
-  const goToNext = useCallback(() => {
-    setImageLoaded(false)
-    setIsZoomed(false)
-    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
-  }, [images.length])
-
-  const toggleZoom = () => {
-    setIsZoomed(!isZoomed)
-  }
-
-  if (!isOpen) return null
+  if (!isOpen || !currentImage) return null
 
   return (
     <div
@@ -98,11 +125,11 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose, alt =
 
       {/* Counter */}
       <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-full bg-white/10 text-white text-sm">
-        {currentIndex + 1} / {images.length}
+        {safeCurrentIndex + 1} / {visibleImages.length}
       </div>
 
       {/* Previous button */}
-      {images.length > 1 && (
+      {visibleImages.length > 1 && (
         <button
           onClick={goToPrevious}
           className="absolute left-2 md:left-4 z-10 p-2 md:p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
@@ -113,7 +140,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose, alt =
       )}
 
       {/* Next button */}
-      {images.length > 1 && (
+      {visibleImages.length > 1 && (
         <button
           onClick={goToNext}
           className="absolute right-2 md:right-4 z-10 p-2 md:p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
@@ -139,14 +166,15 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose, alt =
         )}
 
         <img
-          src={images[currentIndex]}
-          alt={`${alt} ${currentIndex + 1}`}
+          src={currentImage}
+          alt={`${alt} ${safeCurrentIndex + 1}`}
           className={cn(
             "max-w-full max-h-full object-contain transition-all duration-300",
             isZoomed ? "scale-150 cursor-zoom-out" : "scale-100 cursor-zoom-in",
             imageLoaded ? "opacity-100" : "opacity-0"
           )}
           onLoad={() => setImageLoaded(true)}
+          onError={() => handleImageError(currentImage)}
           onClick={(e) => {
             e.stopPropagation()
             toggleZoom()
@@ -155,9 +183,9 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose, alt =
       </div>
 
       {/* Thumbnail strip */}
-      {images.length > 1 && (
+      {visibleImages.length > 1 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2 max-w-[90vw] overflow-x-auto pb-2 px-4">
-          {images.map((img, idx) => (
+          {visibleImages.map((img, idx) => (
             <button
               key={idx}
               onClick={() => {
@@ -167,7 +195,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose, alt =
               }}
               className={cn(
                 "flex-shrink-0 w-16 h-12 md:w-20 md:h-14 rounded-lg overflow-hidden border-2 transition-all",
-                currentIndex === idx
+                safeCurrentIndex === idx
                   ? "border-white opacity-100"
                   : "border-transparent opacity-50 hover:opacity-75"
               )}
@@ -176,6 +204,8 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose, alt =
                 src={img}
                 alt={`Miniatura ${idx + 1}`}
                 className="w-full h-full object-cover"
+                loading="lazy"
+                onError={() => handleImageError(img)}
               />
             </button>
           ))}
