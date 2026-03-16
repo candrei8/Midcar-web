@@ -46,11 +46,16 @@ interface DBVehicle {
 // Transform database vehicle to web format
 function transformToWebFormat(dbVehicle: DBVehicle): Vehicle {
   // Try to find static vehicle by UUID id first, then by stock_id (MongoDB id)
+  // Strip 'STK-' prefix for static lookup (static data uses raw IDs)
+  const stockIdRaw = dbVehicle.stock_id?.replace(/^STK-/, '')
   const staticVehicle = staticVehiclesById.get(dbVehicle.id)
+    || (stockIdRaw ? staticVehiclesById.get(stockIdRaw) : undefined)
     || (dbVehicle.stock_id ? staticVehiclesById.get(dbVehicle.stock_id) : undefined)
   const staticImages = staticVehicle?.images || []
   // Also try to get images directly from vehicleImages data by stock_id
-  const mongoImages = dbVehicle.stock_id ? getAllVehicleImages(dbVehicle.stock_id) : []
+  // Strip 'STK-' prefix if present (Supabase uses 'STK-' prefix, vehicleImages uses raw ID)
+  const rawStockId = dbVehicle.stock_id?.replace(/^STK-/, '') || ''
+  const mongoImages = rawStockId ? getAllVehicleImages(rawStockId) : []
   const fuelMap: Record<string, string> = {
     'diesel': 'Diesel',
     'gasolina': 'Gasolina',
