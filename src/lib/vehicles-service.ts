@@ -39,6 +39,7 @@ interface DBVehicle {
   precio_venta: number
   descuento: number
   imagen_principal: string
+  imagenes?: Array<{ url: string; orden: number; es_principal?: boolean }>
   en_oferta: boolean
   descripcion?: string
 }
@@ -52,6 +53,11 @@ function transformToWebFormat(dbVehicle: DBVehicle): Vehicle {
     || (stockIdRaw ? staticVehiclesById.get(stockIdRaw) : undefined)
     || (dbVehicle.stock_id ? staticVehiclesById.get(dbVehicle.stock_id) : undefined)
   const staticImages = staticVehicle?.images || []
+  // Extract image URLs from the dashboard's 'imagenes' JSONB array, sorted by orden
+  const dbImages = (dbVehicle.imagenes || [])
+    .sort((a, b) => a.orden - b.orden)
+    .map(img => img.url)
+    .filter(Boolean)
   // Also try to get images directly from vehicleImages data by stock_id
   // Strip 'STK-' prefix if present (Supabase uses 'STK-' prefix, vehicleImages uses raw ID)
   const rawStockId = dbVehicle.stock_id?.replace(/^STK-/, '') || ''
@@ -113,13 +119,15 @@ function transformToWebFormat(dbVehicle: DBVehicle): Vehicle {
     label: dbVehicle.etiqueta_dgt
       ? dbVehicle.etiqueta_dgt.replace(/^Etiqueta\s+/i, '').replace(/\s+Emisiones$/i, '').trim() || undefined
       : undefined,
-    images: staticImages.length
-      ? staticImages
-      : mongoImages.length
-        ? mongoImages
-        : dbVehicle.imagen_principal
-          ? [dbVehicle.imagen_principal]
-          : [],
+    images: dbImages.length
+      ? dbImages
+      : staticImages.length
+        ? staticImages
+        : mongoImages.length
+          ? mongoImages
+          : dbVehicle.imagen_principal
+            ? [dbVehicle.imagen_principal]
+            : [],
     featured: dbVehicle.destacado,
     monthlyPayment,
     description: dbVehicle.descripcion || staticVehicle?.description || undefined,
