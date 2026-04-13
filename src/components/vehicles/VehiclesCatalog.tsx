@@ -3,9 +3,12 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Fuel, Gauge, Calendar, Zap, SlidersHorizontal, X, ChevronDown, Grid, List, Search } from 'lucide-react'
 import { formatPrice, formatKilometers, cn } from '@/lib/utils'
-import { getVehiclesOnSale, getBrands, getFuelTypes, type Vehicle } from '@/lib/vehicles-service'
+import { getVehiclesOnSale, getBrands, getFuelTypes, getModels, getLabels, extractBaseModel, type Vehicle } from '@/lib/vehicles-service'
+
+const VEHICLES_PER_PAGE = 24
 
 const bodyTypes = [
   { id: 'todas', name: 'Todas' },
@@ -39,23 +42,30 @@ const kmRanges = [
   { label: '200.000 km', value: 200000 },
 ]
 const yearRanges = ['Sin límite', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015']
+const transmissionOptions = ['Todas', 'Manual', 'Automático']
 
 export function VehiclesCatalog() {
   const searchParams = useSearchParams()
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [isLoading, setIsLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(VEHICLES_PER_PAGE)
 
   // Dynamic data
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [brands, setBrands] = useState<string[]>(['Todas'])
   const [fuelTypes, setFuelTypes] = useState<string[]>(['Todos'])
+  const [models, setModels] = useState<string[]>(['Todos'])
+  const [labels, setLabels] = useState<string[]>(['Todas'])
 
   // Initialize filters from URL params
   const [filters, setFilters] = useState({
     brand: 'Todas',
+    model: 'Todos',
     fuel: 'Todos',
     bodyType: 'todas',
+    transmission: 'Todas',
+    label: 'Todas',
     maxPrice: 'Sin límite',
     maxKm: 'Sin límite',
     minYear: 'Sin límite',
@@ -68,14 +78,16 @@ export function VehiclesCatalog() {
     async function loadData() {
       setIsLoading(true)
       try {
-        const [vehiclesData, brandsData, fuelTypesData] = await Promise.all([
+        const [vehiclesData, brandsData, fuelTypesData, labelsData] = await Promise.all([
           getVehiclesOnSale(),
           getBrands(),
           getFuelTypes(),
+          getLabels(),
         ])
         setVehicles(vehiclesData)
         setBrands(['Todas', ...brandsData])
         setFuelTypes(['Todos', ...fuelTypesData])
+        setLabels(['Todas', ...labelsData])
       } catch (error) {
         console.error('Error loading data:', error)
       } finally {
@@ -84,6 +96,21 @@ export function VehiclesCatalog() {
     }
     loadData()
   }, [])
+
+  // Load models when brand changes
+  useEffect(() => {
+    async function loadModels() {
+      const brand = filters.brand !== 'Todas' ? filters.brand : undefined
+      const modelsData = await getModels(brand)
+      setModels(['Todos', ...modelsData])
+    }
+    loadModels()
+  }, [filters.brand])
+
+  // Reset model when brand changes
+  const handleBrandChange = (brand: string) => {
+    setFilters(prev => ({ ...prev, brand, model: 'Todos' }))
+  }
 
   // Parse URL params on mount
   useEffect(() => {
@@ -138,11 +165,20 @@ export function VehiclesCatalog() {
     if (filters.brand !== 'Todas') {
       result = result.filter(v => v.brand === filters.brand)
     }
+    if (filters.model !== 'Todos') {
+      result = result.filter(v => extractBaseModel(v.model) === filters.model)
+    }
     if (filters.fuel !== 'Todos') {
       result = result.filter(v => v.fuel === filters.fuel)
     }
     if (filters.bodyType !== 'todas') {
       result = result.filter(v => v.bodyType === filters.bodyType)
+    }
+    if (filters.transmission !== 'Todas') {
+      result = result.filter(v => v.transmission === filters.transmission)
+    }
+    if (filters.label !== 'Todas') {
+      result = result.filter(v => v.label === filters.label)
     }
     if (filters.maxPrice !== 'Sin límite') {
       const maxPrice = parseInt(filters.maxPrice.replace(/[^0-9]/g, ''))
@@ -181,17 +217,160 @@ export function VehiclesCatalog() {
     return result
   }, [vehicles, filters, sortBy, searchQuery])
 
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(VEHICLES_PER_PAGE)
+  }, [filters, sortBy, searchQuery])
+
+  const visibleVehicles = filteredVehicles.slice(0, visibleCount)
+  const hasMore = visibleCount < filteredVehicles.length
+
   const resetFilters = () => {
     setSearchQuery('')
     setFilters({
       brand: 'Todas',
+      model: 'Todos',
       fuel: 'Todos',
       bodyType: 'todas',
+      transmission: 'Todas',
+      label: 'Todas',
       maxPrice: 'Sin límite',
       maxKm: 'Sin límite',
       minYear: 'Sin límite',
     })
   }
+
+  // Shared filter dropdowns (used in both desktop and mobile)
+  const FilterDropdown = ({ label, value, onChange, options, className }: {
+    label: string
+    value: string
+    onChange: (val: string) => void
+    options: string[] | { id: string; name: string }[]
+    className?: string
+  }) => (
+    <div className={className}>
+      <label className="block text-sm font-medium text-secondary-700 mb-2">{label}</label>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="select-modern pr-10"
+        >
+          {options.map((opt) => {
+            const id = typeof opt === 'string' ? opt : opt.id
+            const name = typeof opt === 'string' ? opt : opt.name
+            return <option key={id} value={id}>{name}</option>
+          })}
+        </select>
+        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
+      </div>
+    </div>
+  )
+
+  const labelDisplayName = (l: string) => l === '0' ? '0 Emisiones' : l
+
+  const renderFilters = () => (
+    <>
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-secondary-700 mb-2">Buscar</label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por nombre..."
+            className="select-modern pl-10 pr-3"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+              <X className="w-4 h-4 text-secondary-400 hover:text-secondary-600" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <FilterDropdown
+        label="Carrocería"
+        value={filters.bodyType}
+        onChange={(val) => setFilters({ ...filters, bodyType: val })}
+        options={bodyTypes}
+        className="mb-6"
+      />
+
+      <FilterDropdown
+        label="Marca"
+        value={filters.brand}
+        onChange={handleBrandChange}
+        options={brands}
+        className="mb-6"
+      />
+
+      <FilterDropdown
+        label="Modelo"
+        value={filters.model}
+        onChange={(val) => setFilters({ ...filters, model: val })}
+        options={models}
+        className="mb-6"
+      />
+
+      <FilterDropdown
+        label="Combustible"
+        value={filters.fuel}
+        onChange={(val) => setFilters({ ...filters, fuel: val })}
+        options={fuelTypes}
+        className="mb-6"
+      />
+
+      <FilterDropdown
+        label="Transmisión"
+        value={filters.transmission}
+        onChange={(val) => setFilters({ ...filters, transmission: val })}
+        options={transmissionOptions}
+        className="mb-6"
+      />
+
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-secondary-700 mb-2">Etiqueta DGT</label>
+        <div className="relative">
+          <select
+            value={filters.label}
+            onChange={(e) => setFilters({ ...filters, label: e.target.value })}
+            className="select-modern pr-10"
+          >
+            {labels.map((l) => (
+              <option key={l} value={l}>{labelDisplayName(l)}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
+        </div>
+      </div>
+
+      <FilterDropdown
+        label="Precio máximo"
+        value={filters.maxPrice}
+        onChange={(val) => setFilters({ ...filters, maxPrice: val })}
+        options={priceRanges.map(p => p.label)}
+        className="mb-6"
+      />
+
+      <FilterDropdown
+        label="Kilómetros máx."
+        value={filters.maxKm}
+        onChange={(val) => setFilters({ ...filters, maxKm: val })}
+        options={kmRanges.map(k => k.label)}
+        className="mb-6"
+      />
+
+      <FilterDropdown
+        label="Año desde"
+        value={filters.minYear}
+        onChange={(val) => setFilters({ ...filters, minYear: val })}
+        options={yearRanges}
+        className="mb-6"
+      />
+    </>
+  )
 
   if (isLoading) {
     return (
@@ -201,7 +380,7 @@ export function VehiclesCatalog() {
             <div className="bg-white rounded-2xl border border-secondary-100 p-6">
               <div className="h-6 bg-secondary-200 rounded w-1/2 mb-6 animate-pulse" />
               <div className="space-y-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
                   <div key={i} className="h-12 bg-secondary-100 rounded-xl animate-pulse" />
                 ))}
               </div>
@@ -234,86 +413,7 @@ export function VehiclesCatalog() {
         <aside className="hidden lg:block lg:w-72 flex-shrink-0">
           <div className="bg-white rounded-2xl border border-secondary-100 p-6 sticky top-24">
             <h2 className="font-bold text-lg text-secondary-900 mb-6">Filtros</h2>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-secondary-700 mb-2">Buscar</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar por nombre..."
-                  className="select-modern pl-10 pr-3"
-                />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <X className="w-4 h-4 text-secondary-400 hover:text-secondary-600" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-secondary-700 mb-2">Carrocería</label>
-              <div className="relative">
-                <select value={filters.bodyType} onChange={(e) => setFilters({ ...filters, bodyType: e.target.value })} className="select-modern pr-10">
-                  {bodyTypes.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-secondary-700 mb-2">Marca</label>
-              <div className="relative">
-                <select value={filters.brand} onChange={(e) => setFilters({ ...filters, brand: e.target.value })} className="select-modern pr-10">
-                  {brands.map((b) => <option key={b} value={b}>{b}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-secondary-700 mb-2">Combustible</label>
-              <div className="relative">
-                <select value={filters.fuel} onChange={(e) => setFilters({ ...filters, fuel: e.target.value })} className="select-modern pr-10">
-                  {fuelTypes.map((f) => <option key={f} value={f}>{f}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-secondary-700 mb-2">Precio máximo</label>
-              <div className="relative">
-                <select value={filters.maxPrice} onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })} className="select-modern pr-10">
-                  {priceRanges.map((p) => <option key={p.label} value={p.label}>{p.label}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-secondary-700 mb-2">Kilómetros máx.</label>
-              <div className="relative">
-                <select value={filters.maxKm} onChange={(e) => setFilters({ ...filters, maxKm: e.target.value })} className="select-modern pr-10">
-                  {kmRanges.map((k) => <option key={k.label} value={k.label}>{k.label}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-secondary-700 mb-2">Año desde</label>
-              <div className="relative">
-                <select value={filters.minYear} onChange={(e) => setFilters({ ...filters, minYear: e.target.value })} className="select-modern pr-10">
-                  {yearRanges.map((y) => <option key={y} value={y}>{y}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
-              </div>
-            </div>
-
+            {renderFilters()}
             <button onClick={resetFilters} className="w-full py-2 text-sm text-primary-600 hover:text-primary-700 font-medium">
               Limpiar filtros
             </button>
@@ -381,10 +481,27 @@ export function VehiclesCatalog() {
 
           {/* Vehicle Grid */}
           <div className={cn('grid gap-6', viewMode === 'grid' ? 'md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1')}>
-            {filteredVehicles.map((vehicle) => (
+            {visibleVehicles.map((vehicle) => (
               <VehicleCard key={vehicle.id} vehicle={vehicle} viewMode={viewMode} />
             ))}
           </div>
+
+          {/* Load More / Counter */}
+          {filteredVehicles.length > 0 && (
+            <div className="mt-8 text-center">
+              <p className="text-sm text-secondary-500 mb-4">
+                Mostrando {Math.min(visibleCount, filteredVehicles.length)} de {filteredVehicles.length} vehículos
+              </p>
+              {hasMore && (
+                <button
+                  onClick={() => setVisibleCount(prev => prev + VEHICLES_PER_PAGE)}
+                  className="btn-primary"
+                >
+                  Ver más vehículos
+                </button>
+              )}
+            </div>
+          )}
 
           {/* No results */}
           {filteredVehicles.length === 0 && (
@@ -407,61 +524,8 @@ export function VehiclesCatalog() {
               <h2 className="font-bold text-lg">Filtros</h2>
               <button onClick={() => setShowFilters(false)}><X className="w-6 h-6" /></button>
             </div>
-            <div className="p-4 space-y-6 overflow-y-auto h-[calc(100%-60px)]">
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">Buscar</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Buscar por nombre..."
-                    className="select-modern pl-10 pr-3"
-                  />
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <X className="w-4 h-4 text-secondary-400 hover:text-secondary-600" />
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">Carrocería</label>
-                <select value={filters.bodyType} onChange={(e) => setFilters({ ...filters, bodyType: e.target.value })} className="select-modern">
-                  {bodyTypes.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">Marca</label>
-                <select value={filters.brand} onChange={(e) => setFilters({ ...filters, brand: e.target.value })} className="select-modern">
-                  {brands.map((b) => <option key={b} value={b}>{b}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">Combustible</label>
-                <select value={filters.fuel} onChange={(e) => setFilters({ ...filters, fuel: e.target.value })} className="select-modern">
-                  {fuelTypes.map((f) => <option key={f} value={f}>{f}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">Precio máximo</label>
-                <select value={filters.maxPrice} onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })} className="select-modern">
-                  {priceRanges.map((p) => <option key={p.label} value={p.label}>{p.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">Kilómetros máx.</label>
-                <select value={filters.maxKm} onChange={(e) => setFilters({ ...filters, maxKm: e.target.value })} className="select-modern">
-                  {kmRanges.map((k) => <option key={k.label} value={k.label}>{k.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">Año desde</label>
-                <select value={filters.minYear} onChange={(e) => setFilters({ ...filters, minYear: e.target.value })} className="select-modern">
-                  {yearRanges.map((y) => <option key={y} value={y}>{y}</option>)}
-                </select>
-              </div>
+            <div className="p-4 overflow-y-auto h-[calc(100%-60px)]">
+              {renderFilters()}
               <button onClick={() => setShowFilters(false)} className="btn-primary w-full justify-center">
                 Ver {filteredVehicles.length} resultados
               </button>
@@ -492,9 +556,11 @@ function VehicleCard({ vehicle, viewMode }: { vehicle: Vehicle, viewMode: 'grid'
   const ImageContent = () => {
     if (mainImage && !imgError) {
       return (
-        <img
+        <Image
           src={mainImage}
           alt={vehicle.title}
+          width={400}
+          height={300}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
           onError={() => {

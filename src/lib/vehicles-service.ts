@@ -4,16 +4,48 @@
  */
 
 import { getSupabaseClient, isSupabaseConfigured } from './supabase-lazy'
-import { vehicles as staticVehicles, type Vehicle as StaticVehicle } from '@/data/vehicles'
-import { getAllVehicleImages } from '@/data/vehicleImages'
+import type { Vehicle as StaticVehicle } from '@/data/vehicles'
 
 // Re-export the Vehicle type from data
 export type Vehicle = StaticVehicle
 
-const staticVehiclesById = new Map(staticVehicles.map((vehicle) => [vehicle.id, vehicle]))
+// ---- Lazy-loaded static data (avoids bundling ~5MB in client) ----
 
-// Pre-built slug index for O(1) lookups (instead of O(n) array.find)
-const staticVehiclesBySlug = new Map(staticVehicles.map((vehicle) => [vehicle.slug, vehicle]))
+let _staticVehicles: Vehicle[] | null = null
+let _staticVehiclesById: Map<string, Vehicle> | null = null
+let _staticVehiclesBySlug: Map<string, Vehicle> | null = null
+let _vehicleImagesModule: { getAllVehicleImages: (id: string) => string[] } | null = null
+
+async function getStaticVehiclesData(): Promise<Vehicle[]> {
+  if (!_staticVehicles) {
+    const { vehicles } = await import('@/data/vehicles')
+    _staticVehicles = vehicles
+  }
+  return _staticVehicles
+}
+
+async function getStaticVehiclesById(): Promise<Map<string, Vehicle>> {
+  if (!_staticVehiclesById) {
+    const vehicles = await getStaticVehiclesData()
+    _staticVehiclesById = new Map(vehicles.map(v => [v.id, v]))
+  }
+  return _staticVehiclesById
+}
+
+async function getStaticVehiclesBySlug(): Promise<Map<string, Vehicle>> {
+  if (!_staticVehiclesBySlug) {
+    const vehicles = await getStaticVehiclesData()
+    _staticVehiclesBySlug = new Map(vehicles.map(v => [v.slug, v]))
+  }
+  return _staticVehiclesBySlug
+}
+
+async function getVehicleImagesModule() {
+  if (!_vehicleImagesModule) {
+    _vehicleImagesModule = await import('@/data/vehicleImages')
+  }
+  return _vehicleImagesModule
+}
 
 // Cached filtered results (computed once, reused)
 let _cachedOnSale: Vehicle[] | null = null
@@ -45,13 +77,16 @@ interface DBVehicle {
 }
 
 // Transform database vehicle to web format
-function transformToWebFormat(dbVehicle: DBVehicle): Vehicle {
+async function transformToWebFormat(dbVehicle: DBVehicle): Promise<Vehicle> {
+  const vehiclesById = await getStaticVehiclesById()
+  const imagesModule = await getVehicleImagesModule()
+
   // Try to find static vehicle by UUID id first, then by stock_id (MongoDB id)
   // Strip 'STK-' prefix for static lookup (static data uses raw IDs)
   const stockIdRaw = dbVehicle.stock_id?.replace(/^STK-/, '')
-  const staticVehicle = staticVehiclesById.get(dbVehicle.id)
-    || (stockIdRaw ? staticVehiclesById.get(stockIdRaw) : undefined)
-    || (dbVehicle.stock_id ? staticVehiclesById.get(dbVehicle.stock_id) : undefined)
+  const staticVehicle = vehiclesById.get(dbVehicle.id)
+    || (stockIdRaw ? vehiclesById.get(stockIdRaw) : undefined)
+    || (dbVehicle.stock_id ? vehiclesById.get(dbVehicle.stock_id) : undefined)
   const staticImages = staticVehicle?.images || []
   // Extract image URLs from the dashboard's 'imagenes' JSONB array, sorted by orden
   const dbImages = (dbVehicle.imagenes || [])
@@ -61,7 +96,7 @@ function transformToWebFormat(dbVehicle: DBVehicle): Vehicle {
   // Also try to get images directly from vehicleImages data by stock_id
   // Strip 'STK-' prefix if present (Supabase uses 'STK-' prefix, vehicleImages uses raw ID)
   const rawStockId = dbVehicle.stock_id?.replace(/^STK-/, '') || ''
-  const mongoImages = rawStockId ? getAllVehicleImages(rawStockId) : []
+  const mongoImages = rawStockId ? imagesModule.getAllVehicleImages(rawStockId) : []
   const fuelMap: Record<string, string> = {
     'diesel': 'Diesel',
     'gasolina': 'Gasolina',
@@ -141,29 +176,69 @@ function transformToWebFormat(dbVehicle: DBVehicle): Vehicle {
 
 // ---- Static data helpers ----
 
-function getStaticOnSale(): Vehicle[] {
+async function getStaticOnSale(): Promise<Vehicle[]> {
   if (!_cachedOnSale) {
-    _cachedOnSale = staticVehicles.filter(v => v.onSale || v.status === 'disponible')
+    const vehicles = await getStaticVehiclesData()
+    _cachedOnSale = vehicles.filter(v => v.onSale || v.status === 'disponible')
   }
   return _cachedOnSale
 }
 
-function getStaticFeatured(): Vehicle[] {
-  return getStaticOnSale().filter(v => v.featured).slice(0, 8)
+async function getStaticFeatured(): Promise<Vehicle[]> {
+  const onSale = await getStaticOnSale()
+  return onSale.filter(v => v.featured).slice(0, 8)
 }
 
-function getStaticBrands(): string[] {
+async function getStaticBrands(): Promise<string[]> {
   if (!_cachedBrands) {
-    _cachedBrands = Array.from(new Set(getStaticOnSale().map(v => v.brand))).sort()
+    const onSale = await getStaticOnSale()
+    _cachedBrands = Array.from(new Set(onSale.map(v => v.brand))).sort()
   }
   return _cachedBrands
 }
 
-function getStaticFuelTypes(): string[] {
+async function getStaticFuelTypes(): Promise<string[]> {
   if (!_cachedFuelTypes) {
-    _cachedFuelTypes = Array.from(new Set(getStaticOnSale().map(v => v.fuel))).sort()
+    const onSale = await getStaticOnSale()
+    _cachedFuelTypes = Array.from(new Set(onSale.map(v => v.fuel))).sort()
   }
   return _cachedFuelTypes
+}
+
+// ---- Model extraction ----
+
+/**
+ * Extracts the base model name from a full model string containing specs.
+ * E.g. "Fiorino 1.3Mjet E6+ 80Cv IVA..." → "Fiorino"
+ *      "Transit Connect Van 1.5EcoBlue..." → "Transit Connect"
+ *      "208 1.5 BlueHDi Allure..." → "208"
+ */
+export function extractBaseModel(fullModel: string): string {
+  const words = fullModel.trim().split(/\s+/)
+
+  // Patterns indicating engine/tech specs (stop collecting model name)
+  const enginePattern = /^(BlueHD[Ii]|EcoBlue|TDCi|TSI|GDI|DSG|EAT\d|S&S|BMT?|TGI|SCe|ePower|EcoTGI|Mjet|HDi|CDTi|dCi|TFSI|CRDi|MPI|GLP|GNC)/i
+  // Non-model descriptor words (body types, trims, marketing)
+  const stopPattern = /^(Van|Furgón|Furgon|Combi|Kombi|Premium|Allure|Active|Essential|Profesional|Professional|Etiqueta|IVA|Nacional|Garantía|Garantia|Trend|Xcellence|Style|Tecno|DCT|Confort|Pack|Larga|Corta|del|con|Incl|Incluido|Incluida|Stepway|Automático|Automatico|Unico|Único|Historial|pocos|e-Golf|e-208|e-2008)$/i
+
+  const modelParts: string[] = []
+
+  for (const word of words) {
+    // Stop at engine displacement like "1.3Mjet", "1.5", "2.0EcoBlue"
+    if (/^\d+\.\d+/.test(word)) break
+    // Stop at CV pattern like "80Cv", "100Cv"
+    if (/^\d+[Cc][Vv]/.test(word)) break
+    // Stop at kW pattern
+    if (/^\d+kW/.test(word)) break
+    // Stop at engine/tech keywords
+    if (enginePattern.test(word)) break
+    // Stop at descriptor words
+    if (stopPattern.test(word)) break
+
+    modelParts.push(word)
+  }
+
+  return modelParts.join(' ').trim() || words[0]
 }
 
 // ---- Public API ----
@@ -171,12 +246,12 @@ function getStaticFuelTypes(): string[] {
 // Get all vehicles
 export async function getVehicles(): Promise<Vehicle[]> {
   if (!isSupabaseConfigured) {
-    return staticVehicles
+    return await getStaticVehiclesData()
   }
 
   const supabase = await getSupabaseClient()
   if (!supabase) {
-    return staticVehicles
+    return await getStaticVehiclesData()
   }
 
   const { data, error } = await supabase
@@ -187,21 +262,21 @@ export async function getVehicles(): Promise<Vehicle[]> {
 
   if (error) {
     console.error('Error fetching vehicles:', error)
-    return staticVehicles
+    return await getStaticVehiclesData()
   }
 
-  return (data || []).map(transformToWebFormat)
+  return await Promise.all((data || []).map(transformToWebFormat))
 }
 
 // Get vehicles on sale
 export async function getVehiclesOnSale(): Promise<Vehicle[]> {
   if (!isSupabaseConfigured) {
-    return getStaticOnSale()
+    return await getStaticOnSale()
   }
 
   const supabase = await getSupabaseClient()
   if (!supabase) {
-    return getStaticOnSale()
+    return await getStaticOnSale()
   }
 
   const { data, error } = await supabase
@@ -213,21 +288,21 @@ export async function getVehiclesOnSale(): Promise<Vehicle[]> {
 
   if (error) {
     console.error('Error fetching vehicles on sale:', error)
-    return getStaticOnSale()
+    return await getStaticOnSale()
   }
 
-  return (data || []).map(transformToWebFormat)
+  return await Promise.all((data || []).map(transformToWebFormat))
 }
 
 // Get featured vehicles
 export async function getFeaturedVehicles(): Promise<Vehicle[]> {
   if (!isSupabaseConfigured) {
-    return getStaticFeatured()
+    return await getStaticFeatured()
   }
 
   const supabase = await getSupabaseClient()
   if (!supabase) {
-    return getStaticFeatured()
+    return await getStaticFeatured()
   }
 
   const { data, error } = await supabase
@@ -239,21 +314,23 @@ export async function getFeaturedVehicles(): Promise<Vehicle[]> {
 
   if (error) {
     console.error('Error fetching featured vehicles:', error)
-    return getStaticFeatured()
+    return await getStaticFeatured()
   }
 
-  return (data || []).map(transformToWebFormat)
+  return await Promise.all((data || []).map(transformToWebFormat))
 }
 
 // Get vehicle by ID
 export async function getVehicleById(id: string): Promise<Vehicle | null> {
   if (!isSupabaseConfigured) {
-    return staticVehicles.find(v => v.id === id) || null
+    const vehicles = await getStaticVehiclesData()
+    return vehicles.find(v => v.id === id) || null
   }
 
   const supabase = await getSupabaseClient()
   if (!supabase) {
-    return staticVehicles.find(v => v.id === id) || null
+    const vehicles = await getStaticVehiclesData()
+    return vehicles.find(v => v.id === id) || null
   }
 
   const { data, error } = await supabase
@@ -264,21 +341,24 @@ export async function getVehicleById(id: string): Promise<Vehicle | null> {
 
   if (error) {
     console.error('Error fetching vehicle by ID:', error)
-    return staticVehicles.find(v => v.id === id) || null
+    const vehicles = await getStaticVehiclesData()
+    return vehicles.find(v => v.id === id) || null
   }
 
-  return data ? transformToWebFormat(data) : null
+  return data ? await transformToWebFormat(data) : null
 }
 
 // Get vehicle by stock_id (original web ID)
 export async function getVehicleByStockId(stockId: string): Promise<Vehicle | null> {
   if (!isSupabaseConfigured) {
-    return staticVehicles.find(v => v.id === stockId) || null
+    const vehicles = await getStaticVehiclesData()
+    return vehicles.find(v => v.id === stockId) || null
   }
 
   const supabase = await getSupabaseClient()
   if (!supabase) {
-    return staticVehicles.find(v => v.id === stockId) || null
+    const vehicles = await getStaticVehiclesData()
+    return vehicles.find(v => v.id === stockId) || null
   }
 
   const { data, error } = await supabase
@@ -289,17 +369,18 @@ export async function getVehicleByStockId(stockId: string): Promise<Vehicle | nu
 
   if (error) {
     console.error('Error fetching vehicle by stock_id:', error)
-    return staticVehicles.find(v => v.id === stockId) || null
+    const vehicles = await getStaticVehiclesData()
+    return vehicles.find(v => v.id === stockId) || null
   }
 
-  return data ? transformToWebFormat(data) : null
+  return data ? await transformToWebFormat(data) : null
 }
 
 // Get vehicle by slug — O(1) lookup via pre-built index
 export async function getVehicleBySlug(slug: string): Promise<Vehicle | null> {
   if (!isSupabaseConfigured) {
-    // O(1) lookup via slug index instead of O(n) array.find
-    return staticVehiclesBySlug.get(slug) || null
+    const slugMap = await getStaticVehiclesBySlug()
+    return slugMap.get(slug) || null
   }
 
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -315,12 +396,12 @@ export async function getVehicleBySlug(slug: string): Promise<Vehicle | null> {
 // Get unique brands
 export async function getBrands(): Promise<string[]> {
   if (!isSupabaseConfigured) {
-    return getStaticBrands()
+    return await getStaticBrands()
   }
 
   const supabase = await getSupabaseClient()
   if (!supabase) {
-    return getStaticBrands()
+    return await getStaticBrands()
   }
 
   const { data, error } = await supabase
@@ -330,22 +411,105 @@ export async function getBrands(): Promise<string[]> {
 
   if (error) {
     console.error('Error fetching brands:', error)
-    return getStaticBrands()
+    return await getStaticBrands()
   }
 
   const brands = Array.from(new Set((data || []).map(v => v.marca)))
   return brands.sort()
 }
 
-// Get unique fuel types
-export async function getFuelTypes(): Promise<string[]> {
+// Get unique models (optionally filtered by brand)
+export async function getModels(brand?: string): Promise<string[]> {
   if (!isSupabaseConfigured) {
-    return getStaticFuelTypes()
+    const onSale = await getStaticOnSale()
+    let filtered = onSale
+    if (brand) filtered = filtered.filter(v => v.brand === brand)
+    const models = Array.from(new Set(filtered.map(v => extractBaseModel(v.model))))
+    return models.sort()
   }
 
   const supabase = await getSupabaseClient()
   if (!supabase) {
-    return getStaticFuelTypes()
+    const onSale = await getStaticOnSale()
+    let filtered = onSale
+    if (brand) filtered = filtered.filter(v => v.brand === brand)
+    const models = Array.from(new Set(filtered.map(v => extractBaseModel(v.model))))
+    return models.sort()
+  }
+
+  let query = supabase
+    .from('vehicles')
+    .select('modelo')
+    .eq('estado', 'disponible')
+
+  if (brand) query = query.ilike('marca', brand)
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('Error fetching models:', error)
+    const onSale = await getStaticOnSale()
+    let filtered = onSale
+    if (brand) filtered = filtered.filter(v => v.brand === brand)
+    const models = Array.from(new Set(filtered.map(v => extractBaseModel(v.model))))
+    return models.sort()
+  }
+
+  const models = Array.from(new Set((data || []).map(v => extractBaseModel(v.modelo))))
+  return models.sort()
+}
+
+// Get unique DGT labels
+export async function getLabels(): Promise<string[]> {
+  if (!isSupabaseConfigured) {
+    const onSale = await getStaticOnSale()
+    const labels = Array.from(new Set(onSale.map(v => v.label).filter(Boolean) as string[]))
+    return labels.sort()
+  }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) {
+    const onSale = await getStaticOnSale()
+    const labels = Array.from(new Set(onSale.map(v => v.label).filter(Boolean) as string[]))
+    return labels.sort()
+  }
+
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('etiqueta_dgt')
+    .eq('estado', 'disponible')
+
+  if (error) {
+    console.error('Error fetching labels:', error)
+    const onSale = await getStaticOnSale()
+    const labels = Array.from(new Set(onSale.map(v => v.label).filter(Boolean) as string[]))
+    return labels.sort()
+  }
+
+  const labels = Array.from(new Set(
+    (data || [])
+      .map(v => v.etiqueta_dgt)
+      .filter(Boolean)
+      .map((l: string) => l.replace(/^Etiqueta\s+/i, '').replace(/\s+Emisiones$/i, '').trim())
+      .filter(Boolean)
+  ))
+  return labels.sort()
+}
+
+// Get unique transmission types
+export async function getTransmissionTypes(): Promise<string[]> {
+  return ['Manual', 'Automático']
+}
+
+// Get unique fuel types
+export async function getFuelTypes(): Promise<string[]> {
+  if (!isSupabaseConfigured) {
+    return await getStaticFuelTypes()
+  }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) {
+    return await getStaticFuelTypes()
   }
 
   const { data, error } = await supabase
@@ -354,7 +518,7 @@ export async function getFuelTypes(): Promise<string[]> {
     .eq('estado', 'disponible')
 
   if (error) {
-    return getStaticFuelTypes()
+    return await getStaticFuelTypes()
   }
 
   const fuelMap: Record<string, string> = {
@@ -373,13 +537,15 @@ export async function getFuelTypes(): Promise<string[]> {
 // Get unique body types
 export async function getBodyTypes(): Promise<string[]> {
   if (!isSupabaseConfigured) {
-    const types = Array.from(new Set(getStaticOnSale().map(v => v.bodyType)))
+    const onSale = await getStaticOnSale()
+    const types = Array.from(new Set(onSale.map(v => v.bodyType)))
     return types.sort()
   }
 
   const supabase = await getSupabaseClient()
   if (!supabase) {
-    const types = Array.from(new Set(getStaticOnSale().map(v => v.bodyType)))
+    const onSale = await getStaticOnSale()
+    const types = Array.from(new Set(onSale.map(v => v.bodyType)))
     return types.sort()
   }
 
@@ -389,7 +555,8 @@ export async function getBodyTypes(): Promise<string[]> {
     .eq('estado', 'disponible')
 
   if (error) {
-    const types = Array.from(new Set(getStaticOnSale().map(v => v.bodyType)))
+    const onSale = await getStaticOnSale()
+    const types = Array.from(new Set(onSale.map(v => v.bodyType)))
     return types.sort()
   }
 
@@ -410,7 +577,7 @@ export async function searchVehicles(filters: {
   maxYear?: number
 }): Promise<Vehicle[]> {
   if (!isSupabaseConfigured) {
-    let result = getStaticOnSale()
+    let result = await getStaticOnSale()
     if (filters.brand) result = result.filter(v => v.brand.toLowerCase() === filters.brand!.toLowerCase())
     if (filters.bodyType) result = result.filter(v => v.bodyType === filters.bodyType!.toLowerCase())
     if (filters.maxPrice) result = result.filter(v => v.price <= filters.maxPrice!)
@@ -464,13 +631,13 @@ export async function searchVehicles(filters: {
     return []
   }
 
-  return (data || []).map(transformToWebFormat)
+  return await Promise.all((data || []).map(transformToWebFormat))
 }
 
 // Get price range
 export async function getPriceRange(): Promise<{ min: number; max: number }> {
   if (!isSupabaseConfigured) {
-    const onSale = getStaticOnSale()
+    const onSale = await getStaticOnSale()
     if (onSale.length === 0) return { min: 0, max: 100000 }
     const prices = onSale.map(v => v.price)
     return { min: Math.min(...prices), max: Math.max(...prices) }
@@ -495,7 +662,7 @@ export async function getPriceRange(): Promise<{ min: number; max: number }> {
 // Get year range
 export async function getYearRange(): Promise<{ min: number; max: number }> {
   if (!isSupabaseConfigured) {
-    const onSale = getStaticOnSale()
+    const onSale = await getStaticOnSale()
     if (onSale.length === 0) return { min: 2010, max: new Date().getFullYear() }
     const years = onSale.map(v => v.year)
     return { min: Math.min(...years), max: Math.max(...years) }
@@ -520,12 +687,14 @@ export async function getYearRange(): Promise<{ min: number; max: number }> {
 // Get vehicle count
 export async function getVehicleCount(): Promise<number> {
   if (!isSupabaseConfigured) {
-    return getStaticOnSale().length
+    const onSale = await getStaticOnSale()
+    return onSale.length
   }
 
   const supabase = await getSupabaseClient()
   if (!supabase) {
-    return getStaticOnSale().length
+    const onSale = await getStaticOnSale()
+    return onSale.length
   }
 
   const { count, error } = await supabase
@@ -535,7 +704,8 @@ export async function getVehicleCount(): Promise<number> {
 
   if (error) {
     console.error('Error getting vehicle count:', error)
-    return getStaticOnSale().length
+    const onSale = await getStaticOnSale()
+    return onSale.length
   }
 
   return count || 0
@@ -544,7 +714,7 @@ export async function getVehicleCount(): Promise<number> {
 // Get similar vehicles
 export async function getSimilarVehicles(vehicle: Vehicle, limit: number = 4): Promise<Vehicle[]> {
   if (!isSupabaseConfigured) {
-    const onSale = getStaticOnSale().filter(v => v.id !== vehicle.id)
+    const onSale = (await getStaticOnSale()).filter(v => v.id !== vehicle.id)
     const minPrice = Math.round(vehicle.price * 0.7)
     const maxPrice = Math.round(vehicle.price * 1.3)
 
@@ -624,5 +794,5 @@ export async function getSimilarVehicles(vehicle: Vehicle, limit: number = 4): P
     if (!anyError && anyData) data = [...(data || []), ...anyData]
   }
 
-  return (data || []).slice(0, limit).map(transformToWebFormat)
+  return await Promise.all((data || []).slice(0, limit).map(transformToWebFormat))
 }

@@ -1,22 +1,41 @@
-import { supabase, isSupabaseConfigured } from './supabase'
-import { blogPosts as _staticBlogPosts, blogCategories as _staticBlogCategories } from '@/data/blog-posts'
+import { getSupabaseClient, isSupabaseConfigured } from './supabase-lazy'
 
 // Re-export types from shared file (avoids circular dependency with data file)
 export type { BlogCategory, BlogPost, BlogPostsOptions, BlogPostsResult, PopularBrand, PopularModel } from './blog-types'
 import type { BlogCategory, BlogPost, BlogPostsOptions, BlogPostsResult, PopularBrand, PopularModel } from './blog-types'
 
-// Cast untyped data imports
-const staticBlogPosts = _staticBlogPosts as BlogPost[]
-const staticBlogCategories = _staticBlogCategories as BlogCategory[]
+// ---- Lazy-loaded static data (avoids bundling ~15MB in client) ----
+
+let _staticBlogPosts: BlogPost[] | null = null
+let _staticBlogCategories: BlogCategory[] | null = null
+
+async function getStaticBlogPosts(): Promise<BlogPost[]> {
+  if (!_staticBlogPosts) {
+    const { blogPosts } = await import('@/data/blog-posts')
+    _staticBlogPosts = blogPosts as BlogPost[]
+  }
+  return _staticBlogPosts
+}
+
+async function getStaticBlogCategories(): Promise<BlogCategory[]> {
+  if (!_staticBlogCategories) {
+    const { blogCategories } = await import('@/data/blog-posts')
+    _staticBlogCategories = blogCategories as BlogCategory[]
+  }
+  return _staticBlogCategories
+}
 
 // ============================================================================
-// CATEGORÍAS
+// CATEGORIAS
 // ============================================================================
 
 export async function getBlogCategories(): Promise<BlogCategory[]> {
   if (!isSupabaseConfigured) {
-    return staticBlogCategories
+    return await getStaticBlogCategories()
   }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) return await getStaticBlogCategories()
 
   const { data, error } = await supabase
     .from('blog_categories')
@@ -26,7 +45,7 @@ export async function getBlogCategories(): Promise<BlogCategory[]> {
 
   if (error || !data || data.length === 0) {
     if (error) console.error('Error fetching blog categories:', error)
-    return staticBlogCategories
+    return await getStaticBlogCategories()
   }
 
   return data
@@ -34,7 +53,14 @@ export async function getBlogCategories(): Promise<BlogCategory[]> {
 
 export async function getBlogCategoryBySlug(slug: string): Promise<BlogCategory | null> {
   if (!isSupabaseConfigured) {
-    return staticBlogCategories.find(c => c.slug === slug) || null
+    const cats = await getStaticBlogCategories()
+    return cats.find(c => c.slug === slug) || null
+  }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) {
+    const cats = await getStaticBlogCategories()
+    return cats.find(c => c.slug === slug) || null
   }
 
   const { data, error } = await supabase
@@ -46,7 +72,8 @@ export async function getBlogCategoryBySlug(slug: string): Promise<BlogCategory 
 
   if (error || !data) {
     if (error && error.code !== 'PGRST116') console.error('Error fetching blog category:', error)
-    return staticBlogCategories.find(c => c.slug === slug) || null
+    const cats = await getStaticBlogCategories()
+    return cats.find(c => c.slug === slug) || null
   }
 
   return data
@@ -65,6 +92,9 @@ export async function getBlogPosts(options: BlogPostsOptions = {}): Promise<Blog
     destacado,
     search,
   } = options
+
+  const staticBlogPosts = await getStaticBlogPosts()
+  const staticBlogCategories = await getStaticBlogCategories()
 
   if (!isSupabaseConfigured) {
     let filtered = [...staticBlogPosts]
@@ -113,6 +143,14 @@ export async function getBlogPosts(options: BlogPostsOptions = {}): Promise<Blog
     if (!categoryId) {
       return { posts: [], total: 0, page, totalPages: 0 }
     }
+  }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) {
+    const total = staticBlogPosts.length
+    const totalPages = Math.ceil(total / limit)
+    const posts = staticBlogPosts.slice(offset, offset + limit)
+    return { posts, total, page, totalPages }
   }
 
   // Build query
@@ -189,7 +227,14 @@ export async function getBlogPosts(options: BlogPostsOptions = {}): Promise<Blog
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   if (!isSupabaseConfigured) {
-    return staticBlogPosts.find(p => p.slug === slug) || null
+    const posts = await getStaticBlogPosts()
+    return posts.find(p => p.slug === slug) || null
+  }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) {
+    const posts = await getStaticBlogPosts()
+    return posts.find(p => p.slug === slug) || null
   }
 
   const { data, error } = await supabase
@@ -204,16 +249,23 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
 
   if (error || !data) {
     if (error && error.code !== 'PGRST116') console.error('Error fetching blog post by slug:', error)
-    // Fallback to static data
-    return staticBlogPosts.find(p => p.slug === slug) || null
+    const posts = await getStaticBlogPosts()
+    return posts.find(p => p.slug === slug) || null
   }
 
   return data
 }
 
 export async function getFeaturedPosts(limit: number = 3): Promise<BlogPost[]> {
+  const staticBlogPosts = await getStaticBlogPosts()
+
   if (!isSupabaseConfigured) {
-    // Return featured or latest from static data
+    const featured = staticBlogPosts.filter(p => p.destacado)
+    return featured.length > 0 ? featured.slice(0, limit) : staticBlogPosts.slice(0, limit)
+  }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) {
     const featured = staticBlogPosts.filter(p => p.destacado)
     return featured.length > 0 ? featured.slice(0, limit) : staticBlogPosts.slice(0, limit)
   }
@@ -240,7 +292,14 @@ export async function getFeaturedPosts(limit: number = 3): Promise<BlogPost[]> {
 
 export async function getLatestPosts(limit: number = 5): Promise<BlogPost[]> {
   if (!isSupabaseConfigured) {
-    return staticBlogPosts.slice(0, limit)
+    const posts = await getStaticBlogPosts()
+    return posts.slice(0, limit)
+  }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) {
+    const posts = await getStaticBlogPosts()
+    return posts.slice(0, limit)
   }
 
   const { data, error } = await supabase
@@ -255,25 +314,37 @@ export async function getLatestPosts(limit: number = 5): Promise<BlogPost[]> {
 
   if (error || !data || data.length === 0) {
     if (error) console.error('Error fetching latest posts:', error)
-    return staticBlogPosts.slice(0, limit)
+    const posts = await getStaticBlogPosts()
+    return posts.slice(0, limit)
   }
 
   return data
 }
 
 export async function getRelatedPosts(post: BlogPost, limit: number = 4): Promise<BlogPost[]> {
+  const staticBlogPosts = await getStaticBlogPosts()
+
   if (!isSupabaseConfigured) {
-    // First try same category
     if (post.categoria_id) {
       const sameCat = staticBlogPosts
         .filter(p => p.id !== post.id && p.categoria_id === post.categoria_id)
         .slice(0, limit)
       if (sameCat.length >= limit) return sameCat
     }
-    // Fallback to latest posts excluding current
     return staticBlogPosts
       .filter(p => p.id !== post.id)
       .slice(0, limit)
+  }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) {
+    if (post.categoria_id) {
+      const sameCat = staticBlogPosts
+        .filter(p => p.id !== post.id && p.categoria_id === post.categoria_id)
+        .slice(0, limit)
+      if (sameCat.length >= limit) return sameCat
+    }
+    return staticBlogPosts.filter(p => p.id !== post.id).slice(0, limit)
   }
 
   // Try to get posts from the same category first
@@ -309,7 +380,6 @@ export async function getRelatedPosts(post: BlogPost, limit: number = 4): Promis
 
   if (error || !data || data.length === 0) {
     if (error) console.error('Error fetching related posts:', error)
-    // Fallback to static data
     if (post.categoria_id) {
       const sameCat = staticBlogPosts
         .filter(p => p.id !== post.id && p.categoria_id === post.categoria_id)
@@ -324,7 +394,14 @@ export async function getRelatedPosts(post: BlogPost, limit: number = 4): Promis
 
 export async function getAllPublishedSlugs(): Promise<string[]> {
   if (!isSupabaseConfigured) {
-    return staticBlogPosts.map(p => p.slug)
+    const posts = await getStaticBlogPosts()
+    return posts.map(p => p.slug)
+  }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) {
+    const posts = await getStaticBlogPosts()
+    return posts.map(p => p.slug)
   }
 
   const { data, error } = await supabase
@@ -334,14 +411,24 @@ export async function getAllPublishedSlugs(): Promise<string[]> {
 
   if (error || !data || data.length === 0) {
     if (error) console.error('Error fetching blog slugs:', error)
-    return staticBlogPosts.map(p => p.slug)
+    const posts = await getStaticBlogPosts()
+    return posts.map(p => p.slug)
   }
 
   return data.map(p => p.slug)
 }
 
 export async function getAllActiveCategorySlugs(): Promise<string[]> {
-  if (!isSupabaseConfigured) return staticBlogCategories.map(c => c.slug)
+  if (!isSupabaseConfigured) {
+    const cats = await getStaticBlogCategories()
+    return cats.map(c => c.slug)
+  }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) {
+    const cats = await getStaticBlogCategories()
+    return cats.map(c => c.slug)
+  }
 
   const { data, error } = await supabase
     .from('blog_categories')
@@ -350,7 +437,8 @@ export async function getAllActiveCategorySlugs(): Promise<string[]> {
 
   if (error || !data || data.length === 0) {
     if (error) console.error('Error fetching category slugs:', error)
-    return staticBlogCategories.map(c => c.slug)
+    const cats = await getStaticBlogCategories()
+    return cats.map(c => c.slug)
   }
 
   return data.map(c => c.slug)
@@ -361,6 +449,8 @@ export async function getAllActiveCategorySlugs(): Promise<string[]> {
 // ============================================================================
 
 export async function getPopularTags(limit: number = 10): Promise<string[]> {
+  const staticBlogPosts = await getStaticBlogPosts()
+
   const getStaticTags = () => {
     const tagCounts: Record<string, number> = {}
     staticBlogPosts.forEach(post => {
@@ -377,6 +467,9 @@ export async function getPopularTags(limit: number = 10): Promise<string[]> {
   if (!isSupabaseConfigured) {
     return getStaticTags()
   }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) return getStaticTags()
 
   const { data, error } = await supabase
     .from('blog_posts')
@@ -410,7 +503,6 @@ export async function getPopularTags(limit: number = 10): Promise<string[]> {
 
 export async function getPopularBrands(limit: number = 8): Promise<PopularBrand[]> {
   if (!isSupabaseConfigured) {
-    // Use static vehicle data
     const { vehicles } = await import('@/data/vehicles')
     const disponible = vehicles.filter(v => v.onSale || v.status === 'disponible')
     const brandCounts: Record<string, number> = {}
@@ -422,6 +514,9 @@ export async function getPopularBrands(limit: number = 8): Promise<PopularBrand[
       .slice(0, limit)
       .map(([marca, count]) => ({ marca, count }))
   }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) return []
 
   const { data, error } = await supabase
     .from('vehicles')
@@ -462,6 +557,9 @@ export async function getPopularModels(limit: number = 6): Promise<PopularModel[
       .slice(0, limit)
   }
 
+  const supabase = await getSupabaseClient()
+  if (!supabase) return []
+
   const { data, error } = await supabase
     .from('vehicles')
     .select('marca, modelo')
@@ -501,6 +599,9 @@ export async function getVehicleBodyTypes(): Promise<{ tipo: string; count: numb
       .sort((a, b) => b[1] - a[1])
       .map(([tipo, count]) => ({ tipo, count }))
   }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) return []
 
   const { data, error } = await supabase
     .from('vehicles')
