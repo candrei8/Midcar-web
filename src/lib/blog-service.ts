@@ -321,23 +321,12 @@ export async function getLatestPosts(limit: number = 5): Promise<BlogPost[]> {
   return data
 }
 
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function getRelatedPosts(post: BlogPost, limit: number = 4): Promise<BlogPost[]> {
   const staticBlogPosts = await getStaticBlogPosts()
 
-  if (!isSupabaseConfigured) {
-    if (post.categoria_id) {
-      const sameCat = staticBlogPosts
-        .filter(p => p.id !== post.id && p.categoria_id === post.categoria_id)
-        .slice(0, limit)
-      if (sameCat.length >= limit) return sameCat
-    }
-    return staticBlogPosts
-      .filter(p => p.id !== post.id)
-      .slice(0, limit)
-  }
-
-  const supabase = await getSupabaseClient()
-  if (!supabase) {
+  const getStaticRelated = () => {
     if (post.categoria_id) {
       const sameCat = staticBlogPosts
         .filter(p => p.id !== post.id && p.categoria_id === post.categoria_id)
@@ -345,6 +334,16 @@ export async function getRelatedPosts(post: BlogPost, limit: number = 4): Promis
       if (sameCat.length >= limit) return sameCat
     }
     return staticBlogPosts.filter(p => p.id !== post.id).slice(0, limit)
+  }
+
+  // If post ID is not a UUID, it's from static data — skip Supabase queries
+  if (!isSupabaseConfigured || !uuidRegex.test(post.id)) {
+    return getStaticRelated()
+  }
+
+  const supabase = await getSupabaseClient()
+  if (!supabase) {
+    return getStaticRelated()
   }
 
   // Try to get posts from the same category first
@@ -380,13 +379,7 @@ export async function getRelatedPosts(post: BlogPost, limit: number = 4): Promis
 
   if (error || !data || data.length === 0) {
     if (error) console.error('Error fetching related posts:', error)
-    if (post.categoria_id) {
-      const sameCat = staticBlogPosts
-        .filter(p => p.id !== post.id && p.categoria_id === post.categoria_id)
-        .slice(0, limit)
-      if (sameCat.length > 0) return sameCat
-    }
-    return staticBlogPosts.filter(p => p.id !== post.id).slice(0, limit)
+    return getStaticRelated()
   }
 
   return data
