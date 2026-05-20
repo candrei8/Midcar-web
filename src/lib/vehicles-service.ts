@@ -389,6 +389,11 @@ export async function getVehicleBySlug(slug: string): Promise<Vehicle | null> {
     if (byId) return byId
   }
 
+  if (/^STK-/i.test(slug)) {
+    const byStock = await getVehicleByStockId(slug)
+    if (byStock) return byStock
+  }
+
   const vehicles = await getVehicles()
   return vehicles.find(v => v.slug === slug) || null
 }
