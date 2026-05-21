@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Star, Quote } from 'lucide-react'
-import { getTestimonials, Testimonial } from '@/lib/content-service'
+import type { Testimonial } from '@/lib/content-service'
 
 const defaultTestimonials: Testimonial[] = [
   {
@@ -79,27 +79,20 @@ const googleCardVariants = {
   }
 }
 
-export function TestimonialsSection() {
+interface TestimonialsSectionProps {
+  testimonials?: Testimonial[]
+}
+
+export function TestimonialsSection({ testimonials: serverTestimonials }: TestimonialsSectionProps = {}) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-80px' })
   const [mounted, setMounted] = useState(false)
-  const [testimonials, setTestimonials] = useState<Testimonial[]>(defaultTestimonials)
+
+  const testimonials: Testimonial[] =
+    serverTestimonials && serverTestimonials.length > 0 ? serverTestimonials : defaultTestimonials
 
   useEffect(() => {
     setMounted(true)
-
-    async function fetchTestimonials() {
-      try {
-        const data = await getTestimonials()
-        if (data && data.length > 0) {
-          setTestimonials(data)
-        }
-      } catch (error) {
-        console.error('Error fetching testimonials:', error)
-      }
-    }
-
-    fetchTestimonials()
   }, [])
 
   return (

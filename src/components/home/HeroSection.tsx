@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Link from 'next/link'
-import { getHeroContent, HeroContent } from '@/lib/content-service'
+import type { HeroContent } from '@/lib/content-service'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
@@ -61,8 +61,11 @@ function detectLiteMode(): boolean {
   return false
 }
 
-export function HeroSection() {
-  const [content, setContent] = useState<HeroContent | null>(null)
+interface HeroSectionProps {
+  content: HeroContent
+}
+
+export function HeroSection({ content }: HeroSectionProps) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [shouldMount3D, setShouldMount3D] = useState(false)
   const [isLiteMode, setIsLiteMode] = useState(false)
@@ -82,16 +85,6 @@ export function HeroSection() {
     setIsLiteMode(detectLiteMode())
 
     const loadTimeout = window.setTimeout(() => setIsLoaded(true), 100)
-
-    async function fetch() {
-      try {
-        const data = await getHeroContent()
-        setContent(data)
-      } catch (e) {
-        console.error('Failed to load hero content', e)
-      }
-    }
-    fetch()
 
     const w = window as any
     const idleCb = typeof w.requestIdleCallback === 'function'
@@ -241,7 +234,6 @@ export function HeroSection() {
 
             {/* ACT 3: Final Landing */}
             <div ref={act3Ref} className="absolute inset-0 flex flex-col justify-center px-8 md:px-16 lg:px-[8%] opacity-0 pointer-events-auto">
-              {content && (
                 <div className="max-w-4xl w-full mx-auto lg:mx-0">
                   <div className="inline-flex items-center gap-4 mb-10">
                     <div className="w-12 h-[1px] bg-white/50"></div>
@@ -283,7 +275,6 @@ export function HeroSection() {
                     </Link>
                   </div>
                 </div>
-              )}
             </div>
 
           </div>

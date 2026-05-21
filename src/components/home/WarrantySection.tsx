@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { ChevronDown, Shield, Check, X, Phone } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getWarrantyContent, WarrantyContent } from '@/lib/content-service'
+import type { WarrantyContent } from '@/lib/content-service'
 
 const defaultContent: WarrantyContent = {
   titulo: '1 año de garantía sin límite de km',
@@ -31,26 +31,20 @@ const defaultContent: WarrantyContent = {
   ],
 }
 
-export function WarrantySection() {
+interface WarrantySectionProps {
+  content?: WarrantyContent
+}
+
+export function WarrantySection({ content: serverContent }: WarrantySectionProps = {}) {
   const [isExpanded, setIsExpanded] = useState(false)
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-80px' })
   const [mounted, setMounted] = useState(false)
-  const [content, setContent] = useState<WarrantyContent>(defaultContent)
+
+  const content: WarrantyContent = serverContent ?? defaultContent
 
   useEffect(() => {
     setMounted(true)
-
-    async function fetchContent() {
-      try {
-        const warrantyContent = await getWarrantyContent()
-        setContent(warrantyContent)
-      } catch (error) {
-        console.error('Error fetching warranty content:', error)
-      }
-    }
-
-    fetchContent()
   }, [])
 
   const headerVariants = {

@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Shield, Clock, Users, FileCheck, Car, CreditCard, LucideIcon } from 'lucide-react'
-import { getBenefits, Benefit } from '@/lib/content-service'
+import type { Benefit } from '@/lib/content-service'
 
 const defaultBenefits: Benefit[] = [
   {
@@ -91,27 +91,19 @@ const cardVariants = {
   }
 }
 
-export function BenefitsSection() {
+interface BenefitsSectionProps {
+  benefits?: Benefit[]
+}
+
+export function BenefitsSection({ benefits: serverBenefits }: BenefitsSectionProps = {}) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-80px' })
   const [mounted, setMounted] = useState(false)
-  const [benefits, setBenefits] = useState<Benefit[]>(defaultBenefits)
+
+  const benefits: Benefit[] = serverBenefits && serverBenefits.length > 0 ? serverBenefits : defaultBenefits
 
   useEffect(() => {
     setMounted(true)
-
-    async function fetchBenefits() {
-      try {
-        const data = await getBenefits()
-        if (data && data.length > 0) {
-          setBenefits(data)
-        }
-      } catch (error) {
-        console.error('Error fetching benefits:', error)
-      }
-    }
-
-    fetchBenefits()
   }, [])
 
   const getIcon = (iconName?: string): LucideIcon => {

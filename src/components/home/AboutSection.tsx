@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { ChevronDown, Car, Star, Award, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getAboutContent, AboutContent } from '@/lib/content-service'
+import type { AboutContent } from '@/lib/content-service'
 
 const defaultContent: AboutContent = {
   label: 'Sobre nosotros',
@@ -27,30 +27,24 @@ const defaultContent: AboutContent = {
 
 const statIcons = [Car, Star, Award, MapPin]
 
-export function AboutSection() {
+interface AboutSectionProps {
+  content?: AboutContent
+}
+
+export function AboutSection({ content: serverContent }: AboutSectionProps = {}) {
   const [isExpanded, setIsExpanded] = useState(false)
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-80px' })
   const [mounted, setMounted] = useState(false)
-  const [content, setContent] = useState<AboutContent>(defaultContent)
+
+  const content: AboutContent = serverContent ?? defaultContent
+  // Unsplash hosts a tracking pixel — fall back to the gradient placeholder if the dashboard returned one
+  if (content.imagenUrl && /(^|\.)unsplash\.com/i.test(content.imagenUrl)) {
+    content.imagenUrl = ''
+  }
 
   useEffect(() => {
     setMounted(true)
-
-    async function fetchContent() {
-      try {
-        const aboutContent = await getAboutContent()
-        // Drop third-party tracking image hosts (unsplash sets cookies) — fall back to gradient placeholder
-        if (aboutContent.imagenUrl && /(^|\.)unsplash\.com/i.test(aboutContent.imagenUrl)) {
-          aboutContent.imagenUrl = ''
-        }
-        setContent(aboutContent)
-      } catch (error) {
-        console.error('Error fetching about content:', error)
-      }
-    }
-
-    fetchContent()
   }, [])
 
   const headerVariants = {

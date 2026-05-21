@@ -4,6 +4,14 @@ import { SearchSection } from '@/components/home/SearchSection'
 import { FeaturedVehicles } from '@/components/home/FeaturedVehicles'
 import { TrustBadges } from '@/components/home/TrustBadges'
 import { getFeaturedVehicles, getVehiclesOnSale, getVehicleCount, getBrands } from '@/lib/vehicles-service'
+import {
+  getHeroContent,
+  getAboutContent,
+  getBenefits,
+  getWarrantyContent,
+  getTestimonials,
+  getCTAContent,
+} from '@/lib/content-service'
 
 // Below-fold sections — split into separate chunks so they don't bloat the initial JS payload
 const BenefitsSection = dynamic(() => import('@/components/home/BenefitsSection').then(m => ({ default: m.BenefitsSection })))
@@ -100,12 +108,30 @@ const homePageSchema = {
 }
 
 export default async function HomePage() {
-  // Fetch data server-side — no client-side loading spinner needed
-  const [featured, onSale, count, brands] = await Promise.all([
+  // Fetch everything server-side so the client bundle never needs to reach Supabase
+  // (this eliminates the 196 KB @supabase/supabase-js chunk that was loading on the home).
+  const [
+    featured,
+    onSale,
+    count,
+    brands,
+    heroContent,
+    aboutContent,
+    benefits,
+    warrantyContent,
+    testimonials,
+    ctaContent,
+  ] = await Promise.all([
     getFeaturedVehicles(),
     getVehiclesOnSale(),
     getVehicleCount(),
     getBrands(),
+    getHeroContent(),
+    getAboutContent(),
+    getBenefits(),
+    getWarrantyContent(),
+    getTestimonials(),
+    getCTAContent(),
   ])
 
   const featuredVehicles = featured.length >= 4
@@ -120,16 +146,16 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homePageSchema) }}
       />
 
-      <HeroSection />
+      <HeroSection content={heroContent} />
       <SearchSection vehicleCount={count} />
       <TrustBadges />
       <FeaturedVehicles initialVehicles={featuredVehicles} initialCount={count} />
-      <BenefitsSection />
-      <AboutSection />
-      <WarrantySection />
-      <TestimonialsSection />
+      <BenefitsSection benefits={benefits} />
+      <AboutSection content={aboutContent} />
+      <WarrantySection content={warrantyContent} />
+      <TestimonialsSection testimonials={testimonials} />
       <BrandsSection brands={brands} />
-      <CTASection />
+      <CTASection content={ctaContent} />
     </>
   )
 }

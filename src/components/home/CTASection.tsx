@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import Link from 'next/link'
 import { Phone, Search, MapPin, ArrowRight } from 'lucide-react'
-import { getCTAContent, CTAContent } from '@/lib/content-service'
+import type { CTAContent } from '@/lib/content-service'
 
 const defaultContent: CTAContent = {
   financiacion: {
@@ -75,25 +75,19 @@ const decorativeVariants = {
   }
 }
 
-export function CTASection() {
+interface CTASectionProps {
+  content?: CTAContent
+}
+
+export function CTASection({ content: serverContent }: CTASectionProps = {}) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
   const [mounted, setMounted] = useState(false)
-  const [content, setContent] = useState<CTAContent>(defaultContent)
+
+  const content: CTAContent = serverContent ?? defaultContent
 
   useEffect(() => {
     setMounted(true)
-
-    async function fetchContent() {
-      try {
-        const ctaContent = await getCTAContent()
-        setContent(ctaContent)
-      } catch (error) {
-        console.error('Error fetching CTA content:', error)
-      }
-    }
-
-    fetchContent()
   }, [])
 
   return (
