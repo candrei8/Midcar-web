@@ -31,13 +31,24 @@ export function Header({ contactInfo }: HeaderProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
 
   useEffect(() => {
+    let lastScrolled = window.scrollY > 20
+    setIsScrolled(lastScrolled)
+    let ticking = false
+
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
+      if (ticking) return
+      ticking = true
+      window.requestAnimationFrame(() => {
+        const next = window.scrollY > 20
+        if (next !== lastScrolled) {
+          lastScrolled = next
+          setIsScrolled(next)
+        }
+        ticking = false
+      })
     }
 
-    handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
-
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -76,11 +87,12 @@ export function Header({ contactInfo }: HeaderProps) {
 
       <header
         className={cn(
-          'sticky top-0 z-50 transition-all duration-300',
+          'sticky top-0 z-50 transition-colors duration-300',
           isScrolled
-            ? 'bg-white/95 backdrop-blur-lg shadow-lg shadow-secondary-900/5'
+            ? 'bg-white/90 backdrop-blur-md shadow-md shadow-secondary-900/5'
             : 'bg-white'
         )}
+        style={{ contain: 'layout paint' }}
       >
         <div className="container-custom">
           <div className="flex items-center justify-between h-20">

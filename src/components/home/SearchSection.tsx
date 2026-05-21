@@ -5,9 +5,10 @@ import { motion, useInView } from 'framer-motion'
 import { Search, Car, Fuel, Gauge, Euro, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { vehicles } from '@/data/vehicles'
 
-const vehicleCount = vehicles.filter(v => v.onSale || v.status === 'disponible').length
+interface SearchSectionProps {
+  vehicleCount?: number
+}
 
 const bodyTypes = [
   { id: 'berlina', name: 'Berlina', icon: '🚗' },
@@ -62,7 +63,7 @@ const bodyTypeVariants = {
   }
 }
 
-export function SearchSection() {
+export function SearchSection({ vehicleCount = 90 }: SearchSectionProps = {}) {
   const [selectedBodyType, setSelectedBodyType] = useState<string | null>(null)
   const [brand, setBrand] = useState('Todas las marcas')
   const [maxPrice, setMaxPrice] = useState('Sin límite')
@@ -161,6 +162,7 @@ export function SearchSection() {
                 </label>
                 <div className="relative">
                   <select
+                    aria-label="Marca"
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
                     className="select-modern pr-10"
@@ -180,7 +182,7 @@ export function SearchSection() {
                   Modelo
                 </label>
                 <div className="relative">
-                  <select className="select-modern pr-10">
+                  <select aria-label="Modelo" className="select-modern pr-10">
                     <option>Todos los modelos</option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
@@ -195,6 +197,7 @@ export function SearchSection() {
                 </label>
                 <div className="relative">
                   <select
+                    aria-label="Kilómetros hasta"
                     value={maxKm}
                     onChange={(e) => setMaxKm(e.target.value)}
                     className="select-modern pr-10"
@@ -215,6 +218,7 @@ export function SearchSection() {
                 </label>
                 <div className="relative">
                   <select
+                    aria-label="Precio hasta"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
                     className="select-modern pr-10"

@@ -82,7 +82,7 @@ export default async function ContactoPage() {
       {/* Hero Header */}
       <div className="relative bg-secondary-950 text-white overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary-900 via-secondary-950 to-black" />
-        <div className="absolute inset-0 opacity-[0.04] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+        <div className="absolute inset-0 opacity-[0.04] bg-[url('/noise.svg')]" />
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary-500/40 to-transparent" />
 
         <div className="relative container-custom px-4 md:px-6 pt-20 pb-24 md:pt-28 md:pb-32">

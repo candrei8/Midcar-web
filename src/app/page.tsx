@@ -2,14 +2,16 @@ import { Metadata } from 'next'
 import dynamic from 'next/dynamic'
 import { SearchSection } from '@/components/home/SearchSection'
 import { FeaturedVehicles } from '@/components/home/FeaturedVehicles'
-import { BenefitsSection } from '@/components/home/BenefitsSection'
-import { TestimonialsSection } from '@/components/home/TestimonialsSection'
-import { BrandsSection } from '@/components/home/BrandsSection'
-import { CTASection } from '@/components/home/CTASection'
 import { TrustBadges } from '@/components/home/TrustBadges'
-import { AboutSection } from '@/components/home/AboutSection'
-import { WarrantySection } from '@/components/home/WarrantySection'
-import { getFeaturedVehicles, getVehiclesOnSale, getVehicleCount } from '@/lib/vehicles-service'
+import { getFeaturedVehicles, getVehiclesOnSale, getVehicleCount, getBrands } from '@/lib/vehicles-service'
+
+// Below-fold sections — split into separate chunks so they don't bloat the initial JS payload
+const BenefitsSection = dynamic(() => import('@/components/home/BenefitsSection').then(m => ({ default: m.BenefitsSection })))
+const AboutSection = dynamic(() => import('@/components/home/AboutSection').then(m => ({ default: m.AboutSection })))
+const WarrantySection = dynamic(() => import('@/components/home/WarrantySection').then(m => ({ default: m.WarrantySection })))
+const TestimonialsSection = dynamic(() => import('@/components/home/TestimonialsSection').then(m => ({ default: m.TestimonialsSection })))
+const BrandsSection = dynamic(() => import('@/components/home/BrandsSection').then(m => ({ default: m.BrandsSection })))
+const CTASection = dynamic(() => import('@/components/home/CTASection').then(m => ({ default: m.CTASection })))
 
 // Dynamic import: 3D Hero loads asynchronously — doesn't block page render
 const HeroSection = dynamic(
@@ -99,10 +101,11 @@ const homePageSchema = {
 
 export default async function HomePage() {
   // Fetch data server-side — no client-side loading spinner needed
-  const [featured, onSale, count] = await Promise.all([
+  const [featured, onSale, count, brands] = await Promise.all([
     getFeaturedVehicles(),
     getVehiclesOnSale(),
     getVehicleCount(),
+    getBrands(),
   ])
 
   const featuredVehicles = featured.length >= 4
@@ -118,14 +121,14 @@ export default async function HomePage() {
       />
 
       <HeroSection />
-      <SearchSection />
+      <SearchSection vehicleCount={count} />
       <TrustBadges />
       <FeaturedVehicles initialVehicles={featuredVehicles} initialCount={count} />
       <BenefitsSection />
       <AboutSection />
       <WarrantySection />
       <TestimonialsSection />
-      <BrandsSection />
+      <BrandsSection brands={brands} />
       <CTASection />
     </>
   )

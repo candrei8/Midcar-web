@@ -7,7 +7,14 @@
       "mcp__plugin_supabase_supabase__execute_sql",
       "mcp__plugin_supabase_supabase__get_project_url",
       "mcp__plugin_supabase_supabase__get_publishable_keys",
-      "mcp__plugin_supabase_supabase__deploy_edge_function"
+      "mcp__plugin_supabase_supabase__deploy_edge_function",
+      "Bash(ls -la /Users/andreich/Desktop/Midcar-web/src/app/vehiculos/[slug]/page.tsx)",
+      "Bash(npm run build 2>&1 | tail -80)",
+      "Bash(npm run build 2>&1 | grep -E \"\\(error|Error|✓|✗|Build|Route|Size\\)\" | head -30)",
+      "Bash(npm run build 2>&1 | grep -A 100 \"Route \\(app\\)\" | head -60)",
+      "Bash(npx next build 2>&1 | grep -E \"\\(Compiled|error|Error TS|✓|✗\\)\" | head -10)",
+      "Bash(git push origin main)",
+      "Bash(npx tsx --version 2>&1 | head -3)"
     ]
   }
 }

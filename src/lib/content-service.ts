@@ -178,7 +178,7 @@ export async function getHeroContent(): Promise<HeroContent> {
     ],
     precioDesde: content['precio_desde'] || '7.900€',
     garantiaBadge: content['garantia_badge'] || 'Garantía 12 meses',
-    imagenUrl: content['imagen_url'] || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1200&q=80',
+    imagenUrl: content['imagen_url'] || '',
   }
 }
 
@@ -216,7 +216,7 @@ export async function getAboutContent(): Promise<AboutContent> {
       { valor: content['stat_3_valor'] || '2009', label: content['stat_3_label'] || 'Desde' },
       { valor: content['stat_4_valor'] || '2', label: content['stat_4_label'] || 'Ubicaciones' },
     ],
-    imagenUrl: content['imagen_url'] || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80',
+    imagenUrl: content['imagen_url'] || '',
   }
 }
 

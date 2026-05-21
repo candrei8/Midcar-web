@@ -22,7 +22,7 @@ const defaultContent: AboutContent = {
     { valor: '2009', label: 'Desde' },
     { valor: '2', label: 'Ubicaciones' },
   ],
-  imagenUrl: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80',
+  imagenUrl: '',
 }
 
 const statIcons = [Car, Star, Award, MapPin]
@@ -40,9 +40,9 @@ export function AboutSection() {
     async function fetchContent() {
       try {
         const aboutContent = await getAboutContent()
-        // Validar que la imagen sea una URL válida de Unsplash, sino usar default
-        if (!aboutContent.imagenUrl || !aboutContent.imagenUrl.includes('unsplash.com')) {
-          aboutContent.imagenUrl = defaultContent.imagenUrl
+        // Drop third-party tracking image hosts (unsplash sets cookies) — fall back to gradient placeholder
+        if (aboutContent.imagenUrl && /(^|\.)unsplash\.com/i.test(aboutContent.imagenUrl)) {
+          aboutContent.imagenUrl = ''
         }
         setContent(aboutContent)
       } catch (error) {
@@ -79,16 +79,27 @@ export function AboutSection() {
             initial={mounted ? "hidden" : false}
             animate={mounted ? (isInView ? "visible" : "hidden") : false}
           >
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
-              <img
-                src={content.imagenUrl}
-                alt="Concesionario MID Car"
-                className="w-full h-full object-cover"
-              />
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-secondary-700 via-secondary-800 to-secondary-950">
+              {content.imagenUrl ? (
+                <img
+                  src={content.imagenUrl}
+                  alt="Concesionario MID Car"
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0" aria-hidden>
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_60%)]" />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_60%,rgba(0,0,0,0.6)_100%)]" />
+                  <div className="absolute left-8 right-8 top-8 h-px bg-white/10" />
+                  <div className="absolute left-8 right-8 bottom-24 h-px bg-white/10" />
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
               <div className="absolute bottom-6 left-6 right-6">
                 <p className="text-white text-xl font-bold">MID Car</p>
-                <p className="text-white/80 text-sm">Torrejón de Ardoz, Madrid</p>
+                <p className="text-white/90 text-sm">Torrejón de Ardoz, Madrid</p>
               </div>
             </div>
             {/* Floating card */}

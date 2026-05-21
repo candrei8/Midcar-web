@@ -1,25 +1,11 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { motion, useInView } from 'framer-motion'
 import Link from 'next/link'
-import { vehicles } from '@/data/vehicles'
 
-// Get unique brands from available vehicles
-function getBrands(): string[] {
-  const onSale = vehicles.filter(v => v.onSale || v.status === 'disponible')
-  return Array.from(new Set(onSale.map(v => v.brand))).sort()
-}
-
-// Generate brand objects from actual stock
 const generateSlug = (brand: string) =>
-  brand.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-')
-
-const stockBrands = getBrands()
-const brands = stockBrands.map(brand => ({
-  name: brand === 'Volkswagen' ? 'VW' : brand,
-  slug: generateSlug(brand)
-}))
+  brand.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-')
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -57,7 +43,11 @@ const brandVariants = {
   }
 }
 
-export function BrandsSection() {
+interface BrandsSectionProps {
+  brands: string[]
+}
+
+export function BrandsSection({ brands: rawBrands }: BrandsSectionProps) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-80px' })
   const [mounted, setMounted] = useState(false)
@@ -65,6 +55,15 @@ export function BrandsSection() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  const brands = useMemo(
+    () =>
+      rawBrands.map((brand) => ({
+        name: brand === 'Volkswagen' ? 'VW' : brand,
+        slug: generateSlug(brand),
+      })),
+    [rawBrands]
+  )
 
   return (
     <section className="py-12 md:py-20 bg-secondary-50" ref={ref}>
@@ -89,7 +88,7 @@ export function BrandsSection() {
           initial={mounted ? "hidden" : false}
           animate={mounted ? (isInView ? "visible" : "hidden") : false}
         >
-          {brands.map((brand, index) => (
+          {brands.map((brand) => (
             <motion.div key={brand.slug} variants={brandVariants}>
               <Link
                 href={`/vehiculos?marca=${brand.slug}`}

@@ -1,10 +1,27 @@
 import type { Metadata, Viewport } from 'next'
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { VoiceflowChat } from '@/components/ui/VoiceflowChat'
 import { getContactInfo } from '@/lib/content-service'
 import { defaultContactInfo } from '@/lib/contact-info'
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-inter',
+  display: 'swap',
+  preload: true,
+})
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
+  display: 'swap',
+  preload: true,
+})
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
 
@@ -259,11 +276,9 @@ export default async function RootLayout({
   const contactInfo = await getContactInfo().catch(() => defaultContactInfo)
 
   return (
-    <html lang="es" dir="ltr">
+    <html lang="es" dir="ltr" className={`${inter.variable} ${jakarta.variable}`}>
       <head>
         {/* Preconexiones para mejorar rendimiento */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://midcar.azureedge.net" />
 
         {/* DNS Prefetch */}

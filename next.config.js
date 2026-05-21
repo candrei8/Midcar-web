@@ -37,6 +37,13 @@ const nextConfig = {
   // Optimizaciones
   poweredByHeader: false,
 
+  // Inline critical CSS so the initial render isn't blocked by external <link rel="stylesheet">
+  // optimizePackageImports tree-shakes lucide-react and framer-motion (sub-path imports per use site)
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', 'framer-motion', '@react-three/drei'],
+  },
+
   // Headers de seguridad
   async headers() {
     return [
@@ -81,7 +88,7 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.google-analytics.com https://www.googletagmanager.com https://www.google.com https://www.gstatic.com https://cdn.voiceflow.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.voiceflow.com",
-              "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai https://cdn.voiceflow.com data:",
+              "font-src 'self' https://fonts.gstatic.com https://*.perplexity.ai https://cdn.voiceflow.com data:",
               "img-src 'self' data: blob: https: http:",
               "worker-src 'self' blob:",
               "connect-src 'self' blob: https://*.supabase.co https://www.google-analytics.com https://www.googletagmanager.com https://general-runtime.voiceflow.com https://runtime-api.voiceflow.com https://*.voiceflow.com wss://general-runtime.voiceflow.com wss://*.voiceflow.com",
