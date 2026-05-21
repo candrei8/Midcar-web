@@ -33,3 +33,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# original (uncompressed) 3D source — kept locally for re-export; not shipped
+/public/models/*-original.glb

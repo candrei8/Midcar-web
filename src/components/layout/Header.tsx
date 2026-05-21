@@ -154,7 +154,11 @@ export function Header({ contactInfo }: HeaderProps) {
             </div>
 
             <button
+              type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
               className="lg:hidden p-2 text-secondary-600 hover:bg-secondary-100 rounded-lg transition-colors"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -163,7 +167,7 @@ export function Header({ contactInfo }: HeaderProps) {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-secondary-100 bg-white animate-slide-down">
+          <div id="mobile-menu" className="lg:hidden border-t border-secondary-100 bg-white animate-slide-down">
             <div className="container-custom py-4 space-y-2">
               {navigation.map((item) => (
                 <div key={item.name}>

@@ -278,10 +278,8 @@ export default async function RootLayout({
   return (
     <html lang="es" dir="ltr" className={`${inter.variable} ${jakarta.variable}`}>
       <head>
-        {/* Preconexiones para mejorar rendimiento */}
-        <link rel="preconnect" href="https://midcar.azureedge.net" />
-
-        {/* DNS Prefetch */}
+        {/* Vehicle images are proxied through /_next/image, so no preconnect to azureedge.net.
+           Analytics may fire after interaction — use dns-prefetch (cheap) instead of preconnect. */}
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
 

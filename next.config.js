@@ -112,9 +112,9 @@ const nextConfig = {
           },
         ],
       },
-      // Headers específicos para assets estáticos
+      // Headers específicos para assets estáticos (incluye modelos 3D y HDR)
       {
-        source: '/(.*)\\.(ico|png|jpg|jpeg|gif|webp|avif|svg|woff|woff2)',
+        source: '/(.*)\\.(ico|png|jpg|jpeg|gif|webp|avif|svg|woff|woff2|glb|gltf|hdr|ktx2)',
         headers: [
           {
             key: 'Cache-Control',
