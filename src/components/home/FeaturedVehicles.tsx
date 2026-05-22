@@ -127,7 +127,7 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
       </div>
 
       {/* Link overlay */}
-      <Link href={`/vehiculos/${vehicle.slug}`} className="absolute inset-0" prefetch={false}>
+      <Link href={`/vehiculos/${vehicle.stock_id || vehicle.slug}`} className="absolute inset-0" prefetch={false}>
         <span className="sr-only">Ver {vehicle.title}</span>
       </Link>
     </article>

@@ -626,7 +626,7 @@ function VehicleCard({ vehicle, viewMode }: { vehicle: Vehicle, viewMode: 'grid'
             </div>
           </div>
         </div>
-        <Link href={`/vehiculos/${vehicle.slug}`} className="absolute inset-0" prefetch={false}>
+        <Link href={`/vehiculos/${vehicle.stock_id || vehicle.slug}`} className="absolute inset-0" prefetch={false}>
           <span className="sr-only">Ver {vehicle.title}</span>
         </Link>
       </article>
@@ -673,7 +673,7 @@ function VehicleCard({ vehicle, viewMode }: { vehicle: Vehicle, viewMode: 'grid'
           <div className="flex items-center gap-2 text-secondary-600"><Zap className="w-4 h-4" /><span>{vehicle.cv}cv</span></div>
         </div>
       </div>
-      <Link href={`/vehiculos/${vehicle.slug}`} className="absolute inset-0" prefetch={false}>
+      <Link href={`/vehiculos/${vehicle.stock_id || vehicle.slug}`} className="absolute inset-0" prefetch={false}>
         <span className="sr-only">Ver {vehicle.title}</span>
       </Link>
     </article>

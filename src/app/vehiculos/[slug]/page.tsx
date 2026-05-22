@@ -17,12 +17,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     title,
     description,
     alternates: {
-      canonical: `${siteUrl}/vehiculos/${vehicle.slug}`,
+      canonical: `${siteUrl}/vehiculos/${vehicle.stock_id || vehicle.slug}`,
     },
     openGraph: {
       title,
       description,
-      url: `${siteUrl}/vehiculos/${vehicle.slug}`,
+      url: `${siteUrl}/vehiculos/${vehicle.stock_id || vehicle.slug}`,
       type: 'website',
       images: vehicle.images?.[0] ? [{ url: vehicle.images[0], width: 800, height: 600, alt: vehicle.title }] : [],
     },

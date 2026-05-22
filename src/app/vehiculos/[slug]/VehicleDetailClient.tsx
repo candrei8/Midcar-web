@@ -462,7 +462,7 @@ function SimilarVehicleCard({ vehicle }: { vehicle: Vehicle }) {
 
   return (
     <Link
-      href={`/vehiculos/${vehicle.slug}`}
+      href={`/vehiculos/${vehicle.stock_id || vehicle.slug}`}
       className="bg-white rounded-2xl border border-secondary-100 overflow-hidden hover:shadow-lg transition-shadow group"
     >
       <div className="aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 relative overflow-hidden">

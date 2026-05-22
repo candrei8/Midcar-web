@@ -137,6 +137,7 @@ async function transformToWebFormat(dbVehicle: DBVehicle): Promise<Vehicle> {
 
   return {
     id: dbVehicle.id,
+    stock_id: dbVehicle.stock_id,
     slug,
     title,
     brand: dbVehicle.marca,

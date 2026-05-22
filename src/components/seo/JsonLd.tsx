@@ -31,12 +31,14 @@ export function generateVehicleSchema(vehicle: {
   transmission: string
   images: string[]
   slug: string
+  stock_id?: string
   description?: string
 }) {
+  const urlSlug = vehicle.stock_id || vehicle.slug
   return {
     '@context': 'https://schema.org',
     '@type': 'Car',
-    '@id': `${siteUrl}/vehiculos/${vehicle.slug}#vehicle`,
+    '@id': `${siteUrl}/vehiculos/${urlSlug}#vehicle`,
     name: vehicle.title,
     brand: {
       '@type': 'Brand',
@@ -58,7 +60,7 @@ export function generateVehicleSchema(vehicle: {
       price: vehicle.price,
       priceCurrency: 'EUR',
       availability: 'https://schema.org/InStock',
-      url: `${siteUrl}/vehiculos/${vehicle.slug}`,
+      url: `${siteUrl}/vehiculos/${urlSlug}`,
       seller: {
         '@id': `${siteUrl}/#organization`,
       },
@@ -81,6 +83,7 @@ export function generateVehicleListSchema(vehicles: Array<{
   title: string
   price: number
   slug: string
+  stock_id?: string
   images: string[]
 }>) {
   return {
@@ -94,7 +97,7 @@ export function generateVehicleListSchema(vehicles: Array<{
       position: index + 1,
       item: {
         '@type': 'Car',
-        '@id': `${siteUrl}/vehiculos/${vehicle.slug}`,
+        '@id': `${siteUrl}/vehiculos/${vehicle.stock_id || vehicle.slug}`,
         name: vehicle.title,
         image: vehicle.images[0],
         offers: {

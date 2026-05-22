@@ -6,6 +6,10 @@ import { getMainVehicleImage, getAllVehicleImages } from './vehicleImages'
 
 export interface Vehicle {
   id: string
+  /** Optional `STK-…` id from the Supabase CRM. Unique per vehicle, used as
+   *  the canonical URL slug. Missing on legacy static data — fall back to
+   *  the `slug` field in that case. */
+  stock_id?: string
   slug: string
   title: string
   brand: string
