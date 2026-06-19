@@ -1,30 +1,21 @@
 'use client'
 
-import React, { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import React, { Suspense, useLayoutEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { useGLTF, Environment, ContactShadows, AdaptiveDpr } from '@react-three/drei'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import * as THREE from 'three'
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
 
 useGLTF.preload('/models/car.glb')
 
-function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement> }) {
-  const { scene } = useGLTF('/models/car.glb')
-  const invalidate = useThree(state => state.invalidate)
-  const groupRef = useRef<THREE.Group>(null!)
-  const [isMobile, setIsMobile] = useState(false)
+// Pose final del coche (la que dejaba la antigua animación de scroll al terminar),
+// ahora fija. Sin ScrollTrigger ni timeline: el coche se renderiza una vez y se queda.
+const FINAL_SCALE = 1.2
+const FINAL_POSITION: [number, number, number] = [2, -0.8, 0]
+const FINAL_ROTATION: [number, number, number] = [0, -Math.PI / 7, 0]
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+function CarModel() {
+  const { scene } = useGLTF('/models/car.glb')
+  const invalidate = useThree((state) => state.invalidate)
 
   useLayoutEffect(() => {
     const box = new THREE.Box3().setFromObject(scene)
@@ -57,97 +48,8 @@ function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement>
     invalidate()
   }, [scene, invalidate])
 
-  useLayoutEffect(() => {
-    if (!groupRef.current || !containerRef.current) return
-
-    const ctx = gsap.context(() => {
-      const baseScale = isMobile ? 0.7 : 1.2
-
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: 1.5,
-          onUpdate: () => invalidate(),
-          onRefresh: () => invalidate(),
-        }
-      })
-
-      tl.set(groupRef.current.scale, { x: baseScale * 4.5, y: baseScale * 4.5, z: baseScale * 4.5 })
-      tl.set(groupRef.current.position, { x: isMobile ? 0 : -4.5, y: isMobile ? -0.8 : -1.2, z: 6 })
-      tl.set(groupRef.current.rotation, { y: Math.PI / 4.5 })
-
-      tl.to({}, { duration: 100 }, 0)
-
-      tl.to(groupRef.current.scale, {
-        x: baseScale * 1.5,
-        y: baseScale * 1.5,
-        z: baseScale * 1.5,
-        ease: 'power2.inOut',
-        duration: 20
-      }, 15)
-        .to(groupRef.current.position, {
-          x: 0,
-          y: -0.8,
-          z: 0,
-          ease: 'power2.inOut',
-          duration: 20
-        }, 15)
-        .to(groupRef.current.rotation, {
-          y: -Math.PI / 2,
-          ease: 'power2.inOut',
-          duration: 20
-        }, 15)
-
-      tl.to(groupRef.current.scale, {
-        x: isMobile ? baseScale * 1.1 : baseScale * 1.3,
-        y: isMobile ? baseScale * 1.1 : baseScale * 1.3,
-        z: isMobile ? baseScale * 1.1 : baseScale * 1.3,
-        ease: 'power2.inOut',
-        duration: 15
-      }, 40)
-        .to(groupRef.current.position, {
-          x: isMobile ? 0 : 1.5,
-          y: isMobile ? -0.3 : -0.8,
-          z: 0,
-          ease: 'power2.inOut',
-          duration: 15
-        }, 40)
-        .to(groupRef.current.rotation, {
-          y: isMobile ? -Math.PI / 3 : -Math.PI / 3.5,
-          ease: 'power2.inOut',
-          duration: 15
-        }, 40)
-
-      tl.to(groupRef.current.scale, {
-        x: isMobile ? baseScale * 0.85 : baseScale,
-        y: isMobile ? baseScale * 0.85 : baseScale,
-        z: isMobile ? baseScale * 0.85 : baseScale,
-        ease: 'power2.out',
-        duration: 10
-      }, 60)
-        .to(groupRef.current.position, {
-          x: isMobile ? 0 : 2,
-          y: isMobile ? 0.2 : -0.8,
-          z: 0,
-          ease: 'power2.out',
-          duration: 10
-        }, 60)
-        .to(groupRef.current.rotation, {
-          y: isMobile ? -Math.PI / 5 : -Math.PI / 7,
-          ease: 'power2.out',
-          duration: 10
-        }, 60)
-
-      invalidate()
-    })
-
-    return () => ctx.revert()
-  }, [containerRef, isMobile, invalidate])
-
   return (
-    <group ref={groupRef}>
+    <group scale={FINAL_SCALE} position={FINAL_POSITION} rotation={FINAL_ROTATION}>
       <primitive object={scene} />
     </group>
   )
@@ -160,13 +62,13 @@ function SceneLoaderBar() {
         <div className="absolute top-0 left-0 h-full w-full bg-white origin-left animate-[scale-x_2s_infinite_ease-in-out]" />
       </div>
       <span className="text-white/40 text-[9px] tracking-[0.4em] uppercase font-light">
-        Preparando Experiencia
+        Cargando
       </span>
     </div>
   )
 }
 
-export function HeroScene({ containerRef }: { containerRef: React.RefObject<HTMLElement> }) {
+export function HeroScene() {
   return (
     <Suspense fallback={<SceneLoaderBar />}>
       <Canvas
@@ -188,7 +90,7 @@ export function HeroScene({ containerRef }: { containerRef: React.RefObject<HTML
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} castShadow />
         <pointLight position={[-10, -10, -10]} intensity={1} color="#4444ff" />
 
-        <CarModel containerRef={containerRef} />
+        <CarModel />
 
         <ContactShadows
           position={[0, -0.85, 0]}

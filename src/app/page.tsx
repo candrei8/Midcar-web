@@ -27,16 +27,14 @@ const HeroSection = dynamic(
   {
     ssr: false,
     loading: () => (
-      <section className="relative h-[350vh] w-full bg-[#000000]">
-        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-[#000000]">
-          <div className="flex flex-col items-center">
-            <h1 className="text-white text-[15vw] md:text-[9vw] font-bold tracking-[0.3em] uppercase text-center">
-              MIDCAR
-            </h1>
-            <span className="text-white/40 text-[10px] md:text-[11px] tracking-[0.5em] md:tracking-[0.6em] uppercase font-light mt-4">
-              La Nueva Era
-            </span>
-          </div>
+      <section className="relative h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-[#000000]">
+        <div className="flex flex-col items-center">
+          <h1 className="text-white text-[15vw] md:text-[9vw] font-bold tracking-[0.3em] uppercase text-center">
+            MIDCAR
+          </h1>
+          <span className="text-white/40 text-[10px] md:text-[11px] tracking-[0.5em] md:tracking-[0.6em] uppercase font-light mt-4">
+            Concesionario de ocasión en Madrid
+          </span>
         </div>
       </section>
     ),
