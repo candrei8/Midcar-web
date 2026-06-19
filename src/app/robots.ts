@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -27,6 +27,28 @@ export default function robots(): MetadataRoute.Robots {
       },
       {
         userAgent: 'Bingbot',
+        allow: '/',
+        disallow: ['/api/', '/private/'],
+      },
+      // Crawlers de IA — visibilidad en respuestas de ChatGPT, Perplexity, Claude, etc.
+      // (los tres últimos son tokens de opt-out de entrenamiento; se permiten para máxima exposición)
+      {
+        userAgent: [
+          'OAI-SearchBot',
+          'ChatGPT-User',
+          'GPTBot',
+          'PerplexityBot',
+          'Perplexity-User',
+          'ClaudeBot',
+          'Claude-User',
+          'Claude-SearchBot',
+          'Applebot',
+          'Amazonbot',
+          'meta-externalagent',
+          'Google-Extended',
+          'Applebot-Extended',
+          'CCBot',
+        ],
         allow: '/',
         disallow: ['/api/', '/private/'],
       },

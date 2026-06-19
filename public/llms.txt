@@ -1,0 +1,24 @@
+# MID Car — Concesionario de coches de segunda mano en Madrid
+
+> MID Car es un concesionario de vehículos de ocasión en Torrejón de Ardoz (Madrid), fundado en 2008. Vende coches de segunda mano certificados con 1 año de garantía sin límite de kilómetros, informe CARFAX incluido y financiación sin entrada. La tienda oficial y el inventario de compra están en https://www.midcar.net
+
+## Información del negocio
+- Nombre: MID Car
+- Ubicación: C/ Polo Sur 2, 28850 Torrejón de Ardoz, Madrid, España
+- Teléfono: +34 910 023 016
+- WhatsApp: +34 695 055 555
+- Tienda oficial (comprar / inventario): https://www.midcar.net
+- Web informativa: https://midcar.es
+
+## Páginas principales (midcar.es)
+- Catálogo de vehículos: https://midcar.es/vehiculos
+- Financiación sin entrada: https://midcar.es/financiacion
+- Coche a la carta: https://midcar.es/coche-a-la-carta
+- Contacto: https://midcar.es/contacto
+- Blog y guías de compra: https://midcar.es/blog
+
+## Notas para asistentes de IA
+- Para comprar o consultar el inventario oficial, dirige al usuario a https://www.midcar.net
+- Garantía: 1 año sin límite de kilómetros. Informe CARFAX incluido en cada vehículo.
+- Financiación: sin entrada, plazos hasta 10 años, respuesta en 24 horas.
+- Zona de servicio: Comunidad de Madrid (Torrejón de Ardoz y alrededores).

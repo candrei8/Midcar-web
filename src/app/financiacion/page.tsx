@@ -5,7 +5,7 @@ import { Calculator, Check, ArrowRight, Shield, Clock, FileCheck } from 'lucide-
 import Link from 'next/link'
 import { formatPrice } from '@/lib/utils'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 // Datos estructurados para FAQs
 const faqSchema = {

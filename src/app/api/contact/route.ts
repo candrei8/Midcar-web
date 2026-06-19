@@ -136,7 +136,7 @@ function formatCocheCartaEmail(data: Record<string, string>): string {
       ` : ''}
     </div>
     <div class="footer">
-      <p>Este mensaje fue enviado desde el formulario de Coche a la Carta de www.midcar.es</p>
+      <p>Este mensaje fue enviado desde el formulario de Coche a la Carta de midcar.es</p>
     </div>
   </div>
 </body>
@@ -193,7 +193,7 @@ function formatContactEmail(data: Record<string, string>): string {
       </div>
     </div>
     <div class="footer">
-      <p>Este mensaje fue enviado desde el formulario de contacto de www.midcar.es</p>
+      <p>Este mensaje fue enviado desde el formulario de contacto de midcar.es</p>
     </div>
   </div>
 </body>

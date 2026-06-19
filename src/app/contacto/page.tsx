@@ -3,7 +3,7 @@ import { Phone, Mail, MapPin, Clock, ExternalLink, MessageCircle } from 'lucide-
 import { getContactInfo } from '@/lib/content-service'
 import { ContactForm } from '@/components/contact/ContactForm'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 export const metadata: Metadata = {
   title: 'Contacto | Concesionario MID Car Torrejón de Ardoz',

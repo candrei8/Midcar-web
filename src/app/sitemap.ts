@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 // Función para generar slug de vehículo
 function generateSlug(marca: string, modelo: string, id: string): string {

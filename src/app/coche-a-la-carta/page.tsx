@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Search, Check, Send, Car, Euro, Calendar, Palette, Fuel, Settings } from 'lucide-react'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 const benefits = [
   'Sin compromiso: te buscamos el coche que necesitas',

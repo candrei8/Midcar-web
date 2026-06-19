@@ -13,7 +13,7 @@ import {
 import RelatedPosts from '@/components/blog/RelatedPosts'
 import MarkdownRenderer from '@/components/blog/MarkdownRenderer'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 export const revalidate = 3600 // Revalidate every hour
 

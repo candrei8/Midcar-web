@@ -23,7 +23,7 @@ const jakarta = Plus_Jakarta_Sans({
   preload: true,
 })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -214,6 +214,7 @@ const organizationJsonLd = {
     },
   ],
   sameAs: [
+    'https://www.midcar.net',
     'https://www.facebook.com/midcar.es',
     'https://www.instagram.com/midcar_es',
     'https://www.youtube.com/@midcar',
