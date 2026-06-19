@@ -138,16 +138,40 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     ],
   }
 
+  // FAQPage JSON-LD (solo si el post tiene FAQs). El valor GEO real está en el
+  // bloque Q&A visible de abajo; este schema es complemento de coste cero.
+  const faqJsonLd =
+    post.faqs && post.faqs.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: post.faqs.map((f) => ({
+            '@type': 'Question',
+            name: f.pregunta,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: f.respuesta,
+            },
+          })),
+        }
+      : null
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd).replace(/</g, '\\u003c') }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, '\\u003c') }}
       />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, '\\u003c') }}
+        />
+      )}
 
       <main className="min-h-screen bg-white">
         {/* Hero Section with Title */}
@@ -235,6 +259,21 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* Preguntas frecuentes (Q&A visible — lo que citan las IAs) */}
+            {post.faqs && post.faqs.length > 0 && (
+              <section className="mt-10 pt-8 border-t border-gray-200">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Preguntas frecuentes</h2>
+                <div className="space-y-6">
+                  {post.faqs.map((faq, i) => (
+                    <div key={i}>
+                      <h3 className="font-semibold text-gray-900 mb-2">{faq.pregunta}</h3>
+                      <p className="text-gray-700 leading-relaxed whitespace-pre-line">{faq.respuesta}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
             )}
 
             {/* Share Buttons */}

@@ -9,7 +9,9 @@ export function JsonLd({ data }: JsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      // Escapar `<` a < evita que un valor con `</script>` (p. ej. una
+      // descripción de vehículo del CRM) rompa el HTML o permita inyección.
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
     />
   )
 }
