@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { getAllPublishedSlugs } from '@/lib/blog-service'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
@@ -81,21 +82,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         })
       }
 
-      // Fetch blog posts
-      const { data: posts, error: postsError } = await supabase
-        .from('blog_posts')
-        .select('slug, updated_at')
-        .eq('estado', 'publicado')
-        .order('fecha_publicacion', { ascending: false })
-
-      if (!postsError && posts) {
-        blogPages = posts.map((post) => ({
-          url: `${siteUrl}/blog/${post.slug}`,
-          lastModified: post.updated_at ? new Date(post.updated_at) : new Date(),
-          changeFrequency: 'weekly' as const,
-          priority: 0.7,
-        }))
-      }
+      // Blog posts: usar la MISMA fuente que las páginas reales (getAllPublishedSlugs,
+      // que maneja cliente + fallback estático). El query directo con la anon key
+      // devolvía 0 filas (RLS sobre blog_posts), dejando TODAS las guías fuera del
+      // sitemap aunque las páginas sí existen — las guías son el contenido citable de GEO.
+      const blogSlugs = await getAllPublishedSlugs()
+      blogPages = blogSlugs.map((slug) => ({
+        url: `${siteUrl}/blog/${slug}`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }))
 
       // Fetch blog categories
       const { data: categories, error: categoriesError } = await supabase
