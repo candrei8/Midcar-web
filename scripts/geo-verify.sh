@@ -9,7 +9,9 @@
 #
 # Sin argumentos usa https://midcar.es y descubre un slug del sitemap.
 
-set -uo pipefail
+# Nota: sin `pipefail` a propósito — `echo "$grande" | grep -q` provoca SIGPIPE
+# (grep -q corta el pipe) y con pipefail daría falsos negativos en sitemaps grandes.
+set -u
 
 BASE="${1:-https://midcar.es}"
 UA="GPTBot"
@@ -47,9 +49,12 @@ else
 fi
 
 echo "[4] sitemap.xml"
-SM=$(curl -s "$BASE/sitemap.xml")
+# Fetch con reintentos: el sitemap es grande y un único curl puede fallar puntualmente (falso negativo).
+SM=$(curl -s --retry 4 --retry-delay 1 --retry-all-errors --max-time 30 "$BASE/sitemap.xml")
 echo "$SM" | grep -q '<urlset' && ok "sitemap XML válido" || ko "sitemap no válido"
 echo "$SM" | grep -q '/vehiculos/' && ok "incluye fichas de vehículo" || ko "sin fichas en sitemap"
+BLOGN=$(echo "$SM" | grep -o '/blog/[^<]*' | grep -vc '/categoria/')
+[ "${BLOGN:-0}" -ge 1 ] && ok "incluye guías de blog ($BLOGN)" || ko "sin guías de blog en sitemap"
 
 echo "[5] host: www → apex (301)"
 CODE=$(curl -s -o /dev/null -w '%{http_code}' "https://www.midcar.es/")
