@@ -14,6 +14,11 @@ export interface BlogCategory {
   updated_at: string
 }
 
+export interface BlogFaq {
+  pregunta: string
+  respuesta: string
+}
+
 export interface BlogPost {
   id: string
   slug: string
@@ -34,6 +39,9 @@ export interface BlogPost {
   created_at: string
   updated_at: string
   categoria?: BlogCategory
+  /** Preguntas frecuentes opcionales (columna jsonb `faqs`). Si están presentes,
+   *  la página del post emite FAQPage schema + bloque Q&A visible (clave para GEO). */
+  faqs?: BlogFaq[] | null
 }
 
 export interface BlogPostsOptions {

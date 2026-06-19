@@ -12,7 +12,7 @@ import BlogCard from '@/components/blog/BlogCard'
 import BlogSidebar from '@/components/blog/BlogSidebar'
 import Pagination from '@/components/blog/Pagination'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 export const revalidate = 3600 // Revalidate every hour
 

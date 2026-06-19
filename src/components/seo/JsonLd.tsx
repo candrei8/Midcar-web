@@ -9,14 +9,16 @@ export function JsonLd({ data }: JsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      // Escapar `<` a < evita que un valor con `</script>` (p. ej. una
+      // descripción de vehículo del CRM) rompa el HTML o permita inyección.
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
     />
   )
 }
 
 // Generadores de datos estructurados para diferentes tipos
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 // Schema para un vehículo
 export function generateVehicleSchema(vehicle: {
@@ -33,6 +35,11 @@ export function generateVehicleSchema(vehicle: {
   slug: string
   stock_id?: string
   description?: string
+  cv?: number
+  color?: string
+  doors?: number
+  seats?: number
+  bodyType?: string
 }) {
   const urlSlug = vehicle.stock_id || vehicle.slug
   return {
@@ -40,6 +47,7 @@ export function generateVehicleSchema(vehicle: {
     '@type': 'Car',
     '@id': `${siteUrl}/vehiculos/${urlSlug}#vehicle`,
     name: vehicle.title,
+    ...(vehicle.stock_id ? { sku: vehicle.stock_id } : {}),
     brand: {
       '@type': 'Brand',
       name: vehicle.brand,
@@ -53,6 +61,22 @@ export function generateVehicleSchema(vehicle: {
     },
     fuelType: vehicle.fuel,
     vehicleTransmission: vehicle.transmission,
+    ...(vehicle.color ? { color: vehicle.color } : {}),
+    ...(vehicle.doors ? { numberOfDoors: vehicle.doors } : {}),
+    ...(vehicle.seats ? { vehicleSeatingCapacity: vehicle.seats } : {}),
+    ...(vehicle.bodyType ? { bodyType: vehicle.bodyType } : {}),
+    ...(vehicle.cv
+      ? {
+          vehicleEngine: {
+            '@type': 'EngineSpecification',
+            enginePower: {
+              '@type': 'QuantitativeValue',
+              value: vehicle.cv,
+              unitText: 'CV',
+            },
+          },
+        }
+      : {}),
     image: vehicle.images[0] || `${siteUrl}/og-image.jpg`,
     description: vehicle.description || `${vehicle.title} - ${vehicle.year} - ${vehicle.km} km - ${vehicle.fuel}`,
     offers: {

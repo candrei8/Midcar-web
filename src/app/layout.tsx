@@ -23,7 +23,7 @@ const jakarta = Plus_Jakarta_Sans({
   preload: true,
 })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -214,6 +214,7 @@ const organizationJsonLd = {
     },
   ],
   sameAs: [
+    'https://www.midcar.net',
     'https://www.facebook.com/midcar.es',
     'https://www.instagram.com/midcar_es',
     'https://www.youtube.com/@midcar',
@@ -286,11 +287,11 @@ export default async function RootLayout({
         {/* JSON-LD Estructurado */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, '\\u003c') }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, '\\u003c') }}
         />
       </head>
       <body className="min-h-screen flex flex-col antialiased" suppressHydrationWarning>

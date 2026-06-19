@@ -2,9 +2,10 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getVehicleBySlug, getSimilarVehicles } from '@/lib/vehicles-service'
 import { VehicleDetailClient } from './VehicleDetailClient'
+import { JsonLd, generateVehicleSchema, generateBreadcrumbSchema } from '@/components/seo/JsonLd'
 import { formatPrice } from '@/lib/utils'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const vehicle = await getVehicleBySlug(params.slug)
@@ -35,5 +36,17 @@ export default async function VehicleDetailPage({ params }: { params: { slug: st
 
   const similarVehicles = await getSimilarVehicles(vehicle, 4)
 
-  return <VehicleDetailClient vehicle={vehicle} similarVehicles={similarVehicles} />
+  const breadcrumb = generateBreadcrumbSchema([
+    { name: 'Inicio', url: `${siteUrl}/` },
+    { name: 'Vehículos', url: `${siteUrl}/vehiculos` },
+    { name: vehicle.title, url: `${siteUrl}/vehiculos/${vehicle.stock_id || vehicle.slug}` },
+  ])
+
+  return (
+    <>
+      <JsonLd data={generateVehicleSchema(vehicle)} />
+      <JsonLd data={breadcrumb} />
+      <VehicleDetailClient vehicle={vehicle} similarVehicles={similarVehicles} />
+    </>
+  )
 }

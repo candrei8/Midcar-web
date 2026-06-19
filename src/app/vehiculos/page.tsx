@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import { VehiclesCatalog } from '@/components/vehicles/VehiclesCatalog'
 import { VehiclesHeader } from '@/components/vehicles/VehiclesHeader'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 export const metadata: Metadata = {
   title: 'Coches de Segunda Mano en Madrid | Catálogo de Vehículos',

@@ -138,7 +138,13 @@ const nextConfig = {
   // Redirecciones SEO
   async redirects() {
     return [
-      // Redirigir www a non-www (o viceversa según preferencia)
+      // Redirigir www a apex (midcar.es es la versión canónica del dominio)
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.midcar.es' }],
+        destination: 'https://midcar.es/:path*',
+        permanent: true,
+      },
       // Redirigir URLs antiguas si existen
       {
         source: '/coches',

@@ -43,7 +43,7 @@ const HeroSection = dynamic(
   }
 )
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.midcar.es'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 export const metadata: Metadata = {
   title: 'MID Car | Concesionario de Coches de Segunda Mano en Madrid',
