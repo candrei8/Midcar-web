@@ -304,11 +304,11 @@ export default function VehicleDetailClient({ vehicle, similarVehicles, relatedP
               {/* Contact buttons */}
               <div className="space-y-3">
                 <a
-                  href="tel:910023016"
+                  href="tel:617728087"
                   className="btn-primary w-full justify-center text-lg py-4"
                 >
                   <Phone className="w-5 h-5" />
-                  Llamar: 910 023 016
+                  Llamar: 617 728 087
                 </a>
                 <a
                   href={`https://wa.me/34695055555?text=Hola, estoy interesado en el ${encodeURIComponent(vehicle.title)} (${formatPrice(vehicle.price)})`}
@@ -395,8 +395,9 @@ export default function VehicleDetailClient({ vehicle, similarVehicles, relatedP
               {vehicle.bodyType}</Link> de ocasión con garantía.
             </p>
             <p className="text-secondary-600 text-sm leading-relaxed">
-              En MID Car todos nuestros vehículos incluyen <strong>1 año de garantía sin límite de kilómetros</strong> e
-              informe CARFAX verificado. Ofrecemos{' '}
+              En MID Car todos nuestros vehículos incluyen <strong>12 meses de Garantía Plus</strong> (cobertura de
+              hasta 2.500 € por avería) e informe CARFAX verificado; los vehículos con menos de 120.000 km pueden
+              acogerse a la <strong>Garantía Premium</strong> con cobertura de hasta 6.000 € por avería. Ofrecemos{' '}
               <Link href="/financiacion" className="text-primary-600 hover:underline">
                 financiación sin entrada
               </Link>{' '}

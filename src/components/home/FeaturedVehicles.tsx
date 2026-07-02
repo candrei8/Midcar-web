@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight, Fuel, Gauge, Calendar, Zap, Camera } from 'lucide-react'
 import { formatPrice, formatKilometers } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -29,10 +30,12 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
       {/* Vehicle Image */}
       <div className="relative aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 overflow-hidden">
         {mainImage && !imgError ? (
-          <img
+          <Image
             src={mainImage}
             alt={vehicle.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
             onError={() => {
               if (imageIndex < images.length - 1 && imageIndex < MAX_IMAGE_RETRIES - 1) {

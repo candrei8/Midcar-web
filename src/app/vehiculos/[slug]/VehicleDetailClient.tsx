@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   ArrowLeft,
   Fuel,
@@ -17,6 +18,7 @@ import {
   ChevronRight,
   Camera,
   Calculator,
+  ChevronDown,
 } from 'lucide-react'
 import { formatPrice, formatKilometers, cn } from '@/lib/utils'
 import type { Vehicle } from '@/lib/vehicles-service'
@@ -38,6 +40,7 @@ export function VehicleDetailClient({ vehicle, similarVehicles }: VehicleDetailC
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
+  const [descExpanded, setDescExpanded] = useState(false)
 
   useEffect(() => {
     const safeImageCount = vehicle.images?.filter((image) => !failedImages.has(image)).length || 0
@@ -92,10 +95,13 @@ export function VehicleDetailClient({ vehicle, similarVehicles }: VehicleDetailC
               >
                 {hasImages ? (
                   <>
-                    <img
-                      src={currentImage}
+                    <Image
+                      src={currentImage!}
                       alt={`${vehicle.title} - Foto ${safeCurrentImageIndex + 1}`}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      priority
+                      className="object-cover"
                       onError={() => {
                         if (!currentImage) return
                         setFailedImages((prev) => {
@@ -269,7 +275,28 @@ export function VehicleDetailClient({ vehicle, similarVehicles }: VehicleDetailC
               {vehicle.description && (
                 <div className="bg-white rounded-xl p-6 border border-secondary-100">
                   <h3 className="font-semibold text-secondary-900 mb-3">Descripción</h3>
-                  <p className="text-secondary-700 whitespace-pre-line text-sm leading-relaxed">{vehicle.description}</p>
+                  {vehicle.description.length > 300 ? (
+                    <>
+                      <div className={cn(
+                        "relative overflow-hidden transition-[max-height] duration-500 ease-in-out",
+                        descExpanded ? "max-h-[2000px]" : "max-h-28"
+                      )}>
+                        <p className="text-secondary-700 whitespace-pre-line text-sm leading-relaxed">{vehicle.description}</p>
+                        {!descExpanded && (
+                          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setDescExpanded((v) => !v)}
+                        className="mt-3 inline-flex items-center gap-1.5 text-primary-600 font-semibold text-sm hover:text-primary-700 transition-colors"
+                      >
+                        <span>{descExpanded ? 'Ver menos' : 'Ver descripción completa'}</span>
+                        <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", descExpanded && "rotate-180")} />
+                      </button>
+                    </>
+                  ) : (
+                    <p className="text-secondary-700 whitespace-pre-line text-sm leading-relaxed">{vehicle.description}</p>
+                  )}
                 </div>
               )}
 
@@ -294,11 +321,11 @@ export function VehicleDetailClient({ vehicle, similarVehicles }: VehicleDetailC
 
               <div className="space-y-3">
                 <a
-                  href="tel:910023016"
+                  href="tel:617728087"
                   className="btn-primary w-full justify-center text-lg py-4"
                 >
                   <Phone className="w-5 h-5" />
-                  Llamar: 910 023 016
+                  Llamar: 617 728 087
                 </a>
                 <a
                   href={`https://wa.me/34695055555?text=Hola, estoy interesado en el ${encodeURIComponent(vehicle.title)} (${formatPrice(vehicle.price)})`}
@@ -467,10 +494,12 @@ function SimilarVehicleCard({ vehicle }: { vehicle: Vehicle }) {
     >
       <div className="aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 relative overflow-hidden">
         {mainImage && !imgError ? (
-          <img
+          <Image
             src={mainImage}
             alt={vehicle.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
             onError={() => {
               if (imageIndex < images.length - 1 && imageIndex < MAX_IMAGE_RETRIES - 1) {

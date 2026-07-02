@@ -33,6 +33,7 @@ interface AboutSectionProps {
 
 export function AboutSection({ content: serverContent }: AboutSectionProps = {}) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [imgFailed, setImgFailed] = useState(false)
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-80px' })
   const [mounted, setMounted] = useState(false)
@@ -42,6 +43,8 @@ export function AboutSection({ content: serverContent }: AboutSectionProps = {})
   if (content.imagenUrl && /(^|\.)unsplash\.com/i.test(content.imagenUrl)) {
     content.imagenUrl = ''
   }
+  // Foto profesional por defecto (licencia libre, auto-alojada) si el panel no define una propia
+  const aboutImage = content.imagenUrl || '/sobre-nosotros.jpg'
 
   useEffect(() => {
     setMounted(true)
@@ -73,28 +76,33 @@ export function AboutSection({ content: serverContent }: AboutSectionProps = {})
             initial={mounted ? "hidden" : false}
             animate={mounted ? (isInView ? "visible" : "hidden") : false}
           >
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-secondary-700 via-secondary-800 to-secondary-950">
-              {content.imagenUrl ? (
-                <img
-                  src={content.imagenUrl}
-                  alt="Concesionario MID Car"
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover"
-                />
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-primary-50 via-white to-secondary-100">
+              {aboutImage && !imgFailed ? (
+                <>
+                  <img
+                    src={aboutImage}
+                    alt="Concesionario MID Car en Torrejón de Ardoz"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover"
+                    onError={() => setImgFailed(true)}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <p className="text-white text-xl font-bold">MID Car</p>
+                    <p className="text-white/90 text-sm">Torrejón de Ardoz, Madrid</p>
+                  </div>
+                </>
               ) : (
-                <div className="absolute inset-0" aria-hidden>
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_60%)]" />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_60%,rgba(0,0,0,0.6)_100%)]" />
-                  <div className="absolute left-8 right-8 top-8 h-px bg-white/10" />
-                  <div className="absolute left-8 right-8 bottom-24 h-px bg-white/10" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+                  <div className="w-20 h-20 rounded-2xl bg-primary-600/10 flex items-center justify-center mb-4">
+                    <Car className="w-10 h-10 text-primary-600" />
+                  </div>
+                  <p className="text-secondary-900 text-2xl font-bold">MID Car</p>
+                  <p className="text-secondary-500 text-sm mt-1">Torrejón de Ardoz · Talavera de la Reina</p>
+                  <p className="text-secondary-400 text-xs mt-3">Concesionario de vehículos de ocasión certificados</p>
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-              <div className="absolute bottom-6 left-6 right-6">
-                <p className="text-white text-xl font-bold">MID Car</p>
-                <p className="text-white/90 text-sm">Torrejón de Ardoz, Madrid</p>
-              </div>
             </div>
             {/* Floating card */}
             <div className="absolute -bottom-6 -right-6 bg-primary-600 text-white rounded-2xl p-6 shadow-xl hidden md:block">

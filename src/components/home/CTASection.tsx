@@ -254,14 +254,14 @@ export function CTASection({ content: serverContent }: CTASectionProps = {}) {
               transition={{ delay: 0.7, duration: 0.5 }}
             >
               <motion.a
-                href="tel:910023016"
+                href="tel:617728087"
                 className="btn-primary"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 <Phone className="w-5 h-5" />
-                910 023 016
+                617 728 087
               </motion.a>
               <motion.a
                 href="https://goo.gl/maps/QBEDPvLewMC1NdZ68"

@@ -1,30 +1,21 @@
 'use client'
 
-import React, { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import React, { Suspense, useLayoutEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { useGLTF, Environment, ContactShadows, AdaptiveDpr } from '@react-three/drei'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGLTF, Environment, ContactShadows, Lightformer } from '@react-three/drei'
 import * as THREE from 'three'
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
 
 useGLTF.preload('/models/car.glb')
 
-function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement> }) {
-  const { scene } = useGLTF('/models/car.glb')
-  const invalidate = useThree(state => state.invalidate)
-  const groupRef = useRef<THREE.Group>(null!)
-  const [isMobile, setIsMobile] = useState(false)
+// Pose final del coche (la que dejaba la antigua animación de scroll al terminar),
+// ahora fija. Sin ScrollTrigger ni timeline: el coche se renderiza una vez y se queda.
+const FINAL_SCALE = 0.85
+const FINAL_POSITION: [number, number, number] = [1.9, -0.9, 0]
+const FINAL_ROTATION: [number, number, number] = [0, -Math.PI / 6, 0]
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+function CarModel() {
+  const { scene } = useGLTF('/models/car.glb')
+  const invalidate = useThree((state) => state.invalidate)
 
   useLayoutEffect(() => {
     const box = new THREE.Box3().setFromObject(scene)
@@ -43,111 +34,30 @@ function CarModel({ containerRef }: { containerRef: React.RefObject<HTMLElement>
         const mat = child.material as THREE.MeshPhysicalMaterial
 
         if (mat.name.toLowerCase().includes('paint') || mat.name.toLowerCase().includes('body')) {
+          // Pintura negra glossy realista (no cromo)
           mat.color.setHex(0x0a0a0a)
-          mat.roughness = 0.05
-          mat.metalness = 1.0
+          mat.metalness = 0.85
+          mat.roughness = 0.3
           mat.clearcoat = 1.0
-          mat.clearcoatRoughness = 0.03
-          mat.envMapIntensity = 1.5
+          mat.clearcoatRoughness = 0.15
+          mat.envMapIntensity = 0.9
         } else {
-          mat.envMapIntensity = 1.0
+          mat.envMapIntensity = 0.9
         }
+        // Apagar materiales emisivos del modelo (las luces brillaban en rojo en el parabrisas)
+        const std = mat as THREE.MeshStandardMaterial
+        if (std.emissive) {
+          std.emissive.setHex(0x000000)
+          std.emissiveIntensity = 0
+        }
+        mat.needsUpdate = true
       }
     })
     invalidate()
   }, [scene, invalidate])
 
-  useLayoutEffect(() => {
-    if (!groupRef.current || !containerRef.current) return
-
-    const ctx = gsap.context(() => {
-      const baseScale = isMobile ? 0.7 : 1.2
-
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: 1.5,
-          onUpdate: () => invalidate(),
-          onRefresh: () => invalidate(),
-        }
-      })
-
-      tl.set(groupRef.current.scale, { x: baseScale * 4.5, y: baseScale * 4.5, z: baseScale * 4.5 })
-      tl.set(groupRef.current.position, { x: isMobile ? 0 : -4.5, y: isMobile ? -0.8 : -1.2, z: 6 })
-      tl.set(groupRef.current.rotation, { y: Math.PI / 4.5 })
-
-      tl.to({}, { duration: 100 }, 0)
-
-      tl.to(groupRef.current.scale, {
-        x: baseScale * 1.5,
-        y: baseScale * 1.5,
-        z: baseScale * 1.5,
-        ease: 'power2.inOut',
-        duration: 20
-      }, 15)
-        .to(groupRef.current.position, {
-          x: 0,
-          y: -0.8,
-          z: 0,
-          ease: 'power2.inOut',
-          duration: 20
-        }, 15)
-        .to(groupRef.current.rotation, {
-          y: -Math.PI / 2,
-          ease: 'power2.inOut',
-          duration: 20
-        }, 15)
-
-      tl.to(groupRef.current.scale, {
-        x: isMobile ? baseScale * 1.1 : baseScale * 1.3,
-        y: isMobile ? baseScale * 1.1 : baseScale * 1.3,
-        z: isMobile ? baseScale * 1.1 : baseScale * 1.3,
-        ease: 'power2.inOut',
-        duration: 15
-      }, 40)
-        .to(groupRef.current.position, {
-          x: isMobile ? 0 : 1.5,
-          y: isMobile ? -0.3 : -0.8,
-          z: 0,
-          ease: 'power2.inOut',
-          duration: 15
-        }, 40)
-        .to(groupRef.current.rotation, {
-          y: isMobile ? -Math.PI / 3 : -Math.PI / 3.5,
-          ease: 'power2.inOut',
-          duration: 15
-        }, 40)
-
-      tl.to(groupRef.current.scale, {
-        x: isMobile ? baseScale * 0.85 : baseScale,
-        y: isMobile ? baseScale * 0.85 : baseScale,
-        z: isMobile ? baseScale * 0.85 : baseScale,
-        ease: 'power2.out',
-        duration: 10
-      }, 60)
-        .to(groupRef.current.position, {
-          x: isMobile ? 0 : 2,
-          y: isMobile ? 0.2 : -0.8,
-          z: 0,
-          ease: 'power2.out',
-          duration: 10
-        }, 60)
-        .to(groupRef.current.rotation, {
-          y: isMobile ? -Math.PI / 5 : -Math.PI / 7,
-          ease: 'power2.out',
-          duration: 10
-        }, 60)
-
-      invalidate()
-    })
-
-    return () => ctx.revert()
-  }, [containerRef, isMobile, invalidate])
-
   return (
-    <group ref={groupRef}>
+    <group scale={FINAL_SCALE} position={FINAL_POSITION} rotation={FINAL_ROTATION}>
       <primitive object={scene} />
     </group>
   )
@@ -160,42 +70,47 @@ function SceneLoaderBar() {
         <div className="absolute top-0 left-0 h-full w-full bg-white origin-left animate-[scale-x_2s_infinite_ease-in-out]" />
       </div>
       <span className="text-white/40 text-[9px] tracking-[0.4em] uppercase font-light">
-        Preparando Experiencia
+        Cargando
       </span>
     </div>
   )
 }
 
-export function HeroScene({ containerRef }: { containerRef: React.RefObject<HTMLElement> }) {
+export function HeroScene() {
   return (
     <Suspense fallback={<SceneLoaderBar />}>
       <Canvas
         shadows
         frameloop="demand"
-        dpr={[1, 1.5]}
+        dpr={[1, 2]}
         camera={{ position: [0, 1.5, 8], fov: 30 }}
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.2,
+          toneMappingExposure: 1.15,
           powerPreference: 'high-performance',
         }}
       >
-        <AdaptiveDpr pixelated />
-        <Environment files="/studio_small_03_1k.hdr" />
+        {/* Estudio neutro con softboxes blancos -> reflejos limpios en blanco/gris (sin arcoíris del HDR) */}
+        <Environment resolution={256}>
+          <Lightformer form="rect" intensity={1.8} position={[0, 5, 1]} scale={[10, 4, 1]} />
+          <Lightformer form="rect" intensity={1.2} position={[-5, 1.5, 1]} rotation-y={Math.PI / 2} scale={[6, 4, 1]} />
+          <Lightformer form="rect" intensity={1.2} position={[5, 1.5, 1]} rotation-y={-Math.PI / 2} scale={[6, 4, 1]} />
+          <Lightformer form="rect" intensity={1.5} position={[0, 1.5, -6]} scale={[10, 5, 1]} />
+        </Environment>
 
-        <ambientLight intensity={0.2} />
-        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} castShadow />
-        <pointLight position={[-10, -10, -10]} intensity={1} color="#4444ff" />
+        <ambientLight intensity={0.35} />
+        <spotLight position={[6, 9, 5]} angle={0.35} penumbra={1} intensity={1.5} castShadow color="#ffffff" />
+        <directionalLight position={[-6, 5, -3]} intensity={0.5} color="#ffffff" />
 
-        <CarModel containerRef={containerRef} />
+        <CarModel />
 
         <ContactShadows
-          position={[0, -0.85, 0]}
-          opacity={0.6}
-          scale={20}
-          blur={2.5}
-          far={4}
+          position={[FINAL_POSITION[0], FINAL_POSITION[1], FINAL_POSITION[2]]}
+          opacity={0.65}
+          scale={12}
+          blur={2.2}
+          far={3}
           color="#000000"
         />
       </Canvas>
