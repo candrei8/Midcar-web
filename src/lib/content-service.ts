@@ -165,7 +165,7 @@ export async function getHeroContent(): Promise<HeroContent> {
   const content = await getSectionContent('hero')
 
   return {
-    badge: content['badge'] || 'Más de 15 años de experiencia',
+    badge: content['badge'] || 'En activo desde 2007',
     titulo1: content['titulo_1'] || 'Vehículos de confianza',
     titulo2: content['titulo_2'] || 'con garantía incluida',
     subtitulo: content['subtitulo'] || 'Desde 2007 ofreciendo vehículos de ocasión certificados, garantizados y al mejor precio.',
