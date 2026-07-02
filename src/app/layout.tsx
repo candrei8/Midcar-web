@@ -123,7 +123,7 @@ export const metadata: Metadata = {
 
   // Verificación
   verification: {
-    google: 'tu-codigo-de-verificacion-google',
+    google: 'JpMezKzQhVcl4osFh-Cv7DnFE201h6R8r6S4YL5yirI',
     // yandex: 'tu-codigo-yandex',
     // bing: 'tu-codigo-bing',
   },
