@@ -7,7 +7,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
 export const metadata: Metadata = {
   title: 'Contacto | Concesionario MID Car Torrejón de Ardoz',
-  description: 'Contacta con MID Car, tu concesionario de coches de segunda mano en Torrejón de Ardoz, Madrid. Teléfono 910 023 016. Visítanos en C/ Polo Sur 2.',
+  description: 'Contacta con MID Car, tu concesionario de coches de segunda mano en Torrejón de Ardoz, Madrid. Teléfono 617 728 087. Visítanos en C/ Polo Sur 2.',
   keywords: [
     'contacto midcar',
     'concesionario torrejón de ardoz',
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Contacto | MID Car Madrid',
-    description: 'Visítanos en Torrejón de Ardoz. Teléfono: 910 023 016. Horario: L-J 9:00-14:00/16:00-20:30, V 9:00-17:00, D 11:00-14:00.',
+    description: 'Visítanos en Torrejón de Ardoz. Teléfono: 617 728 087. Horario: L-J 9:00-14:00/15:30-20:00, V 9:00-14:00/15:30-17:30, D cita previa 11:00-14:00.',
     url: `${siteUrl}/contacto`,
     type: 'website',
     images: [

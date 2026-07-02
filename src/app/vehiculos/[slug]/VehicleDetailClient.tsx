@@ -321,11 +321,11 @@ export function VehicleDetailClient({ vehicle, similarVehicles }: VehicleDetailC
 
               <div className="space-y-3">
                 <a
-                  href="tel:910023016"
+                  href="tel:617728087"
                   className="btn-primary w-full justify-center text-lg py-4"
                 >
                   <Phone className="w-5 h-5" />
-                  Llamar: 910 023 016
+                  Llamar: 617 728 087
                 </a>
                 <a
                   href={`https://wa.me/34695055555?text=Hola, estoy interesado en el ${encodeURIComponent(vehicle.title)} (${formatPrice(vehicle.price)})`}
