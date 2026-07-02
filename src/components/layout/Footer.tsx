@@ -52,7 +52,7 @@ export function Footer({ contactInfo }: FooterProps) {
               </div>
             </Link>
             <p className="text-secondary-400 mb-6 max-w-sm">
-              Más de 15 años siendo el concesionario de segunda mano de confianza en Madrid.
+              Desde 2007, el concesionario de segunda mano de confianza en Madrid.
               Vehículos certificados, garantizados y al mejor precio.
             </p>
 

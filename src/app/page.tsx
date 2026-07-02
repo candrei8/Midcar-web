@@ -3,8 +3,9 @@ import dynamic from 'next/dynamic'
 import { SearchSection } from '@/components/home/SearchSection'
 import { FeaturedVehicles } from '@/components/home/FeaturedVehicles'
 import { HeroSection } from '@/components/home/HeroSection'
+import { QuickCategories } from '@/components/home/QuickCategories'
 import { TrustBadges } from '@/components/home/TrustBadges'
-import { getFeaturedVehicles, getVehiclesOnSale, getVehicleCount, getBrands } from '@/lib/vehicles-service'
+import { getFeaturedVehicles, getVehiclesOnSale, getVehicleCount, getBrands, getFuelTypes } from '@/lib/vehicles-service'
 import {
   getHeroContent,
   getAboutContent,
@@ -12,6 +13,7 @@ import {
   getWarrantyContent,
   getTestimonials,
   getCTAContent,
+  getConfigs,
 } from '@/lib/content-service'
 
 // Below-fold sections — split into separate chunks so they don't bloat the initial JS payload
@@ -94,28 +96,55 @@ export default async function HomePage() {
     onSale,
     count,
     brands,
+    fuelTypes,
     heroContent,
     aboutContent,
     benefits,
     warrantyContent,
     testimonials,
     ctaContent,
+    configs,
   ] = await Promise.all([
     getFeaturedVehicles(),
     getVehiclesOnSale(),
     getVehicleCount(),
     getBrands(),
+    getFuelTypes(),
     getHeroContent(),
     getAboutContent(),
     getBenefits(),
     getWarrantyContent(),
     getTestimonials(),
     getCTAContent(),
+    getConfigs(['google_rating', 'google_reviews_count', 'google_maps_url']),
   ])
 
   const featuredVehicles = featured.length >= 4
     ? featured.slice(0, 8)
     : [...featured, ...onSale.filter(v => !v.featured)].slice(0, 8)
+
+  // Rangos y contadores reales calculados sobre el stock disponible
+  const currentYear = new Date().getFullYear()
+  const validYears = onSale.map(v => v.year).filter(y => y >= 1990 && y <= currentYear + 1)
+  const yearMin = validYears.length ? Math.min(...validYears) : 2010
+  const yearMax = validYears.length ? Math.max(...validYears) : currentYear
+  const priceMax = onSale.length ? Math.max(...onSale.map(v => v.price)) : 50000
+
+  const TURISMO_TYPES = ['berlina', 'familiar', 'suv', 'monovolumen']
+  const categoryCounts = {
+    turismos: onSale.filter(v => TURISMO_TYPES.includes(v.bodyType)).length,
+    furgonetas: onSale.filter(v => v.bodyType === 'furgoneta').length,
+    industriales: onSale.filter(v => v.bodyType === 'industrial').length,
+    automaticos: onSale.filter(v => v.transmission === 'Automático').length,
+    sietePlazas: onSale.filter(v => v.bodyType === 'monovolumen').length,
+    eco: onSale.filter(v => v.label === 'ECO' || v.label === '0').length,
+  }
+
+  const google = {
+    rating: (configs['google_rating'] || '4.5').replace('.', ','),
+    reviews: configs['google_reviews_count'] || '189',
+    url: configs['google_maps_url'] || 'https://goo.gl/maps/QBEDPvLewMC1NdZ68',
+  }
 
   return (
     <>
@@ -125,10 +154,18 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homePageSchema) }}
       />
 
-      <HeroSection content={heroContent} />
-      <SearchSection vehicleCount={count} />
-      <TrustBadges />
+      <HeroSection content={heroContent} google={google} />
+      <SearchSection
+        vehicleCount={count}
+        brands={brands}
+        fuelTypes={fuelTypes}
+        maxPrice={priceMax}
+        minYear={yearMin}
+        maxYear={yearMax}
+      />
+      <QuickCategories counts={categoryCounts} />
       <FeaturedVehicles initialVehicles={featuredVehicles} initialCount={count} />
+      <TrustBadges />
       <BenefitsSection benefits={benefits} />
       <AboutSection content={aboutContent} />
       <WarrantySection content={warrantyContent} />

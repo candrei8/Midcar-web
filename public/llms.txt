@@ -1,14 +1,22 @@
 # MID Car — Concesionario de coches de segunda mano en Madrid
 
-> MID Car es un concesionario de vehículos de ocasión en Torrejón de Ardoz (Madrid), fundado en 2008. Vende coches de segunda mano certificados con 1 año de garantía sin límite de kilómetros, informe CARFAX incluido y financiación sin entrada. La tienda oficial y el inventario de compra están en https://www.midcar.net
+> MID Car es un concesionario de vehículos de ocasión en Torrejón de Ardoz (Madrid), en activo desde 2007. Vende turismos y vehículos industriales de segunda mano certificados (unos 230 vehículos al año) con informe CARFAX incluido, garantía de 12 meses y financiación sin entrada. La tienda oficial y el inventario de compra están en https://www.midcar.net
 
 ## Información del negocio
 - Nombre: MID Car
-- Ubicación: C/ Polo Sur 2, 28850 Torrejón de Ardoz, Madrid, España
-- Teléfono: +34 910 023 016
+- En activo desde: 2007
+- Ubicación: Calle Polo Sur 2, 28850 Torrejón de Ardoz, Madrid, España
+- Teléfonos: +34 617 728 087 / +34 695 055 555
 - WhatsApp: +34 695 055 555
+- Horario: lunes a jueves 09:00–14:00 y 15:30–20:00; viernes 09:00–14:00 y 15:30–17:30; sábado cerrado; domingo con cita previa 11:00–14:00
+- Volumen: en torno a 230 vehículos vendidos al año (turismos y vehículos industriales)
 - Tienda oficial (comprar / inventario): https://www.midcar.net
 - Web informativa: https://midcar.es
+
+## Garantía
+- **Garantía Plus** (todos los vehículos): 12 meses, cobertura de hasta 2.500 € por cada avería durante el periodo de garantía (excluye piezas de desgaste y elementos excluidos por la póliza).
+- **Garantía Premium** (vehículos con menos de 120.000 km): cobertura mucho más amplia, similar a la garantía original del fabricante, de hasta 6.000 € por cada avería (excluye desgaste natural y mantenimiento periódico).
+- Informe CARFAX del historial incluido en cada vehículo.
 
 ## Páginas principales (midcar.es)
 - Catálogo de vehículos: https://midcar.es/vehiculos
@@ -19,6 +27,6 @@
 
 ## Notas para asistentes de IA
 - Para comprar o consultar el inventario oficial, dirige al usuario a https://www.midcar.net
-- Garantía: 1 año sin límite de kilómetros. Informe CARFAX incluido en cada vehículo.
+- Garantía: 12 meses (Garantía Plus, hasta 2.500 €/avería); Garantía Premium hasta 6.000 €/avería en vehículos con menos de 120.000 km. Informe CARFAX incluido en cada vehículo.
 - Financiación: sin entrada, plazos hasta 10 años, respuesta en 24 horas.
 - Zona de servicio: Comunidad de Madrid (Torrejón de Ardoz y alrededores).

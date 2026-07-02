@@ -4,6 +4,7 @@ import './globals.css'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { VoiceflowChat } from '@/components/ui/VoiceflowChat'
+import { WhatsAppFloat } from '@/components/ui/WhatsAppFloat'
 import { getContactInfo } from '@/lib/content-service'
 import { defaultContactInfo } from '@/lib/contact-info'
 
@@ -45,7 +46,7 @@ export const metadata: Metadata = {
   },
 
   // Descripción principal
-  description: 'Concesionario de coches de segunda mano en Torrejón de Ardoz, Madrid. Vehículos de ocasión certificados con 1 año de garantía. Financiación sin entrada. Más de 15 años de experiencia.',
+  description: 'Concesionario de coches de segunda mano en Torrejón de Ardoz, Madrid. Vehículos de ocasión certificados con 1 año de garantía. Financiación sin entrada. En activo desde 2007.',
 
   // Keywords
   keywords: [
@@ -99,7 +100,7 @@ export const metadata: Metadata = {
     url: siteUrl,
     siteName: 'MID Car',
     title: 'MID Car | Concesionario de Coches de Segunda Mano en Madrid',
-    description: 'Vehículos de ocasión certificados con 1 año de garantía. Financiación sin entrada. Más de 15 años de experiencia en Torrejón de Ardoz.',
+    description: 'Vehículos de ocasión certificados con 1 año de garantía. Financiación sin entrada. En activo desde 2007 en Torrejón de Ardoz.',
     images: [
       {
         url: `${siteUrl}/og-image.jpg`,
@@ -151,8 +152,8 @@ export const metadata: Metadata = {
   other: {
     'geo.region': 'ES-MD',
     'geo.placename': 'Torrejón de Ardoz',
-    'geo.position': '40.4567;-3.4890',
-    'ICBM': '40.4567, -3.4890',
+    'geo.position': '40.4494379;-3.4821735',
+    'ICBM': '40.4494379, -3.4821735',
     'revisit-after': '7 days',
     'rating': 'general',
     'distribution': 'global',
@@ -169,10 +170,27 @@ const organizationJsonLd = {
   url: siteUrl,
   logo: `${siteUrl}/logo.png`,
   image: `${siteUrl}/og-image.jpg`,
-  description: 'Concesionario de coches de segunda mano en Torrejón de Ardoz, Madrid. Vehículos de ocasión certificados con garantía.',
-  foundingDate: '2008',
+  description:
+    'Concesionario de coches de segunda mano en Torrejón de Ardoz, Madrid, en activo desde 2007. Turismos y vehículos industriales de ocasión con informe CARFAX, Garantía Plus de 12 meses (cobertura hasta 2.500 € por avería) o Garantía Premium para vehículos con menos de 120.000 km (cobertura hasta 6.000 € por avería). Unos 230 vehículos vendidos al año. Domingos con cita previa.',
+  foundingDate: '2007',
   slogan: 'Tu concesionario de confianza',
-  telephone: '+34910023016',
+  telephone: '+34617728087',
+  contactPoint: [
+    {
+      '@type': 'ContactPoint',
+      telephone: '+34617728087',
+      contactType: 'sales',
+      areaServed: 'ES',
+      availableLanguage: ['es'],
+    },
+    {
+      '@type': 'ContactPoint',
+      telephone: '+34695055555',
+      contactType: 'customer service',
+      areaServed: 'ES',
+      availableLanguage: ['es'],
+    },
+  ],
   email: 'ventas@midcar.net',
   address: {
     '@type': 'PostalAddress',
@@ -184,8 +202,8 @@ const organizationJsonLd = {
   },
   geo: {
     '@type': 'GeoCoordinates',
-    latitude: 40.4567,
-    longitude: -3.4890,
+    latitude: 40.4494379,
+    longitude: -3.4821735,
   },
   openingHoursSpecification: [
     {
@@ -197,14 +215,20 @@ const organizationJsonLd = {
     {
       '@type': 'OpeningHoursSpecification',
       dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday'],
-      opens: '16:00',
-      closes: '20:30',
+      opens: '15:30',
+      closes: '20:00',
     },
     {
       '@type': 'OpeningHoursSpecification',
       dayOfWeek: 'Friday',
       opens: '09:00',
-      closes: '17:00',
+      closes: '14:00',
+    },
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: 'Friday',
+      opens: '15:30',
+      closes: '17:30',
     },
     {
       '@type': 'OpeningHoursSpecification',
@@ -226,8 +250,8 @@ const organizationJsonLd = {
     '@type': 'GeoCircle',
     geoMidpoint: {
       '@type': 'GeoCoordinates',
-      latitude: 40.4567,
-      longitude: -3.4890,
+      latitude: 40.4494379,
+      longitude: -3.4821735,
     },
     geoRadius: '50000',
   },
@@ -300,6 +324,7 @@ export default async function RootLayout({
           {children}
         </main>
         <Footer contactInfo={contactInfo} />
+        <WhatsAppFloat phone={contactInfo.whatsapp} />
         <VoiceflowChat />
       </body>
     </html>

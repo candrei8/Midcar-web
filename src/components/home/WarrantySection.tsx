@@ -7,8 +7,9 @@ import { cn } from '@/lib/utils'
 import type { WarrantyContent } from '@/lib/content-service'
 
 const defaultContent: WarrantyContent = {
-  titulo: '1 año de garantía sin límite de km',
-  subtitulo: 'Colaboramos con CONCENTRA GARANTÍAS desde hace más de 11 años.',
+  titulo: '12 meses de garantía en todos nuestros vehículos',
+  subtitulo:
+    'Garantía Plus: 12 meses con cobertura de hasta 2.500 € por avería. Garantía Premium (vehículos con menos de 120.000 km): cobertura de hasta 6.000 € por avería, similar a la del fabricante. Colaboramos con CONCENTRA GARANTÍAS desde hace más de 11 años.',
   cubierto: [
     'Motor y sus componentes internos',
     'Caja de cambios manual y automática',
@@ -177,11 +178,11 @@ export function WarrantySection({ content: serverContent }: WarrantySectionProps
                     ¿Tienes dudas sobre la garantía? Contáctanos y te lo explicamos todo.
                   </p>
                   <a
-                    href="tel:910023016"
+                    href="tel:617728087"
                     className="btn-primary inline-flex items-center gap-2"
                   >
                     <Phone className="w-4 h-4" />
-                    Llamar: 910 023 016
+                    Llamar: 617 728 087
                   </a>
                 </div>
               </div>

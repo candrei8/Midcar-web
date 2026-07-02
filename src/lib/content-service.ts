@@ -168,11 +168,11 @@ export async function getHeroContent(): Promise<HeroContent> {
     badge: content['badge'] || 'Concesionario de confianza en Madrid',
     titulo1: content['titulo_1'] || 'Tu próximo coche',
     titulo2: content['titulo_2'] || 'está aquí',
-    subtitulo: content['subtitulo'] || 'Más de 15 años ofreciendo vehículos de ocasión certificados, garantizados y al mejor precio.',
+    subtitulo: content['subtitulo'] || 'Desde 2007 ofreciendo vehículos de ocasión certificados, garantizados y al mejor precio.',
     ctaPrimario: content['cta_primario'] || 'Ver vehículos',
     ctaSecundario: content['cta_secundario'] || 'Contactar',
     stats: [
-      { valor: content['stat_1_valor'] || '15+', label: content['stat_1_label'] || 'años de experiencia' },
+      { valor: content['stat_1_valor'] || '2007', label: content['stat_1_label'] || 'en activo desde' },
       { valor: content['stat_2_valor'] || '1 año', label: content['stat_2_label'] || 'de garantía' },
       { valor: content['stat_3_valor'] || '80+', label: content['stat_3_label'] || 'vehículos en stock' },
     ],
@@ -208,12 +208,12 @@ export async function getAboutContent(): Promise<AboutContent> {
   return {
     label: content['label'] || 'Sobre nosotros',
     titulo: content['titulo'] || 'Tu concesionario de confianza en Madrid',
-    parrafoPrincipal: content['parrafo_principal'] || 'En MID Car contamos con una amplia experiencia de más de 10 años en la venta de vehículos de ocasión.',
+    parrafoPrincipal: content['parrafo_principal'] || 'En MID Car llevamos desde 2007 vendiendo vehículos de ocasión: unos 230 turismos y vehículos industriales al año, todos con informe CARFAX y garantía de 12 meses.',
     parrafosExtendidos,
     stats: [
       { valor: content['stat_1_valor'] || '+80', label: content['stat_1_label'] || 'Vehículos en stock' },
       { valor: content['stat_2_valor'] || '4.5', label: content['stat_2_label'] || 'Estrellas en Google' },
-      { valor: content['stat_3_valor'] || '2009', label: content['stat_3_label'] || 'Desde' },
+      { valor: content['stat_3_valor'] || '2007', label: content['stat_3_label'] || 'Desde' },
       { valor: content['stat_4_valor'] || '2', label: content['stat_4_label'] || 'Ubicaciones' },
     ],
     imagenUrl: content['imagen_url'] || '',
@@ -246,8 +246,8 @@ export async function getWarrantyContent(): Promise<WarrantyContent> {
   }
 
   return {
-    titulo: content['titulo'] || '1 año de garantía sin límite de km',
-    subtitulo: content['subtitulo'] || 'Colaboramos con CONCENTRA GARANTÍAS desde hace más de 11 años.',
+    titulo: content['titulo'] || '12 meses de garantía en todos nuestros vehículos',
+    subtitulo: content['subtitulo'] || 'Garantía Plus: 12 meses con cobertura de hasta 2.500 € por avería. Garantía Premium (vehículos con menos de 120.000 km): cobertura de hasta 6.000 € por avería, similar a la del fabricante. Colaboramos con CONCENTRA GARANTÍAS desde hace más de 11 años.',
     cubierto: cubierto.length > 0 ? cubierto : [
       'Motor y sus componentes internos',
       'Caja de cambios manual y automática',
@@ -389,7 +389,7 @@ export async function getContactInfo(): Promise<ContactInfo> {
   const configs = await getAllConfigs()
 
   return {
-    telefono: configs['telefono'] || '910 023 016',
+    telefono: configs['telefono'] || '617 728 087',
     whatsapp: configs['whatsapp'] || '695055555',
     email: configs['email'] || 'ventas@midcar.net',
     direccion: {
@@ -399,10 +399,10 @@ export async function getContactInfo(): Promise<ContactInfo> {
       provincia: configs['direccion_provincia'] || 'Madrid',
     },
     horario: {
-      lunesJueves: configs['horario_lunes_jueves'] || '9:00-14:00 / 16:00-20:30',
-      viernes: configs['horario_viernes'] || '9:00-17:00',
+      lunesJueves: configs['horario_lunes_jueves'] || '9:00-14:00 / 15:30-20:00',
+      viernes: configs['horario_viernes'] || '9:00-14:00 / 15:30-17:30',
       sabado: configs['horario_sabado'] || 'Cerrado',
-      domingo: configs['horario_domingo'] || '11:00-14:00',
+      domingo: configs['horario_domingo'] || '11:00-14:00 (con cita previa)',
     },
     googleMapsUrl: configs['google_maps_url'] || 'https://goo.gl/maps/QBEDPvLewMC1NdZ68',
     redes: {

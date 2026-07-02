@@ -1,266 +1,195 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { motion, useInView } from 'framer-motion'
-import { Search, Car, Fuel, Gauge, Euro, ChevronDown } from 'lucide-react'
-import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Search, ChevronDown } from 'lucide-react'
 
 interface SearchSectionProps {
-  vehicleCount?: number
+  vehicleCount: number
+  brands: string[]
+  fuelTypes: string[]
+  maxPrice: number
+  minYear: number
+  maxYear: number
 }
 
-const bodyTypes = [
-  { id: 'berlina', name: 'Berlina', icon: '🚗' },
-  { id: 'familiar', name: 'Familiar', icon: '🚙' },
-  { id: 'suv', name: 'SUV/4x4', icon: '🚜' },
-  { id: 'monovolumen', name: 'Monovolumen', icon: '🚐' },
-  { id: 'furgoneta', name: 'Furgoneta', icon: '🚚' },
-  { id: 'industrial', name: 'Industrial', icon: '🏭' },
+const vehicleTypes = [
+  { id: 'todos', name: 'Todos' },
+  { id: 'turismo', name: 'Turismo' },
+  { id: 'furgoneta', name: 'Furgoneta' },
+  { id: 'industrial', name: 'Industrial' },
+  { id: 'berlina', name: 'Berlina' },
+  { id: 'familiar', name: 'Familiar' },
+  { id: 'suv', name: 'SUV / 4x4' },
+  { id: 'monovolumen', name: 'Monovolumen' },
 ]
 
-const brands = [
-  'Todas las marcas', 'BMW', 'Citroën', 'Dacia', 'Fiat', 'Ford', 'Hyundai',
-  'Kia', 'Mercedes-Benz', 'Opel', 'Peugeot'
-]
+const PRICE_STEP = 1000
 
-const priceRanges = [
-  'Sin límite', '5.000€', '10.000€', '15.000€', '20.000€', '25.000€', '30.000€', '40.000€', '50.000€'
-]
-
-const kmRanges = [
-  'Sin límite', '25.000 km', '50.000 km', '75.000 km', '100.000 km', '125.000 km', '150.000 km'
-]
-
-const containerVariants = {
-  hidden: { opacity: 0, y: 60 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.8,
-      ease: [0.22, 1, 0.36, 1],
-      staggerChildren: 0.1
-    }
-  }
+function formatEuro(n: number) {
+  return `${n.toLocaleString('es-ES')} €`
 }
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
-  }
+function SelectField({ label, value, onChange, children }: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary-500 mb-1.5">
+        {label}
+      </label>
+      <div className="relative">
+        <select
+          aria-label={label}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full appearance-none cursor-pointer rounded-lg border border-secondary-200 bg-white px-3 py-2.5 pr-8 text-sm font-medium text-secondary-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          {children}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
+      </div>
+    </div>
+  )
 }
 
-const bodyTypeVariants = {
-  hidden: { opacity: 0, scale: 0.8 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
-  }
-}
+export function SearchSection({ vehicleCount, brands, fuelTypes, maxPrice, minYear, maxYear }: SearchSectionProps) {
+  const router = useRouter()
+  const priceCap = Math.max(10000, Math.ceil(maxPrice / 5000) * 5000)
 
-export function SearchSection({ vehicleCount = 90 }: SearchSectionProps = {}) {
-  const [selectedBodyType, setSelectedBodyType] = useState<string | null>(null)
-  const [brand, setBrand] = useState('Todas las marcas')
-  const [maxPrice, setMaxPrice] = useState('Sin límite')
-  const [maxKm, setMaxKm] = useState('Sin límite')
-  const [mounted, setMounted] = useState(false)
+  const [tipo, setTipo] = useState('todos')
+  const [marca, setMarca] = useState('Todas')
+  const [combustible, setCombustible] = useState('Todos')
+  const [precioMin, setPrecioMin] = useState(0)
+  const [precioMax, setPrecioMax] = useState(priceCap)
+  const [anoDesde, setAnoDesde] = useState('')
+  const [anoHasta, setAnoHasta] = useState('')
 
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-100px' })
+  const years = useMemo(() => {
+    const list: number[] = []
+    for (let y = maxYear; y >= minYear; y--) list.push(y)
+    return list
+  }, [minYear, maxYear])
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const buildSearchUrl = () => {
+  const search = () => {
     const params = new URLSearchParams()
-    if (selectedBodyType) params.set('carroceria', selectedBodyType)
-    if (brand !== 'Todas las marcas') {
-      // Normalize brand names for URL
-      const brandSlug = brand.toLowerCase().replace(/\s+/g, '-')
-      params.set('marca', brandSlug)
-    }
-    if (maxPrice !== 'Sin límite') params.set('precio_max', maxPrice.replace(/[^0-9]/g, ''))
-    if (maxKm !== 'Sin límite') params.set('km_max', maxKm.replace(/[^0-9]/g, ''))
-    return `/vehiculos${params.toString() ? '?' + params.toString() : ''}`
+    if (tipo === 'turismo') params.set('tipo', 'turismo')
+    else if (tipo !== 'todos') params.set('carroceria', tipo)
+    if (marca !== 'Todas') params.set('marca', marca.toLowerCase().replace(/\s+/g, '-'))
+    if (combustible !== 'Todos') params.set('combustible', combustible.toLowerCase())
+    if (precioMin > 0) params.set('precio_min', String(precioMin))
+    if (precioMax < priceCap) params.set('precio_max', String(precioMax))
+    if (anoDesde) params.set('ano_min', anoDesde)
+    if (anoHasta) params.set('ano_max', anoHasta)
+    router.push(`/vehiculos${params.toString() ? '?' + params.toString() : ''}`)
   }
+
+  const minPct = (precioMin / priceCap) * 100
+  const maxPct = (precioMax / priceCap) * 100
 
   return (
-    <section className="relative -mt-12 md:-mt-24 z-20 pb-8 md:pb-12 px-4 md:px-0" ref={ref}>
+    <section className="relative z-30 -mt-14 md:-mt-20 px-4 md:px-0 pb-6">
       <div className="container-custom">
-        <motion.div
-          className="bg-white rounded-3xl shadow-2xl shadow-secondary-900/10 border border-secondary-100 overflow-hidden"
-          variants={containerVariants}
-          initial={mounted ? "hidden" : false}
-          animate={isInView ? "visible" : (mounted ? "hidden" : false)}
-        >
-          {/* Header */}
-          <motion.div
-            className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 md:px-8 py-4 md:py-6"
-            variants={itemVariants}
-          >
-            <h2 className="text-xl md:text-2xl font-bold text-white font-display">
-              Encuentra tu coche ideal
-            </h2>
-            <p className="text-primary-100 mt-1 text-sm md:text-base">
-              Busca entre {vehicleCount} vehículos certificados
-            </p>
-          </motion.div>
+        <div className="rounded-2xl bg-white p-5 md:p-6 shadow-2xl shadow-secondary-950/20 border border-secondary-100">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-[1fr_1fr_1fr_1.5fr_0.8fr_0.8fr_auto] gap-4 items-end">
+            <SelectField label="Tipo de vehículo" value={tipo} onChange={setTipo}>
+              {vehicleTypes.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </SelectField>
 
-          <div className="p-4 md:p-8">
-            {/* Body Type Selection */}
-            <motion.div className="mb-8" variants={itemVariants}>
-              <label className="block text-sm font-medium text-secondary-700 mb-3">
-                Tipo de carrocería
+            <SelectField label="Marca" value={marca} onChange={setMarca}>
+              <option value="Todas">Todas</option>
+              {brands.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </SelectField>
+
+            <SelectField label="Combustible" value={combustible} onChange={setCombustible}>
+              <option value="Todos">Todos</option>
+              {fuelTypes.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </SelectField>
+
+            {/* Precio: slider doble */}
+            <div className="col-span-2 md:col-span-1">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary-500 mb-1.5">
+                Precio
               </label>
-              <motion.div
-                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 md:gap-3"
-                variants={containerVariants}
-              >
-                {bodyTypes.map((type, index) => (
-                  <motion.button
-                    key={type.id}
-                    variants={bodyTypeVariants}
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedBodyType(selectedBodyType === type.id ? null : type.id)}
-                    className={cn(
-                      'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-colors duration-200',
-                      selectedBodyType === type.id
-                        ? 'border-primary-500 bg-primary-50 text-primary-700'
-                        : 'border-secondary-200 hover:border-secondary-300 text-secondary-600 hover:bg-secondary-50'
-                    )}
-                  >
-                    <motion.span
-                      className="text-2xl"
-                      animate={selectedBodyType === type.id ? { scale: [1, 1.2, 1] } : {}}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {type.icon}
-                    </motion.span>
-                    <span className="text-sm font-medium">{type.name}</span>
-                  </motion.button>
-                ))}
-              </motion.div>
-            </motion.div>
+              <div className="rounded-lg border border-secondary-200 px-3 pt-2 pb-3">
+                <div className="flex justify-between text-xs font-semibold text-secondary-700 mb-2">
+                  <span>{formatEuro(precioMin)}</span>
+                  <span>{precioMax >= priceCap ? `${formatEuro(priceCap)}+` : formatEuro(precioMax)}</span>
+                </div>
+                <div className="dual-range relative h-5">
+                  <div className="absolute top-1/2 -translate-y-1/2 h-1 w-full rounded-full bg-secondary-200" />
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 h-1 rounded-full bg-primary-600"
+                    style={{ left: `${minPct}%`, width: `${Math.max(0, maxPct - minPct)}%` }}
+                  />
+                  <input
+                    type="range"
+                    aria-label="Precio mínimo"
+                    min={0}
+                    max={priceCap}
+                    step={PRICE_STEP}
+                    value={precioMin}
+                    onChange={(e) => setPrecioMin(Math.min(Number(e.target.value), precioMax - PRICE_STEP))}
+                  />
+                  <input
+                    type="range"
+                    aria-label="Precio máximo"
+                    min={0}
+                    max={priceCap}
+                    step={PRICE_STEP}
+                    value={precioMax}
+                    onChange={(e) => setPrecioMax(Math.max(Number(e.target.value), precioMin + PRICE_STEP))}
+                  />
+                </div>
+              </div>
+            </div>
 
-            {/* Filters Grid */}
-            <motion.div
-              className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
-              variants={containerVariants}
+            <SelectField label="Año desde" value={anoDesde} onChange={setAnoDesde}>
+              <option value="">Todos</option>
+              {years.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </SelectField>
+
+            <SelectField label="Año hasta" value={anoHasta} onChange={setAnoHasta}>
+              <option value="">Todos</option>
+              {years.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </SelectField>
+
+            <button
+              type="button"
+              onClick={search}
+              className="col-span-2 md:col-span-3 lg:col-span-1 inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 hover:bg-primary-700 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors shadow-lg shadow-primary-600/25 whitespace-nowrap"
             >
-              {/* Brand */}
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">
-                  <Car className="w-4 h-4 inline mr-1" />
-                  Marca
-                </label>
-                <div className="relative">
-                  <select
-                    aria-label="Marca"
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
-                    className="select-modern pr-10"
-                  >
-                    {brands.map((b) => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
-                </div>
-              </motion.div>
-
-              {/* Model - placeholder for now */}
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">
-                  <Car className="w-4 h-4 inline mr-1" />
-                  Modelo
-                </label>
-                <div className="relative">
-                  <select aria-label="Modelo" className="select-modern pr-10">
-                    <option>Todos los modelos</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
-                </div>
-              </motion.div>
-
-              {/* Max KM */}
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">
-                  <Gauge className="w-4 h-4 inline mr-1" />
-                  Kilómetros hasta
-                </label>
-                <div className="relative">
-                  <select
-                    aria-label="Kilómetros hasta"
-                    value={maxKm}
-                    onChange={(e) => setMaxKm(e.target.value)}
-                    className="select-modern pr-10"
-                  >
-                    {kmRanges.map((km) => (
-                      <option key={km} value={km}>{km}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
-                </div>
-              </motion.div>
-
-              {/* Max Price */}
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-medium text-secondary-700 mb-2">
-                  <Euro className="w-4 h-4 inline mr-1" />
-                  Precio hasta
-                </label>
-                <div className="relative">
-                  <select
-                    aria-label="Precio hasta"
-                    value={maxPrice}
-                    onChange={(e) => setMaxPrice(e.target.value)}
-                    className="select-modern pr-10"
-                  >
-                    {priceRanges.map((price) => (
-                      <option key={price} value={price}>{price}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
-                </div>
-              </motion.div>
-            </motion.div>
-
-            {/* Actions */}
-            <motion.div
-              className="flex flex-col sm:flex-row gap-4"
-              variants={itemVariants}
-            >
-              <Link href={buildSearchUrl()} className="flex-1">
-                <motion.div
-                  className="btn-primary justify-center text-lg py-4 w-full"
-                  whileHover={{ scale: 1.02, boxShadow: "0 10px 30px rgba(239, 68, 68, 0.3)" }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                >
-                  <Search className="w-5 h-5" />
-                  Buscar coches
-                </motion.div>
-              </Link>
-              <Link href="/vehiculos" className="flex-1">
-                <motion.div
-                  className="btn-secondary justify-center w-full"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                >
-                  Ver todos los vehículos
-                </motion.div>
-              </Link>
-            </motion.div>
+              <Search className="h-4 w-4" />
+              Buscar vehículos
+            </button>
           </div>
-        </motion.div>
+
+          <div className="mt-4 flex items-center justify-between border-t border-secondary-100 pt-3">
+            <span className="text-xs text-secondary-500">
+              {vehicleCount} vehículos disponibles
+            </span>
+            <a
+              href="/vehiculos"
+              className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-secondary-500 hover:text-primary-600 transition-colors"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+              Búsqueda avanzada
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   )

@@ -14,8 +14,8 @@ const defaultBenefits: Benefit[] = [
   },
   {
     id: '2',
-    titulo: '1 año de garantía',
-    descripcion: 'Garantía sin límite de kilómetros. Colaboramos con CONCENTRA GARANTÍAS desde hace más de 11 años.',
+    titulo: '12 meses de garantía',
+    descripcion: 'Garantía Plus con hasta 2.500 € por avería, o Premium con hasta 6.000 € en vehículos con menos de 120.000 km.',
     icono: 'clock',
   },
   {

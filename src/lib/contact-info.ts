@@ -24,7 +24,7 @@ export interface ContactInfo {
 }
 
 export const defaultContactInfo: ContactInfo = {
-  telefono: '910 023 016',
+  telefono: '617 728 087',
   whatsapp: '695055555',
   email: 'ventas@midcar.net',
   direccion: {
@@ -34,10 +34,10 @@ export const defaultContactInfo: ContactInfo = {
     provincia: 'Madrid',
   },
   horario: {
-    lunesJueves: '9:00-14:00 / 16:00-20:30',
-    viernes: '9:00-17:00',
+    lunesJueves: '9:00-14:00 / 15:30-20:00',
+    viernes: '9:00-14:00 / 15:30-17:30',
     sabado: 'Cerrado',
-    domingo: '11:00-14:00',
+    domingo: '11:00-14:00 (con cita previa)',
   },
   googleMapsUrl: 'https://goo.gl/maps/QBEDPvLewMC1NdZ68',
   redes: {
