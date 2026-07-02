@@ -140,22 +140,26 @@
   -webkit-appearance: none;
   appearance: none;
   pointer-events: auto;
-  width: 18px;
-  height: 18px;
-  border-radius: 9999px;
-  background: #fff;
-  border: 3px solid #dc2626;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
-  cursor: pointer;
-}
-.dual-range input[type='range']::-moz-range-thumb {
-  pointer-events: auto;
   width: 14px;
   height: 14px;
   border-radius: 9999px;
-  background: #fff;
-  border: 3px solid #dc2626;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+  background: #dc2626;
+  border: 2.5px solid #fff;
+  box-shadow: 0 0 0 1px rgb(2 6 23 / 0.08), 0 2px 6px rgb(2 6 23 / 0.25);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.dual-range input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.dual-range input[type='range']::-moz-range-thumb {
+  pointer-events: auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #dc2626;
+  border: 2.5px solid #fff;
+  box-shadow: 0 0 0 1px rgb(2 6 23 / 0.08), 0 2px 6px rgb(2 6 23 / 0.25);
   cursor: pointer;
 }
 .dual-range input[type='range']::-moz-range-track {

@@ -3,18 +3,19 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, ChevronLeft, ChevronRight, Fuel, Camera } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Camera } from 'lucide-react'
 import { formatPrice, formatKilometers, cn } from '@/lib/utils'
 import { getVehiclesOnSale, getFeaturedVehicles, getVehicleCount, type Vehicle } from '@/lib/vehicles-service'
 
 const MAX_IMAGE_RETRIES = 3
 
-function vehicleBadge(vehicle: Vehicle): { text: string; cls: string } {
-  if (vehicle.originalPrice) return { text: 'Oferta', cls: 'bg-primary-600' }
-  if (vehicle.transmission === 'Automático') return { text: 'Automático', cls: 'bg-secondary-900' }
-  if (vehicle.label === 'ECO' || vehicle.label === '0') return { text: 'Etiqueta ECO', cls: 'bg-green-600' }
-  if (vehicle.bodyType === 'monovolumen') return { text: '7 plazas', cls: 'bg-teal-600' }
-  return { text: 'IVA deducible', cls: 'bg-blue-600' }
+// Una sola insignia por tarjeta: la más relevante, en cristal oscuro discreto
+function vehicleBadge(vehicle: Vehicle): string | null {
+  if (vehicle.originalPrice) return 'Oferta'
+  if (vehicle.transmission === 'Automático') return 'Automático'
+  if (vehicle.label === 'ECO' || vehicle.label === '0') return 'Etiqueta ECO'
+  if (vehicle.bodyType === 'monovolumen') return '7 plazas'
+  return null
 }
 
 function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
@@ -25,25 +26,18 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
   const mainImage = images[imageIndex]
   const badge = vehicleBadge(vehicle)
 
-  const labelColors: Record<string, string> = {
-    'ECO': 'bg-green-500',
-    'C': 'bg-emerald-500',
-    'B': 'bg-yellow-500',
-    '0': 'bg-blue-500',
-  }
-
   const specs = [vehicle.year, formatKilometers(vehicle.km), vehicle.fuel, vehicle.transmission]
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-secondary-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-secondary-900/10">
-      <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-secondary-100 to-secondary-200">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.06] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_-20px_rgba(2,6,23,0.3)]">
+      <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-secondary-100 to-secondary-200">
         {mainImage && !imgError ? (
           <Image
             src={mainImage}
             alt={vehicle.title}
             fill
-            sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 280px"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 640px) 85vw, (max-width: 1024px) 45vw, 320px"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
             loading="lazy"
             onError={() => {
               if (imageIndex < images.length - 1 && imageIndex < MAX_IMAGE_RETRIES - 1) {
@@ -55,56 +49,62 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-secondary-300">
-                <Fuel className="h-8 w-8 text-secondary-500" />
-              </div>
-              <p className="text-sm font-medium text-secondary-500">{vehicle.brand}</p>
-            </div>
+            <p className="font-display text-2xl font-light tracking-wide text-secondary-400">{vehicle.brand}</p>
           </div>
         )}
 
-        <span className={cn('absolute left-3 top-3 rounded-sm px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white', badge.cls)}>
-          {badge.text}
-        </span>
+        {/* Velo inferior para que los elementos sobre la foto respiren */}
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/35 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
+        {badge && (
+          <span className="absolute left-4 top-4 rounded-full bg-secondary-950/65 px-3.5 py-1.5 text-[10.5px] font-medium uppercase tracking-[0.14em] text-white backdrop-blur-md">
+            {badge}
+          </span>
+        )}
 
         {vehicle.label && (
-          <span className={cn(
-            'absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white shadow-lg',
-            labelColors[vehicle.label] || 'bg-gray-500'
-          )}>
+          <span
+            className={cn(
+              'absolute right-4 top-4 inline-flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm backdrop-blur-sm',
+              vehicle.label === 'ECO' ? 'bg-emerald-500/90'
+                : vehicle.label === '0' ? 'bg-sky-500/90'
+                : vehicle.label === 'B' ? 'bg-amber-400/90'
+                : 'bg-emerald-600/80'
+            )}
+            title={`Etiqueta DGT ${vehicle.label}`}
+          >
             {vehicle.label}
           </span>
         )}
 
         {images.length > 1 && (
-          <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-xs text-white">
+          <span className="absolute bottom-3.5 right-4 flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-[11px] font-light text-white backdrop-blur-sm">
             <Camera className="h-3 w-3" />
             {images.length}
           </span>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="mb-1 line-clamp-1 text-[15px] font-bold text-secondary-900 transition-colors group-hover:text-primary-600">
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
+        <h3 className="line-clamp-1 text-[15px] font-semibold text-secondary-900">
           {vehicle.title}
         </h3>
-        <p className="mb-3 text-xs text-secondary-500">
-          {specs.join(' · ')}
+        <p className="mt-1 text-[13px] font-light tracking-wide text-secondary-400">
+          {specs.join('  ·  ')}
         </p>
-        <div className="mt-auto flex items-center justify-between border-t border-secondary-100 pt-3">
-          <div className="flex flex-col leading-tight">
-            <span className="text-xl font-extrabold text-secondary-900">
+        <div className="mt-4 flex items-end justify-between border-t border-secondary-100/80 pt-4">
+          <div className="flex flex-col">
+            <span className="font-display text-[22px] font-bold leading-none tracking-tight text-secondary-950">
               {formatPrice(vehicle.price)}
             </span>
             {vehicle.originalPrice && (
-              <span className="text-xs text-secondary-400 line-through">
-                {formatPrice(vehicle.originalPrice)}
+              <span className="mt-1 text-xs font-light text-secondary-400 line-through">
+                antes {formatPrice(vehicle.originalPrice)}
               </span>
             )}
           </div>
-          <span className="rounded-md bg-primary-50 px-2 py-1 text-xs font-semibold text-primary-700">
-            Desde {monthlyPayment}€/mes
+          <span className="text-[13px] font-light text-secondary-400">
+            o <span className="font-medium text-secondary-600">{monthlyPayment} €/mes</span>
           </span>
         </div>
       </div>
@@ -154,21 +154,21 @@ export function FeaturedVehicles({ initialVehicles, initialCount }: FeaturedVehi
   }, [initialVehicles])
 
   const scrollBy = (dir: 1 | -1) => {
-    scrollerRef.current?.scrollBy({ left: dir * 600, behavior: 'smooth' })
+    scrollerRef.current?.scrollBy({ left: dir * 680, behavior: 'smooth' })
   }
 
   if (isLoading) {
     return (
-      <section className="py-10 md:py-16">
+      <section className="py-12 md:py-20">
         <div className="container-custom px-4 md:px-6 lg:px-8">
-          <div className="mb-8 h-8 w-72 animate-pulse rounded bg-secondary-200" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+          <div className="mb-10 h-9 w-72 animate-pulse rounded-full bg-secondary-100" />
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="overflow-hidden rounded-xl bg-white animate-pulse">
-                <div className="aspect-[4/3] bg-secondary-200" />
-                <div className="space-y-3 p-4">
-                  <div className="h-5 w-3/4 rounded bg-secondary-200" />
-                  <div className="h-7 w-1/2 rounded bg-secondary-200" />
+              <div key={i} className="overflow-hidden rounded-[22px] bg-white ring-1 ring-secondary-900/[0.06] animate-pulse">
+                <div className="aspect-[16/10] bg-secondary-100" />
+                <div className="space-y-3 p-5">
+                  <div className="h-4 w-3/4 rounded-full bg-secondary-100" />
+                  <div className="h-6 w-1/2 rounded-full bg-secondary-100" />
                 </div>
               </div>
             ))}
@@ -179,62 +179,70 @@ export function FeaturedVehicles({ initialVehicles, initialCount }: FeaturedVehi
   }
 
   return (
-    <section className="py-10 md:py-16">
+    <section className="py-12 md:py-20">
       <div className="container-custom px-4 md:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-6 flex items-end justify-between gap-4 md:mb-8">
-          <h2 className="font-display text-2xl font-extrabold uppercase tracking-tight text-secondary-900 md:text-3xl">
-            Vehículos destacados
-          </h2>
-          <Link
-            href="/vehiculos"
-            className="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-secondary-600 transition-colors hover:text-primary-600 md:text-sm"
-          >
-            Ver todo el stock
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+        {/* Cabecera elegante: eyebrow + título, controles a la derecha */}
+        <div className="mb-8 flex items-end justify-between gap-6 md:mb-10">
+          <div>
+            <p className="mb-2.5 flex items-center gap-2.5 text-[11px] font-medium uppercase tracking-[0.35em] text-primary-600">
+              <span className="h-px w-8 bg-primary-600" />
+              Selección
+            </p>
+            <h2 className="font-display text-3xl font-bold tracking-tight text-secondary-950 md:text-4xl">
+              Vehículos destacados
+            </h2>
+          </div>
+          <div className="flex items-center gap-2.5">
+            {vehicles.length > 4 && (
+              <div className="hidden md:flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => scrollBy(-1)}
+                  aria-label="Anterior"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-secondary-600 ring-1 ring-secondary-200 transition-all duration-300 hover:bg-secondary-950 hover:text-white hover:ring-secondary-950"
+                >
+                  <ChevronLeft className="h-[18px] w-[18px]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollBy(1)}
+                  aria-label="Siguiente"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-secondary-600 ring-1 ring-secondary-200 transition-all duration-300 hover:bg-secondary-950 hover:text-white hover:ring-secondary-950"
+                >
+                  <ChevronRight className="h-[18px] w-[18px]" />
+                </button>
+              </div>
+            )}
+            <Link
+              href="/vehiculos"
+              className="group hidden sm:inline-flex items-center gap-2 rounded-full bg-secondary-950 px-5 py-2.5 text-[13px] font-medium text-white transition-all duration-300 hover:bg-primary-600"
+            >
+              Ver todo el stock
+              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+            </Link>
+          </div>
         </div>
 
         {/* Carrusel */}
-        <div className="relative">
-          <div
-            ref={scrollerRef}
-            className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 scrollbar-hide md:gap-5"
-          >
-            {vehicles.map((vehicle) => (
-              <div key={vehicle.id} className="w-[260px] shrink-0 snap-start sm:w-[280px]">
-                <VehicleCard vehicle={vehicle} />
-              </div>
-            ))}
-          </div>
-
-          {vehicles.length > 4 && (
-            <>
-              <button
-                type="button"
-                onClick={() => scrollBy(-1)}
-                aria-label="Anterior"
-                className="absolute -left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-secondary-900 shadow-lg ring-1 ring-secondary-200 transition-colors hover:bg-secondary-900 hover:text-white md:flex"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollBy(1)}
-                aria-label="Siguiente"
-                className="absolute -right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-secondary-900 text-white shadow-lg transition-colors hover:bg-primary-600 md:flex"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </>
-          )}
+        <div
+          ref={scrollerRef}
+          className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 scrollbar-hide"
+        >
+          {vehicles.map((vehicle) => (
+            <div key={vehicle.id} className="w-[280px] shrink-0 snap-start sm:w-[320px]">
+              <VehicleCard vehicle={vehicle} />
+            </div>
+          ))}
         </div>
 
-        {/* CTA */}
+        {/* CTA de cierre */}
         <div className="mt-10 text-center">
-          <Link href="/vehiculos" className="btn-primary px-8 py-4 text-lg">
-            Ver todos los vehículos ({totalCount})
-            <ArrowRight className="h-5 w-5" />
+          <Link
+            href="/vehiculos"
+            className="group inline-flex items-center gap-2.5 rounded-full bg-gradient-to-b from-primary-500 to-primary-700 px-8 py-4 text-[15px] font-semibold text-white shadow-[0_8px_30px_rgba(220,38,38,0.3)] transition-all duration-300 hover:shadow-[0_12px_40px_rgba(220,38,38,0.45)] hover:brightness-110"
+          >
+            Explorar los {totalCount} vehículos
+            <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>
       </div>

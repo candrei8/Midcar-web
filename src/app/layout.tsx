@@ -4,7 +4,6 @@ import './globals.css'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { VoiceflowChat } from '@/components/ui/VoiceflowChat'
-import { WhatsAppFloat } from '@/components/ui/WhatsAppFloat'
 import { getContactInfo } from '@/lib/content-service'
 import { defaultContactInfo } from '@/lib/contact-info'
 
@@ -324,7 +323,6 @@ export default async function RootLayout({
           {children}
         </main>
         <Footer contactInfo={contactInfo} />
-        <WhatsAppFloat phone={contactInfo.whatsapp} />
         <VoiceflowChat />
       </body>
     </html>

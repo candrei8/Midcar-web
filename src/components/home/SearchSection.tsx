@@ -38,7 +38,7 @@ function SelectField({ label, value, onChange, children }: {
 }) {
   return (
     <div>
-      <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary-500 mb-1.5">
+      <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">
         {label}
       </label>
       <div className="relative">
@@ -46,11 +46,11 @@ function SelectField({ label, value, onChange, children }: {
           aria-label={label}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none cursor-pointer rounded-lg border border-secondary-200 bg-white px-3 py-2.5 pr-8 text-sm font-medium text-secondary-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full cursor-pointer appearance-none rounded-xl bg-secondary-50 px-4 py-3 pr-9 text-sm font-medium text-secondary-800 ring-1 ring-transparent transition-all duration-200 hover:bg-secondary-100/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/60"
         >
           {children}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
       </div>
     </div>
   )
@@ -91,10 +91,10 @@ export function SearchSection({ vehicleCount, brands, fuelTypes, maxPrice, minYe
   const maxPct = (precioMax / priceCap) * 100
 
   return (
-    <section className="relative z-30 -mt-14 md:-mt-20 px-4 md:px-0 pb-6">
+    <section className="relative z-30 -mt-20 md:-mt-28 px-4 md:px-0 pb-8">
       <div className="container-custom">
-        <div className="rounded-2xl bg-white p-5 md:p-6 shadow-2xl shadow-secondary-950/20 border border-secondary-100">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-[1fr_1fr_1fr_1.5fr_0.8fr_0.8fr_auto] gap-4 items-end">
+        <div className="rounded-[28px] bg-white/95 backdrop-blur-xl p-6 md:p-8 shadow-[0_24px_80px_-16px_rgba(2,6,23,0.35)] ring-1 ring-secondary-900/5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-[1fr_1fr_1fr_1.5fr_0.8fr_0.8fr_auto] gap-4 lg:gap-5 items-end">
             <SelectField label="Tipo de vehículo" value={tipo} onChange={setTipo}>
               {vehicleTypes.map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
@@ -115,20 +115,19 @@ export function SearchSection({ vehicleCount, brands, fuelTypes, maxPrice, minYe
               ))}
             </SelectField>
 
-            {/* Precio: slider doble */}
+            {/* Precio: slider doble refinado */}
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-secondary-500 mb-1.5">
+              <label className="mb-2 flex items-baseline justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">
                 Precio
+                <span className="text-[11px] font-semibold normal-case tracking-normal text-secondary-700">
+                  {formatEuro(precioMin)} — {precioMax >= priceCap ? `${formatEuro(priceCap)}+` : formatEuro(precioMax)}
+                </span>
               </label>
-              <div className="rounded-lg border border-secondary-200 px-3 pt-2 pb-3">
-                <div className="flex justify-between text-xs font-semibold text-secondary-700 mb-2">
-                  <span>{formatEuro(precioMin)}</span>
-                  <span>{precioMax >= priceCap ? `${formatEuro(priceCap)}+` : formatEuro(precioMax)}</span>
-                </div>
-                <div className="dual-range relative h-5">
-                  <div className="absolute top-1/2 -translate-y-1/2 h-1 w-full rounded-full bg-secondary-200" />
+              <div className="rounded-xl bg-secondary-50 px-4 pt-[18px] pb-[18px]">
+                <div className="dual-range relative h-3.5">
+                  <div className="absolute top-1/2 h-[3px] w-full -translate-y-1/2 rounded-full bg-secondary-200" />
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 h-1 rounded-full bg-primary-600"
+                    className="absolute top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-gradient-to-r from-primary-500 to-primary-600"
                     style={{ left: `${minPct}%`, width: `${Math.max(0, maxPct - minPct)}%` }}
                   />
                   <input
@@ -170,23 +169,22 @@ export function SearchSection({ vehicleCount, brands, fuelTypes, maxPrice, minYe
             <button
               type="button"
               onClick={search}
-              className="col-span-2 md:col-span-3 lg:col-span-1 inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 hover:bg-primary-700 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors shadow-lg shadow-primary-600/25 whitespace-nowrap"
+              className="group col-span-2 md:col-span-3 lg:col-span-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-gradient-to-b from-primary-500 to-primary-700 px-7 py-[15px] text-sm font-semibold text-white shadow-[0_8px_24px_rgba(220,38,38,0.3)] transition-all duration-300 hover:shadow-[0_10px_32px_rgba(220,38,38,0.45)] hover:brightness-110"
             >
-              <Search className="h-4 w-4" />
-              Buscar vehículos
+              <Search className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
+              Buscar
             </button>
           </div>
 
-          <div className="mt-4 flex items-center justify-between border-t border-secondary-100 pt-3">
-            <span className="text-xs text-secondary-500">
-              {vehicleCount} vehículos disponibles
+          <div className="mt-5 flex items-center justify-between border-t border-secondary-100 pt-4">
+            <span className="text-[13px] font-light text-secondary-500">
+              <span className="font-semibold text-secondary-800">{vehicleCount}</span> vehículos disponibles hoy
             </span>
             <a
               href="/vehiculos"
-              className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-secondary-500 hover:text-primary-600 transition-colors"
+              className="text-[13px] font-medium text-secondary-500 transition-colors hover:text-primary-600"
             >
-              <ChevronDown className="h-3.5 w-3.5" />
-              Búsqueda avanzada
+              Búsqueda avanzada →
             </a>
           </div>
         </div>

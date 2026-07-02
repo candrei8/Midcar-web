@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic'
 import { SearchSection } from '@/components/home/SearchSection'
 import { FeaturedVehicles } from '@/components/home/FeaturedVehicles'
 import { HeroSection } from '@/components/home/HeroSection'
+import { GoogleReviewsBadge } from '@/components/home/GoogleReviewsBadge'
 import { QuickCategories } from '@/components/home/QuickCategories'
 import { TrustBadges } from '@/components/home/TrustBadges'
 import { getFeaturedVehicles, getVehiclesOnSale, getVehicleCount, getBrands, getFuelTypes } from '@/lib/vehicles-service'
@@ -116,7 +117,7 @@ export default async function HomePage() {
     getWarrantyContent(),
     getTestimonials(),
     getCTAContent(),
-    getConfigs(['google_rating', 'google_reviews_count', 'google_maps_url']),
+    getConfigs(['google_rating', 'google_reviews_count', 'google_maps_url', 'telefono']),
   ])
 
   const featuredVehicles = featured.length >= 4
@@ -154,7 +155,8 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homePageSchema) }}
       />
 
-      <HeroSection content={heroContent} google={google} />
+      <HeroSection content={heroContent} vehicleCount={count} telefono={configs['telefono'] || '617 728 087'} />
+      <GoogleReviewsBadge rating={google.rating} reviews={google.reviews} url={google.url} />
       <SearchSection
         vehicleCount={count}
         brands={brands}
