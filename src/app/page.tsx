@@ -137,7 +137,7 @@ export default async function HomePage() {
     industriales: onSale.filter(v => v.bodyType === 'industrial').length,
     automaticos: onSale.filter(v => v.transmission === 'Automático').length,
     sietePlazas: onSale.filter(v => v.bodyType === 'monovolumen').length,
-    eco: onSale.filter(v => v.label === 'ECO' || v.label === '0').length,
+    eco: onSale.filter(v => v.label === 'ECO').length,
   }
 
   const google = {

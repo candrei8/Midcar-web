@@ -10,8 +10,11 @@ import { getVehiclesOnSale, getBrands, getFuelTypes, getModels, getLabels, extra
 
 const VEHICLES_PER_PAGE = 24
 
+const TURISMO_TYPES = ['berlina', 'familiar', 'suv', 'monovolumen']
+
 const bodyTypes = [
   { id: 'todas', name: 'Todas' },
+  { id: 'turismo', name: 'Turismo (todos)' },
   { id: 'berlina', name: 'Berlina' },
   { id: 'familiar', name: 'Familiar' },
   { id: 'suv', name: 'SUV/4x4' },
@@ -72,6 +75,8 @@ export function VehiclesCatalog() {
   })
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('relevancia')
+  // Rangos numéricos que solo llegan por URL (slider de precio y años de la home)
+  const [urlRange, setUrlRange] = useState<{ minPrice?: number; maxPrice?: number; minYear?: number; maxYear?: number }>({})
 
   // Load data on mount
   useEffect(() => {
@@ -116,10 +121,18 @@ export function VehiclesCatalog() {
   useEffect(() => {
     const marca = searchParams.get('marca')
     const carroceria = searchParams.get('carroceria')
+    const tipo = searchParams.get('tipo')
+    const combustible = searchParams.get('combustible')
+    const cambio = searchParams.get('cambio')
+    const etiqueta = searchParams.get('etiqueta')
     const precioMax = searchParams.get('precio_max')
+    const precioMin = searchParams.get('precio_min')
     const kmMax = searchParams.get('km_max')
+    const anoMin = searchParams.get('ano_min')
+    const anoMax = searchParams.get('ano_max')
 
     const newFilters = { ...filters }
+    const newRange: typeof urlRange = {}
 
     if (marca) {
       const matchedBrand = brands.find(b =>
@@ -129,15 +142,38 @@ export function VehiclesCatalog() {
       if (matchedBrand) newFilters.brand = matchedBrand
     }
 
-    if (carroceria) {
+    if (tipo === 'turismo') {
+      newFilters.bodyType = 'turismo'
+    } else if (carroceria) {
       const matchedBody = bodyTypes.find(b => b.id === carroceria.toLowerCase())
       if (matchedBody) newFilters.bodyType = matchedBody.id
+    }
+
+    if (combustible) {
+      const matchedFuel = fuelTypes.find(f => f.toLowerCase() === combustible.toLowerCase())
+      if (matchedFuel && matchedFuel !== 'Todos') newFilters.fuel = matchedFuel
+    }
+
+    if (cambio) {
+      const transMap: Record<string, string> = { automatico: 'Automático', manual: 'Manual' }
+      const matched = transMap[cambio.toLowerCase()]
+      if (matched) newFilters.transmission = matched
+    }
+
+    if (etiqueta) {
+      newFilters.label = etiqueta.toUpperCase() === 'ECO' ? 'ECO' : etiqueta
     }
 
     if (precioMax) {
       const price = parseInt(precioMax)
       const matchedPrice = priceRanges.find(p => p.value === price)
       if (matchedPrice) newFilters.maxPrice = matchedPrice.label
+      else if (!isNaN(price)) newRange.maxPrice = price
+    }
+
+    if (precioMin) {
+      const price = parseInt(precioMin)
+      if (!isNaN(price) && price > 0) newRange.minPrice = price
     }
 
     if (kmMax) {
@@ -146,8 +182,19 @@ export function VehiclesCatalog() {
       if (matchedKm) newFilters.maxKm = matchedKm.label
     }
 
+    if (anoMin) {
+      const y = parseInt(anoMin)
+      if (!isNaN(y)) newRange.minYear = y
+    }
+
+    if (anoMax) {
+      const y = parseInt(anoMax)
+      if (!isNaN(y)) newRange.maxYear = y
+    }
+
     setFilters(newFilters)
-  }, [searchParams, brands])
+    setUrlRange(newRange)
+  }, [searchParams, brands, fuelTypes])
 
   // Filter and sort vehicles
   const filteredVehicles = useMemo(() => {
@@ -172,7 +219,11 @@ export function VehiclesCatalog() {
       result = result.filter(v => v.fuel === filters.fuel)
     }
     if (filters.bodyType !== 'todas') {
-      result = result.filter(v => v.bodyType === filters.bodyType)
+      if (filters.bodyType === 'turismo') {
+        result = result.filter(v => TURISMO_TYPES.includes(v.bodyType))
+      } else {
+        result = result.filter(v => v.bodyType === filters.bodyType)
+      }
     }
     if (filters.transmission !== 'Todas') {
       result = result.filter(v => v.transmission === filters.transmission)
@@ -192,6 +243,10 @@ export function VehiclesCatalog() {
       const minYear = parseInt(filters.minYear)
       result = result.filter(v => v.year >= minYear)
     }
+    if (urlRange.minPrice) result = result.filter(v => v.price >= urlRange.minPrice!)
+    if (urlRange.maxPrice) result = result.filter(v => v.price <= urlRange.maxPrice!)
+    if (urlRange.minYear) result = result.filter(v => v.year >= urlRange.minYear!)
+    if (urlRange.maxYear) result = result.filter(v => v.year <= urlRange.maxYear!)
 
     switch (sortBy) {
       case 'precio-asc':
@@ -215,7 +270,7 @@ export function VehiclesCatalog() {
     }
 
     return result
-  }, [vehicles, filters, sortBy, searchQuery])
+  }, [vehicles, filters, sortBy, searchQuery, urlRange])
 
   // Reset visible count when filters change
   useEffect(() => {
@@ -227,6 +282,7 @@ export function VehiclesCatalog() {
 
   const resetFilters = () => {
     setSearchQuery('')
+    setUrlRange({})
     setFilters({
       brand: 'Todas',
       model: 'Todos',

@@ -40,7 +40,7 @@ export function QuickCategories({ counts }: QuickCategoriesProps) {
                 <cat.icon className="h-6 w-6" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-bold uppercase tracking-wide text-secondary-900">
+                <p className="text-[13px] leading-tight font-bold uppercase text-secondary-900">
                   {cat.name}
                 </p>
                 <p className="flex items-center gap-1 text-xs text-secondary-500">

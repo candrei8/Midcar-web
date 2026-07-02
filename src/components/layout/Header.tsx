@@ -139,8 +139,11 @@ export function Header({ contactInfo }: HeaderProps) {
                 <Phone className="h-4 w-4 text-primary-600" />
                 {contactInfo.telefono}
               </span>
-              <span className="text-[10.5px] text-secondary-500">
-                L-J: {contactInfo.horario.lunesJueves} · V: {contactInfo.horario.viernes}
+              <span className="text-[10px] text-secondary-500">
+                L-J: {contactInfo.horario.lunesJueves}
+              </span>
+              <span className="text-[10px] text-secondary-500">
+                V: {contactInfo.horario.viernes}
               </span>
             </a>
             <a
