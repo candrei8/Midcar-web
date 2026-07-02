@@ -25,6 +25,50 @@ async function getStaticBlogCategories(): Promise<BlogCategory[]> {
   return _staticBlogCategories
 }
 
+// ---- Fusión BD + estático ----
+// La BD (panel) es la fuente editable; el fichero estático conserva el archivo
+// histórico (~205 guías migradas de MongoDB). La lógica anterior era "BD *o*
+// estático": en cuanto la BD tuvo su primer post publicado, las guías
+// estáticas desaparecieron del listado y del sitemap. Ambas fuentes deben
+// FUSIONARSE siempre; si un slug existe en ambas, gana la BD.
+
+async function getPublishedDbPosts(): Promise<BlogPost[]> {
+  if (!isSupabaseConfigured) return []
+  const supabase = await getSupabaseClient()
+  if (!supabase) return []
+
+  // Sin paginación: los posts gestionados desde el panel son pocas decenas;
+  // la paginación se hace en memoria sobre el conjunto fusionado.
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select(`
+      *,
+      categoria:blog_categories(*)
+    `)
+    .eq('estado', 'publicado')
+    .order('fecha_publicacion', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching published blog posts:', error)
+    return []
+  }
+  return data || []
+}
+
+function mergeWithStatic(dbPosts: BlogPost[], staticPosts: BlogPost[]): BlogPost[] {
+  const dbSlugs = new Set(dbPosts.map(p => p.slug))
+  return [...dbPosts, ...staticPosts.filter(p => !dbSlugs.has(p.slug))].sort(
+    (a, b) =>
+      new Date(b.fecha_publicacion || b.created_at || 0).getTime() -
+      new Date(a.fecha_publicacion || a.created_at || 0).getTime()
+  )
+}
+
+async function getMergedPublishedPosts(): Promise<BlogPost[]> {
+  const [dbPosts, staticPosts] = await Promise.all([getPublishedDbPosts(), getStaticBlogPosts()])
+  return mergeWithStatic(dbPosts, staticPosts)
+}
+
 // ============================================================================
 // CATEGORIAS
 // ============================================================================
@@ -93,136 +137,36 @@ export async function getBlogPosts(options: BlogPostsOptions = {}): Promise<Blog
     search,
   } = options
 
-  const staticBlogPosts = await getStaticBlogPosts()
-  const staticBlogCategories = await getStaticBlogCategories()
+  // Conjunto fusionado BD + estático; filtros y paginación en memoria para
+  // que ambas fuentes convivan (ver nota en mergeWithStatic).
+  let filtered = await getMergedPublishedPosts()
 
-  if (!isSupabaseConfigured) {
-    let filtered = [...staticBlogPosts]
-
-    // Category filtering
-    let categoryId = categoria_id
-    if (categoria_slug && !categoryId) {
-      const cat = staticBlogCategories.find(c => c.slug === categoria_slug)
-      categoryId = cat?.id
-      if (!categoryId) {
-        return { posts: [], total: 0, page, totalPages: 0 }
-      }
-    }
-    if (categoryId) {
-      filtered = filtered.filter(p => p.categoria_id === categoryId)
-    }
-
-    if (destacado !== undefined) {
-      filtered = filtered.filter(p => p.destacado === destacado)
-    }
-
-    if (search) {
-      const q = search.toLowerCase()
-      filtered = filtered.filter(p =>
-        p.titulo.toLowerCase().includes(q) ||
-        (p.extracto && p.extracto.toLowerCase().includes(q)) ||
-        p.contenido.toLowerCase().includes(q)
-      )
-    }
-
-    const total = filtered.length
-    const totalPages = Math.ceil(total / limit)
-    const offset = (page - 1) * limit
-    const posts = filtered.slice(offset, offset + limit)
-
-    return { posts, total, page, totalPages }
-  }
-
-  const offset = (page - 1) * limit
-
-  // First get the category id if we have a slug
-  let categoryId = categoria_id
-  if (categoria_slug && !categoryId) {
-    const category = await getBlogCategoryBySlug(categoria_slug)
-    categoryId = category?.id
-    if (!categoryId) {
-      return { posts: [], total: 0, page, totalPages: 0 }
-    }
-  }
-
-  const supabase = await getSupabaseClient()
-  if (!supabase) {
-    const total = staticBlogPosts.length
-    const totalPages = Math.ceil(total / limit)
-    const posts = staticBlogPosts.slice(offset, offset + limit)
-    return { posts, total, page, totalPages }
-  }
-
-  // Build query
-  let query = supabase
-    .from('blog_posts')
-    .select(`
-      *,
-      categoria:blog_categories(*)
-    `, { count: 'exact' })
-    .eq('estado', 'publicado')
-    .order('fecha_publicacion', { ascending: false })
-
-  if (categoryId) {
-    query = query.eq('categoria_id', categoryId)
+  if (categoria_slug) {
+    // Por slug cubre tanto categorías de BD (join) como estáticas (embebida)
+    filtered = filtered.filter(p => p.categoria?.slug === categoria_slug)
+  } else if (categoria_id) {
+    filtered = filtered.filter(p => p.categoria_id === categoria_id)
   }
 
   if (destacado !== undefined) {
-    query = query.eq('destacado', destacado)
+    filtered = filtered.filter(p => p.destacado === destacado)
   }
 
   if (search) {
-    query = query.or(`titulo.ilike.%${search}%,extracto.ilike.%${search}%,contenido.ilike.%${search}%`)
+    const q = search.toLowerCase()
+    filtered = filtered.filter(p =>
+      p.titulo.toLowerCase().includes(q) ||
+      (p.extracto && p.extracto.toLowerCase().includes(q)) ||
+      p.contenido.toLowerCase().includes(q)
+    )
   }
 
-  // Paginate
-  query = query.range(offset, offset + limit - 1)
-
-  const { data, error, count } = await query
-
-  if (error) {
-    console.error('Error fetching blog posts:', error)
-    // Fallback to static data
-    const total = staticBlogPosts.length
-    const totalPages = Math.ceil(total / limit)
-    const posts = staticBlogPosts.slice(offset, offset + limit)
-    return { posts, total, page, totalPages }
-  }
-
-  // If Supabase returns empty, fallback to static data
-  if (!data || data.length === 0) {
-    let filtered = [...staticBlogPosts]
-
-    if (categoryId) {
-      filtered = filtered.filter(p => p.categoria_id === categoryId)
-    }
-    if (destacado !== undefined) {
-      filtered = filtered.filter(p => p.destacado === destacado)
-    }
-    if (search) {
-      const q = search.toLowerCase()
-      filtered = filtered.filter(p =>
-        p.titulo.toLowerCase().includes(q) ||
-        (p.extracto && p.extracto.toLowerCase().includes(q)) ||
-        p.contenido.toLowerCase().includes(q)
-      )
-    }
-
-    const total = filtered.length
-    const totalPages = Math.ceil(total / limit)
-    const posts = filtered.slice(offset, offset + limit)
-    return { posts, total, page, totalPages }
-  }
-
-  const total = count || 0
+  const total = filtered.length
   const totalPages = Math.ceil(total / limit)
+  const offset = (page - 1) * limit
+  const posts = filtered.slice(offset, offset + limit)
 
-  return {
-    posts: data || [],
-    total,
-    page,
-    totalPages,
-  }
+  return { posts, total, page, totalPages }
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
@@ -257,184 +201,56 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
 }
 
 export async function getFeaturedPosts(limit: number = 3): Promise<BlogPost[]> {
-  const staticBlogPosts = await getStaticBlogPosts()
-
-  if (!isSupabaseConfigured) {
-    const featured = staticBlogPosts.filter(p => p.destacado)
-    return featured.length > 0 ? featured.slice(0, limit) : staticBlogPosts.slice(0, limit)
-  }
-
-  const supabase = await getSupabaseClient()
-  if (!supabase) {
-    const featured = staticBlogPosts.filter(p => p.destacado)
-    return featured.length > 0 ? featured.slice(0, limit) : staticBlogPosts.slice(0, limit)
-  }
-
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select(`
-      *,
-      categoria:blog_categories(*)
-    `)
-    .eq('estado', 'publicado')
-    .eq('destacado', true)
-    .order('fecha_publicacion', { ascending: false })
-    .limit(limit)
-
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching featured posts:', error)
-    const featured = staticBlogPosts.filter(p => p.destacado)
-    return featured.length > 0 ? featured.slice(0, limit) : staticBlogPosts.slice(0, limit)
-  }
-
-  return data
+  const merged = await getMergedPublishedPosts()
+  const featured = merged.filter(p => p.destacado)
+  return featured.length > 0 ? featured.slice(0, limit) : merged.slice(0, limit)
 }
 
 export async function getLatestPosts(limit: number = 5): Promise<BlogPost[]> {
-  if (!isSupabaseConfigured) {
-    const posts = await getStaticBlogPosts()
-    return posts.slice(0, limit)
-  }
-
-  const supabase = await getSupabaseClient()
-  if (!supabase) {
-    const posts = await getStaticBlogPosts()
-    return posts.slice(0, limit)
-  }
-
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select(`
-      *,
-      categoria:blog_categories(*)
-    `)
-    .eq('estado', 'publicado')
-    .order('fecha_publicacion', { ascending: false })
-    .limit(limit)
-
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching latest posts:', error)
-    const posts = await getStaticBlogPosts()
-    return posts.slice(0, limit)
-  }
-
-  return data
+  const merged = await getMergedPublishedPosts()
+  return merged.slice(0, limit)
 }
 
-const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
 export async function getRelatedPosts(post: BlogPost, limit: number = 4): Promise<BlogPost[]> {
-  const staticBlogPosts = await getStaticBlogPosts()
+  const merged = await getMergedPublishedPosts()
+  const pool = merged.filter(p => p.slug !== post.slug)
 
-  const getStaticRelated = () => {
-    if (post.categoria_id) {
-      const sameCat = staticBlogPosts
-        .filter(p => p.id !== post.id && p.categoria_id === post.categoria_id)
-        .slice(0, limit)
-      if (sameCat.length >= limit) return sameCat
-    }
-    return staticBlogPosts.filter(p => p.id !== post.id).slice(0, limit)
-  }
-
-  // If post ID is not a UUID, it's from static data — skip Supabase queries
-  if (!isSupabaseConfigured || !uuidRegex.test(post.id)) {
-    return getStaticRelated()
-  }
-
-  const supabase = await getSupabaseClient()
-  if (!supabase) {
-    return getStaticRelated()
-  }
-
-  // Try to get posts from the same category first
-  if (post.categoria_id) {
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .select(`
-        *,
-        categoria:blog_categories(*)
-      `)
-      .eq('estado', 'publicado')
-      .eq('categoria_id', post.categoria_id)
-      .neq('id', post.id)
-      .order('fecha_publicacion', { ascending: false })
-      .limit(limit)
-
-    if (!error && data && data.length > 0) {
-      return data
-    }
-  }
-
-  // If no category posts found, get latest posts excluding current
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select(`
-      *,
-      categoria:blog_categories(*)
-    `)
-    .eq('estado', 'publicado')
-    .neq('id', post.id)
-    .order('fecha_publicacion', { ascending: false })
-    .limit(limit)
-
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching related posts:', error)
-    return getStaticRelated()
-  }
-
-  return data
+  // Primero de la misma categoría (por id o por slug, cubre BD y estático)
+  const sameCat = pool.filter(p =>
+    (post.categoria_id && p.categoria_id === post.categoria_id) ||
+    (post.categoria?.slug && p.categoria?.slug === post.categoria.slug)
+  )
+  const rest = pool.filter(p => !sameCat.includes(p))
+  return [...sameCat, ...rest].slice(0, limit)
 }
 
 export async function getAllPublishedSlugs(): Promise<string[]> {
-  if (!isSupabaseConfigured) {
-    const posts = await getStaticBlogPosts()
-    return posts.map(p => p.slug)
-  }
-
-  const supabase = await getSupabaseClient()
-  if (!supabase) {
-    const posts = await getStaticBlogPosts()
-    return posts.map(p => p.slug)
-  }
-
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('slug')
-    .eq('estado', 'publicado')
-
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching blog slugs:', error)
-    const posts = await getStaticBlogPosts()
-    return posts.map(p => p.slug)
-  }
-
-  return data.map(p => p.slug)
+  // Unión BD + estático: el sitemap debe listar TODAS las guías publicadas
+  const merged = await getMergedPublishedPosts()
+  return merged.map(p => p.slug)
 }
 
 export async function getAllActiveCategorySlugs(): Promise<string[]> {
-  if (!isSupabaseConfigured) {
-    const cats = await getStaticBlogCategories()
-    return cats.map(c => c.slug)
-  }
+  // Unión BD + estático (las categorías del archivo histórico también tienen
+  // página propia y deben seguir en el sitemap)
+  const staticSlugs = (await getStaticBlogCategories()).map(c => c.slug)
 
+  if (!isSupabaseConfigured) return staticSlugs
   const supabase = await getSupabaseClient()
-  if (!supabase) {
-    const cats = await getStaticBlogCategories()
-    return cats.map(c => c.slug)
-  }
+  if (!supabase) return staticSlugs
 
   const { data, error } = await supabase
     .from('blog_categories')
     .select('slug')
     .eq('activo', true)
 
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching category slugs:', error)
-    const cats = await getStaticBlogCategories()
-    return cats.map(c => c.slug)
+  if (error) {
+    console.error('Error fetching category slugs:', error)
+    return staticSlugs
   }
 
-  return data.map(c => c.slug)
+  const dbSlugs = (data || []).map(c => c.slug)
+  return Array.from(new Set([...dbSlugs, ...staticSlugs]))
 }
 
 // ============================================================================
@@ -442,48 +258,14 @@ export async function getAllActiveCategorySlugs(): Promise<string[]> {
 // ============================================================================
 
 export async function getPopularTags(limit: number = 10): Promise<string[]> {
-  const staticBlogPosts = await getStaticBlogPosts()
-
-  const getStaticTags = () => {
-    const tagCounts: Record<string, number> = {}
-    staticBlogPosts.forEach(post => {
-      (post.tags || []).forEach((tag: string) => {
-        tagCounts[tag] = (tagCounts[tag] || 0) + 1
-      })
-    })
-    return Object.entries(tagCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, limit)
-      .map(([tag]) => tag)
-  }
-
-  if (!isSupabaseConfigured) {
-    return getStaticTags()
-  }
-
-  const supabase = await getSupabaseClient()
-  if (!supabase) return getStaticTags()
-
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('tags')
-    .eq('estado', 'publicado')
-
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching tags:', error)
-    return getStaticTags()
-  }
-
-  // Flatten all tags and count them
+  // Sobre el conjunto fusionado BD + estático
+  const merged = await getMergedPublishedPosts()
   const tagCounts: Record<string, number> = {}
-  data.forEach(post => {
-    const tags = post.tags || []
-    tags.forEach((tag: string) => {
+  merged.forEach(post => {
+    (post.tags || []).forEach((tag: string) => {
       tagCounts[tag] = (tagCounts[tag] || 0) + 1
     })
   })
-
-  // Sort by count and return top tags
   return Object.entries(tagCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)

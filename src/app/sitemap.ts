@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { getAllPublishedSlugs } from '@/lib/blog-service'
+import { getAllPublishedSlugs, getAllActiveCategorySlugs } from '@/lib/blog-service'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
@@ -94,21 +94,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       }))
 
-      // Fetch blog categories
-      const { data: categories, error: categoriesError } = await supabase
-        .from('blog_categories')
-        .select('slug, updated_at')
-        .eq('activo', true)
-        .order('orden', { ascending: true })
-
-      if (!categoriesError && categories) {
-        categoryPages = categories.map((category) => ({
-          url: `${siteUrl}/blog/categoria/${category.slug}`,
-          lastModified: category.updated_at ? new Date(category.updated_at) : new Date(),
-          changeFrequency: 'weekly' as const,
-          priority: 0.6,
-        }))
-      }
+      // Categorías: unión BD + estáticas (misma fuente que las páginas reales)
+      const categorySlugs = await getAllActiveCategorySlugs()
+      categoryPages = categorySlugs.map((slug) => ({
+        url: `${siteUrl}/blog/categoria/${slug}`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.6,
+      }))
     } catch (error) {
       console.error('Error fetching data for sitemap:', error)
     }
