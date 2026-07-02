@@ -43,6 +43,8 @@ export function AboutSection({ content: serverContent }: AboutSectionProps = {})
   if (content.imagenUrl && /(^|\.)unsplash\.com/i.test(content.imagenUrl)) {
     content.imagenUrl = ''
   }
+  // Foto profesional por defecto (licencia libre, auto-alojada) si el panel no define una propia
+  const aboutImage = content.imagenUrl || '/sobre-nosotros.jpg'
 
   useEffect(() => {
     setMounted(true)
@@ -75,10 +77,10 @@ export function AboutSection({ content: serverContent }: AboutSectionProps = {})
             animate={mounted ? (isInView ? "visible" : "hidden") : false}
           >
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-primary-50 via-white to-secondary-100">
-              {content.imagenUrl && !imgFailed ? (
+              {aboutImage && !imgFailed ? (
                 <>
                   <img
-                    src={content.imagenUrl}
+                    src={aboutImage}
                     alt="Concesionario MID Car en Torrejón de Ardoz"
                     loading="lazy"
                     decoding="async"

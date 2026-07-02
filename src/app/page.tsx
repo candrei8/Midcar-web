@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import dynamic from 'next/dynamic'
 import { SearchSection } from '@/components/home/SearchSection'
 import { FeaturedVehicles } from '@/components/home/FeaturedVehicles'
+import { HeroSection } from '@/components/home/HeroSection'
 import { TrustBadges } from '@/components/home/TrustBadges'
 import { getFeaturedVehicles, getVehiclesOnSale, getVehicleCount, getBrands } from '@/lib/vehicles-service'
 import {
@@ -20,26 +21,6 @@ const WarrantySection = dynamic(() => import('@/components/home/WarrantySection'
 const TestimonialsSection = dynamic(() => import('@/components/home/TestimonialsSection').then(m => ({ default: m.TestimonialsSection })))
 const BrandsSection = dynamic(() => import('@/components/home/BrandsSection').then(m => ({ default: m.BrandsSection })))
 const CTASection = dynamic(() => import('@/components/home/CTASection').then(m => ({ default: m.CTASection })))
-
-// Dynamic import: 3D Hero loads asynchronously — doesn't block page render
-const HeroSection = dynamic(
-  () => import('@/components/home/HeroSection').then(mod => ({ default: mod.HeroSection })),
-  {
-    ssr: false,
-    loading: () => (
-      <section className="relative h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-[#000000]">
-        <div className="flex flex-col items-center">
-          <h1 className="text-white text-[15vw] md:text-[9vw] font-bold tracking-[0.3em] uppercase text-center">
-            MIDCAR
-          </h1>
-          <span className="text-white/40 text-[10px] md:text-[11px] tracking-[0.5em] md:tracking-[0.6em] uppercase font-light mt-4">
-            Concesionario de ocasión en Madrid
-          </span>
-        </div>
-      </section>
-    ),
-  }
-)
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
