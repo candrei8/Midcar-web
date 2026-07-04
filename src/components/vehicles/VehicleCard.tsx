@@ -80,7 +80,6 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
           : '(max-width: 640px) 92vw, (max-width: 1280px) 46vw, 340px'
       }
       className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
-      priority={eager}
       loading={eager ? 'eager' : 'lazy'}
       onError={handleError}
     />

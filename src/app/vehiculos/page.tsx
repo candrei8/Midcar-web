@@ -91,9 +91,20 @@ export default async function VehiculosPage() {
 
   // Preload de las primeras fotos del grid: el navegador las pide antes de
   // que el JS hidrate el catálogo (mismo srcset que generará next/image)
-  const preloadWidths = [640, 750, 828, 1080]
+  // Mismos candidatos que genera next/image para el sizes de la tarjeta
+  // (incluye 384: es el que elige el navegador para el hueco de ~340px) —
+  // si difieren, el preload apunta a una URL que nadie pide y se desperdicia
+  const preloadWidths = [384, 640, 750, 828, 1080]
   const cardSizes = '(max-width: 640px) 92vw, (max-width: 1280px) 46vw, 340px'
-  const preloadImages = vehicles
+  // Mismo orden que el sort por defecto del catálogo ('relevancia':
+  // destacados primero, luego precio) — si no, se precargan fotos de
+  // tarjetas que no son las primeras en pintarse y el preload se desperdicia
+  const byRelevance = [...vehicles].sort((a, b) => {
+    if (a.featured && !b.featured) return -1
+    if (!a.featured && b.featured) return 1
+    return a.price - b.price
+  })
+  const preloadImages = byRelevance
     .slice(0, 6)
     .map(v => (v.images || [])[0])
     .filter(Boolean) as string[]
