@@ -239,7 +239,7 @@ export function FeaturedVehicles({ initialVehicles, initialCount }: FeaturedVehi
         <div className="mt-10 text-center">
           <Link
             href="/vehiculos"
-            className="group inline-flex items-center gap-2.5 rounded-full bg-gradient-to-b from-primary-500 to-primary-700 px-8 py-4 text-[15px] font-semibold text-white shadow-[0_8px_30px_rgba(220,38,38,0.3)] transition-all duration-300 hover:shadow-[0_12px_40px_rgba(220,38,38,0.45)] hover:brightness-110"
+            className="group inline-flex items-center gap-2.5 rounded-full bg-primary-600 px-8 py-4 text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_1px_2px_rgba(2,6,23,0.2)] transition-colors duration-200 hover:bg-primary-700 active:bg-primary-800"
           >
             Explorar los {totalCount} vehículos
             <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-1" />

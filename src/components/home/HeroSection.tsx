@@ -59,35 +59,38 @@ export function HeroSection({ content, vehicleCount, telefono }: HeroSectionProp
           </p>
 
           {/* CTAs: una acción principal clara + llamada directa */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-14">
             <Link
               href="/vehiculos"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-primary-500 to-primary-700 px-8 py-4 text-[15px] font-semibold text-white shadow-[0_8px_30px_rgba(220,38,38,0.35)] transition-all duration-300 hover:shadow-[0_12px_40px_rgba(220,38,38,0.5)] hover:brightness-110"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-primary-600 px-8 py-4 text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_1px_2px_rgba(0,0,0,0.3)] transition-colors duration-200 hover:bg-primary-700 active:bg-primary-800"
             >
               Ver los {vehicleCount} vehículos
-              <ArrowRight className="h-4.5 w-4.5 h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-1" />
+              <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <a
               href={`tel:${telefono.replace(/\s/g, '')}`}
-              className="inline-flex items-center justify-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] px-7 py-4 text-[15px] font-medium text-white backdrop-blur-md transition-all duration-300 hover:bg-white/[0.12] hover:border-white/30"
+              className="inline-flex items-center justify-center gap-2.5 rounded-full border border-white/20 px-7 py-4 text-[15px] font-medium text-white backdrop-blur-md transition-colors duration-200 hover:border-white/50 hover:bg-white/[0.06]"
             >
               <Phone className="h-[17px] w-[17px] text-primary-400" />
               {telefono}
             </a>
           </div>
+        </div>
 
-          {/* Confianza: chips de cristal, discretos */}
-          <div className="flex flex-wrap gap-2.5">
-            {trustItems.map((item) => (
-              <span
-                key={item.label}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-[13px] font-light text-white/75 backdrop-blur-md"
-              >
-                <item.icon className="h-3.5 w-3.5 text-primary-400" />
-                {item.label}
-              </span>
-            ))}
-          </div>
+        {/* Confianza: una línea a lo ancho con separadores finos, sin cajas */}
+        <div className="mt-14 grid grid-cols-2 gap-y-5 border-t border-white/10 pt-7 lg:flex lg:items-center">
+          {trustItems.map((item, i) => (
+            <div
+              key={item.label}
+              className={
+                'flex items-center gap-2.5' +
+                (i < trustItems.length - 1 ? ' lg:mr-9 lg:border-r lg:border-white/10 lg:pr-9' : '')
+              }
+            >
+              <item.icon className="h-[18px] w-[18px] shrink-0 text-primary-400" strokeWidth={1.5} />
+              <span className="text-[13.5px] font-light leading-tight text-white/70 lg:whitespace-nowrap">{item.label}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>
