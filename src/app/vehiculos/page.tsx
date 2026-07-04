@@ -117,6 +117,10 @@ export default async function VehiculosPage() {
       />
 
       <VehiclesHeader vehicleCount={vehicles.length} />
+      {/* min-h-screen: el área del catálogo ocupa al menos una pantalla antes y
+          después de hidratar → la sección SEO nunca entra en el viewport inicial
+          y el intercambio esqueleto→catálogo no produce layout shift */}
+      <div className="min-h-screen">
       <Suspense fallback={<VehiclesCatalogSkeleton />}>
         <VehiclesCatalog
           initialVehicles={vehicles}
@@ -125,6 +129,7 @@ export default async function VehiculosPage() {
           initialLabels={labels}
         />
       </Suspense>
+      </div>
 
       {/* SEO Content Section */}
       <section className="bg-white border-t border-secondary-100 py-12">

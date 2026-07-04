@@ -35,7 +35,7 @@ export function VehiclesHeader({ vehicleCount }: VehiclesHeaderProps) {
       <div className="pointer-events-none absolute inset-0 opacity-[0.05] bg-[url('/noise.svg')]" />
 
       <div className="container-custom relative py-8 md:py-10">
-        <nav className="mb-4 flex items-center gap-1.5 text-[12px] font-light text-white/40">
+        <nav className="mb-4 flex items-center gap-1.5 text-[12px] font-light text-white/60">
           <Link href="/" className="transition-colors hover:text-white">
             Inicio
           </Link>

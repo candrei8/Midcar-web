@@ -38,7 +38,7 @@ function SelectField({ label, value, onChange, children }: {
 }) {
   return (
     <div>
-      <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">
+      <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-500">
         {label}
       </label>
       <div className="relative">
@@ -117,7 +117,7 @@ export function SearchSection({ vehicleCount, brands, fuelTypes, maxPrice, minYe
 
             {/* Precio: slider doble refinado */}
             <div className="col-span-2 md:col-span-1">
-              <label className="mb-2 flex items-baseline justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">
+              <label className="mb-2 flex items-baseline justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-500">
                 Precio
                 <span className="text-[11px] font-semibold normal-case tracking-normal text-secondary-700">
                   {formatEuro(precioMin)} — {precioMax >= priceCap ? `${formatEuro(priceCap)}+` : formatEuro(precioMax)}

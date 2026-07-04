@@ -59,6 +59,16 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
   const hasServerData = Boolean(initialVehicles && initialVehicles.length > 0)
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+  // La vista elegida se recuerda entre visitas
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? window.localStorage.getItem('midcar_vista') : null
+    if (saved === 'list' || saved === 'grid') setViewMode(saved)
+  }, [])
+  const changeView = (mode: 'grid' | 'list') => {
+    setViewMode(mode)
+    try { window.localStorage.setItem('midcar_vista', mode) } catch {}
+  }
   const [isLoading, setIsLoading] = useState(!hasServerData)
   const [visibleCount, setVisibleCount] = useState(VEHICLES_PER_PAGE)
 
@@ -320,9 +330,10 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
     className?: string
   }) => (
     <div className={className}>
-      <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">{label}</label>
+      <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-500">{label}</label>
       <div className="relative">
         <select
+          aria-label={label}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="w-full cursor-pointer appearance-none rounded-xl bg-secondary-50 px-4 py-3 pr-9 text-sm font-medium text-secondary-800 ring-1 ring-transparent transition-all duration-200 hover:bg-secondary-100/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/60"
@@ -383,9 +394,10 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
       />
 
       <div className="mb-6">
-        <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">Etiqueta DGT</label>
+        <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-500">Etiqueta DGT</label>
         <div className="relative">
           <select
+            aria-label="Etiqueta DGT"
             value={filters.label}
             onChange={(e) => setFilters({ ...filters, label: e.target.value })}
             className="w-full cursor-pointer appearance-none rounded-xl bg-secondary-50 px-4 py-3 pr-9 text-sm font-medium text-secondary-800 ring-1 ring-transparent transition-all duration-200 hover:bg-secondary-100/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/60"
@@ -508,7 +520,7 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
                 )}
               >
                 {chip.name}
-                <span className={cn('text-[11.5px] font-light', chip.active ? 'text-white/60' : 'text-secondary-400')}>
+                <span className={cn('text-[11.5px] font-light', chip.active ? 'text-white/70' : 'text-secondary-500')}>
                   {chip.count}
                 </span>
               </button>
@@ -549,6 +561,7 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
 
               <div className="relative">
                 <select
+                  aria-label="Ordenar resultados"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="cursor-pointer appearance-none rounded-full bg-white py-2.5 pl-4 pr-9 text-[13px] font-medium text-secondary-700 shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.08] transition-all hover:ring-secondary-900/[0.15] focus:outline-none focus:ring-2 focus:ring-primary-500/60">
@@ -563,14 +576,14 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
 
               <div className="hidden items-center gap-1 rounded-full bg-white p-1 shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.08] md:flex">
                 <button
-                  onClick={() => setViewMode('grid')}
+                  onClick={() => changeView('grid')}
                   aria-label="Vista en cuadrícula"
                   className={cn('rounded-full p-2 transition-colors', viewMode === 'grid' ? 'bg-secondary-950 text-white' : 'text-secondary-500 hover:text-secondary-900')}
                 >
                   <Grid className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => setViewMode('list')}
+                  onClick={() => changeView('list')}
                   aria-label="Vista en lista"
                   className={cn('rounded-full p-2 transition-colors', viewMode === 'list' ? 'bg-secondary-950 text-white' : 'text-secondary-500 hover:text-secondary-900')}
                 >

@@ -138,7 +138,7 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
               <h3 className="line-clamp-2 text-[17px] font-semibold text-secondary-900 transition-colors group-hover:text-primary-600">
                 {vehicle.title}
               </h3>
-              <p className="mt-1.5 text-[13px] font-light tracking-wide text-secondary-400">
+              <p className="mt-1.5 text-[13px] font-light tracking-wide text-secondary-500">
                 {specs.join('  ·  ')}{vehicle.cv ? `  ·  ${vehicle.cv} CV` : ''}
               </p>
             </div>
@@ -151,7 +151,7 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
                   antes {formatPrice(vehicle.originalPrice)}
                 </span>
               )}
-              <span className="mt-1.5 text-[13px] font-light text-secondary-400">
+              <span className="mt-1.5 text-[13px] font-light text-secondary-500">
                 o <span className="font-medium text-secondary-600">{monthlyPayment} €/mes</span>
               </span>
             </div>
@@ -178,7 +178,7 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
         <h3 className="line-clamp-1 text-[15px] font-semibold text-secondary-900">
           {vehicle.title}
         </h3>
-        <p className="mt-1 text-[13px] font-light tracking-wide text-secondary-400">
+        <p className="mt-1 text-[13px] font-light tracking-wide text-secondary-500">
           {specs.join('  ·  ')}
         </p>
         <div className="mt-4 flex items-end justify-between border-t border-secondary-100/80 pt-4">
@@ -192,7 +192,7 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
               </span>
             )}
           </div>
-          <span className="text-[13px] font-light text-secondary-400">
+          <span className="text-[13px] font-light text-secondary-500">
             o <span className="font-medium text-secondary-600">{monthlyPayment} €/mes</span>
           </span>
         </div>
