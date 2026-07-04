@@ -406,7 +406,7 @@ export async function getContactInfo(): Promise<ContactInfo> {
     },
     googleMapsUrl: configs['google_maps_url'] || 'https://goo.gl/maps/QBEDPvLewMC1NdZ68',
     redes: {
-      facebook: configs['facebook_url'] || 'https://www.facebook.com/midcar.midcar/',
+      facebook: configs['facebook_url'] || 'https://www.facebook.com/midcarmidcar',
       instagram: configs['instagram_url'] || 'https://www.instagram.com/midcarmidcar/',
       youtube: configs['youtube_url'] || 'https://www.youtube.com/@mid7473',
       twitter: configs['twitter_url'] || 'https://twitter.com/MidcarVehiculos',

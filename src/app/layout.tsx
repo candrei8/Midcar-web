@@ -238,9 +238,10 @@ const organizationJsonLd = {
   ],
   sameAs: [
     'https://www.midcar.net',
-    'https://www.facebook.com/midcar.es',
-    'https://www.instagram.com/midcar_es',
-    'https://www.youtube.com/@midcar',
+    'https://www.facebook.com/midcarmidcar',
+    'https://www.instagram.com/midcarmidcar/',
+    'https://www.youtube.com/@mid7473',
+    'https://x.com/MidcarVehiculos',
   ],
   priceRange: '€€',
   currenciesAccepted: 'EUR',

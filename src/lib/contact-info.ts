@@ -41,7 +41,7 @@ export const defaultContactInfo: ContactInfo = {
   },
   googleMapsUrl: 'https://goo.gl/maps/QBEDPvLewMC1NdZ68',
   redes: {
-    facebook: 'https://www.facebook.com/midcar.midcar/',
+    facebook: 'https://www.facebook.com/midcarmidcar',
     instagram: 'https://www.instagram.com/midcarmidcar/',
     youtube: 'https://www.youtube.com/@mid7473',
     twitter: 'https://twitter.com/MidcarVehiculos',
