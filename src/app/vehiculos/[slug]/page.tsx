@@ -1,11 +1,20 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getVehicleBySlug, getSimilarVehicles } from '@/lib/vehicles-service'
+import { getVehicleBySlug, getSimilarVehicles, getVehiclesOnSale } from '@/lib/vehicles-service'
 import { VehicleDetailClient } from './VehicleDetailClient'
 import { JsonLd, generateVehicleSchema, generateBreadcrumbSchema } from '@/components/seo/JsonLd'
 import { formatPrice } from '@/lib/utils'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
+
+// Fichas pre-renderizadas en build y refrescadas cada 10 min (ISR):
+// se sirven desde CDN en vez de consultar Supabase en cada visita.
+export const revalidate = 600
+
+export async function generateStaticParams() {
+  const vehicles = await getVehiclesOnSale()
+  return vehicles.map((v) => ({ slug: v.stock_id || v.slug }))
+}
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const vehicle = await getVehicleBySlug(params.slug)

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Camera } from 'lucide-react'
 import { formatPrice, formatKilometers, cn } from '@/lib/utils'
 import type { Vehicle } from '@/lib/vehicles-service'
@@ -33,6 +34,8 @@ interface VehicleCardProps {
 }
 
 export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: VehicleCardProps) {
+  const router = useRouter()
+  const warmed = useRef(false)
   const [imgError, setImgError] = useState(false)
   const [imageIndex, setImageIndex] = useState(0)
   const monthlyPayment = vehicle.monthlyPayment || Math.round(vehicle.price / 60)
@@ -40,6 +43,23 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
   const mainImage = images[imageIndex]
   const badge = vehicleBadge(vehicle)
   const specs = [vehicle.year, formatKilometers(vehicle.km), vehicle.fuel, vehicle.transmission]
+
+  const href = `/vehiculos/${vehicle.stock_id || vehicle.slug}`
+
+  // Calentamiento predictivo: al primer hover/touch precargamos en background
+  // la ruta de la ficha y su foto principal en grande — el click abre al instante.
+  const warmDetail = () => {
+    if (warmed.current) return
+    warmed.current = true
+    router.prefetch(href)
+    const first = images[0]
+    if (first && typeof window !== 'undefined') {
+      for (const w of [750, 1080]) {
+        const img = new window.Image()
+        img.src = `/_next/image?url=${encodeURIComponent(first)}&w=${w}&q=75`
+      }
+    }
+  }
 
   const handleError = () => {
     if (imageIndex < images.length - 1 && imageIndex < MAX_IMAGE_RETRIES - 1) {
@@ -104,7 +124,10 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
 
   if (viewMode === 'list') {
     return (
-      <article className="group relative overflow-hidden rounded-[22px] bg-white shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.06] transition-all duration-500 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_rgba(2,6,23,0.25)]">
+      <article
+        onPointerEnter={warmDetail}
+        onTouchStart={warmDetail}
+        className="group relative overflow-hidden rounded-[22px] bg-white shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.06] transition-all duration-500 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_rgba(2,6,23,0.25)]">
         <div className="flex flex-col md:flex-row">
           <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-gradient-to-br from-secondary-100 to-secondary-200 md:w-80 md:aspect-auto md:min-h-[190px]">
             {photo}
@@ -134,7 +157,7 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
             </div>
           </div>
         </div>
-        <Link href={`/vehiculos/${vehicle.stock_id || vehicle.slug}`} className="absolute inset-0" prefetch={false}>
+        <Link href={href} className="absolute inset-0" prefetch={false}>
           <span className="sr-only">Ver {vehicle.title}</span>
         </Link>
       </article>
@@ -142,7 +165,10 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
   }
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.06] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_-20px_rgba(2,6,23,0.3)]">
+    <article
+      onPointerEnter={warmDetail}
+      onTouchStart={warmDetail}
+      className="group relative flex h-full flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.06] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_-20px_rgba(2,6,23,0.3)]">
       <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-secondary-100 to-secondary-200">
         {photo}
         {overlays}
@@ -172,7 +198,7 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
         </div>
       </div>
 
-      <Link href={`/vehiculos/${vehicle.stock_id || vehicle.slug}`} className="absolute inset-0" prefetch={false}>
+      <Link href={href} className="absolute inset-0" prefetch={false}>
         <span className="sr-only">Ver {vehicle.title}</span>
       </Link>
     </article>
