@@ -2,6 +2,10 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { VehiclesCatalog } from '@/components/vehicles/VehiclesCatalog'
 import { VehiclesHeader } from '@/components/vehicles/VehiclesHeader'
+import { getVehiclesOnSale, getBrands, getFuelTypes, getLabels } from '@/lib/vehicles-service'
+
+// ISR: el stock se refresca cada 10 minutos sin sacrificar velocidad
+export const revalidate = 600
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://midcar.es'
 
@@ -75,18 +79,51 @@ const catalogPageSchema = {
   },
 }
 
-export default function VehiculosPage() {
+export default async function VehiculosPage() {
+  // Datos servidos: el HTML llega con los coches dentro y las fotos
+  // empiezan a cargar de inmediato (antes todo se pedía desde el cliente)
+  const [vehicles, brands, fuelTypes, labels] = await Promise.all([
+    getVehiclesOnSale(),
+    getBrands(),
+    getFuelTypes(),
+    getLabels(),
+  ])
+
+  // Preload de las primeras fotos del grid: el navegador las pide antes de
+  // que el JS hidrate el catálogo (mismo srcset que generará next/image)
+  const preloadWidths = [640, 750, 828, 1080]
+  const cardSizes = '(max-width: 640px) 92vw, (max-width: 1280px) 46vw, 340px'
+  const preloadImages = vehicles
+    .slice(0, 6)
+    .map(v => (v.images || [])[0])
+    .filter(Boolean) as string[]
+
   return (
     <div className="min-h-screen bg-secondary-50">
+      {preloadImages.map(src => (
+        <link
+          key={src}
+          rel="preload"
+          as="image"
+          imageSrcSet={preloadWidths.map(w => `/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=75 ${w}w`).join(', ')}
+          imageSizes={cardSizes}
+        />
+      ))}
+
       {/* Datos estructurados */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(catalogPageSchema) }}
       />
 
-      <VehiclesHeader />
+      <VehiclesHeader vehicleCount={vehicles.length} />
       <Suspense fallback={<VehiclesCatalogSkeleton />}>
-        <VehiclesCatalog />
+        <VehiclesCatalog
+          initialVehicles={vehicles}
+          initialBrands={brands}
+          initialFuelTypes={fuelTypes}
+          initialLabels={labels}
+        />
       </Suspense>
 
       {/* SEO Content Section */}

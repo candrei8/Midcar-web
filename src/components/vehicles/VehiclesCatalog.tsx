@@ -3,10 +3,10 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
-import { Fuel, Gauge, Calendar, Zap, SlidersHorizontal, X, ChevronDown, Grid, List, Search } from 'lucide-react'
-import { formatPrice, formatKilometers, cn } from '@/lib/utils'
-import { getVehiclesOnSale, getBrands, getFuelTypes, getModels, getLabels, extractBaseModel, type Vehicle } from '@/lib/vehicles-service'
+import { SlidersHorizontal, X, ChevronDown, Grid, List, Search } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { VehicleCard } from '@/components/vehicles/VehicleCard'
+import { getVehiclesOnSale, getBrands, getFuelTypes, getLabels, extractBaseModel, type Vehicle } from '@/lib/vehicles-service'
 
 const VEHICLES_PER_PAGE = 24
 
@@ -47,19 +47,26 @@ const kmRanges = [
 const yearRanges = ['Sin límite', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015']
 const transmissionOptions = ['Todas', 'Manual', 'Automático']
 
-export function VehiclesCatalog() {
+interface VehiclesCatalogProps {
+  initialVehicles?: Vehicle[]
+  initialBrands?: string[]
+  initialFuelTypes?: string[]
+  initialLabels?: string[]
+}
+
+export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTypes, initialLabels }: VehiclesCatalogProps = {}) {
   const searchParams = useSearchParams()
+  const hasServerData = Boolean(initialVehicles && initialVehicles.length > 0)
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(!hasServerData)
   const [visibleCount, setVisibleCount] = useState(VEHICLES_PER_PAGE)
 
-  // Dynamic data
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [brands, setBrands] = useState<string[]>(['Todas'])
-  const [fuelTypes, setFuelTypes] = useState<string[]>(['Todos'])
-  const [models, setModels] = useState<string[]>(['Todos'])
-  const [labels, setLabels] = useState<string[]>(['Todas'])
+  // Datos: llegan renderizados del servidor (rápido); el fetch en cliente queda como fallback
+  const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles || [])
+  const [brands, setBrands] = useState<string[]>(['Todas', ...(initialBrands || [])])
+  const [fuelTypes, setFuelTypes] = useState<string[]>(['Todos', ...(initialFuelTypes || [])])
+  const [labels, setLabels] = useState<string[]>(['Todas', ...(initialLabels || [])])
 
   // Initialize filters from URL params
   const [filters, setFilters] = useState({
@@ -78,8 +85,9 @@ export function VehiclesCatalog() {
   // Rangos numéricos que solo llegan por URL (slider de precio y años de la home)
   const [urlRange, setUrlRange] = useState<{ minPrice?: number; maxPrice?: number; minYear?: number; maxYear?: number }>({})
 
-  // Load data on mount
+  // Load data on mount (solo si el servidor no aportó datos)
   useEffect(() => {
+    if (hasServerData) return
     async function loadData() {
       setIsLoading(true)
       try {
@@ -100,17 +108,13 @@ export function VehiclesCatalog() {
       }
     }
     loadData()
-  }, [])
+  }, [hasServerData])
 
-  // Load models when brand changes
-  useEffect(() => {
-    async function loadModels() {
-      const brand = filters.brand !== 'Todas' ? filters.brand : undefined
-      const modelsData = await getModels(brand)
-      setModels(['Todos', ...modelsData])
-    }
-    loadModels()
-  }, [filters.brand])
+  // Modelos derivados en local del stock ya cargado
+  const models = useMemo(() => {
+    const source = filters.brand !== 'Todas' ? vehicles.filter(v => v.brand === filters.brand) : vehicles
+    return ['Todos', ...Array.from(new Set(source.map(v => extractBaseModel(v.model)))).sort()]
+  }, [vehicles, filters.brand])
 
   // Reset model when brand changes
   const handleBrandChange = (brand: string) => {
@@ -305,12 +309,12 @@ export function VehiclesCatalog() {
     className?: string
   }) => (
     <div className={className}>
-      <label className="block text-sm font-medium text-secondary-700 mb-2">{label}</label>
+      <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">{label}</label>
       <div className="relative">
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="select-modern pr-10"
+          className="w-full cursor-pointer appearance-none rounded-xl bg-secondary-50 px-4 py-3 pr-9 text-sm font-medium text-secondary-800 ring-1 ring-transparent transition-all duration-200 hover:bg-secondary-100/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/60"
         >
           {options.map((opt) => {
             const id = typeof opt === 'string' ? opt : opt.id
@@ -318,7 +322,7 @@ export function VehiclesCatalog() {
             return <option key={id} value={id}>{name}</option>
           })}
         </select>
-        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
       </div>
     </div>
   )
@@ -328,15 +332,15 @@ export function VehiclesCatalog() {
   const renderFilters = () => (
     <>
       <div className="mb-6">
-        <label className="block text-sm font-medium text-secondary-700 mb-2">Buscar</label>
+        <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">Buscar</label>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400" />
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por nombre..."
-            className="select-modern pl-10 pr-3"
+            className="w-full rounded-xl bg-secondary-50 py-3 pl-10 pr-9 text-sm font-medium text-secondary-800 placeholder:font-light placeholder:text-secondary-400 ring-1 ring-transparent transition-all duration-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/60"
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -387,18 +391,18 @@ export function VehiclesCatalog() {
       />
 
       <div className="mb-6">
-        <label className="block text-sm font-medium text-secondary-700 mb-2">Etiqueta DGT</label>
+        <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">Etiqueta DGT</label>
         <div className="relative">
           <select
             value={filters.label}
             onChange={(e) => setFilters({ ...filters, label: e.target.value })}
-            className="select-modern pr-10"
+            className="w-full cursor-pointer appearance-none rounded-xl bg-secondary-50 px-4 py-3 pr-9 text-sm font-medium text-secondary-800 ring-1 ring-transparent transition-all duration-200 hover:bg-secondary-100/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/60"
           >
             {labels.map((l) => (
               <option key={l} value={l}>{labelDisplayName(l)}</option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 pointer-events-none" />
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
         </div>
       </div>
 
@@ -467,10 +471,16 @@ export function VehiclesCatalog() {
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar Filters - Desktop */}
         <aside className="hidden lg:block lg:w-72 flex-shrink-0">
-          <div className="bg-white rounded-2xl border border-secondary-100 p-6 sticky top-24">
-            <h2 className="font-bold text-lg text-secondary-900 mb-6">Filtros</h2>
+          <div className="sticky top-24 rounded-[22px] bg-white p-6 shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.06]">
+            <div className="mb-6 flex items-center gap-2.5">
+              <span className="h-px w-6 bg-primary-600" />
+              <h2 className="text-[11px] font-medium uppercase tracking-[0.35em] text-secondary-500">Filtros</h2>
+            </div>
             {renderFilters()}
-            <button onClick={resetFilters} className="w-full py-2 text-sm text-primary-600 hover:text-primary-700 font-medium">
+            <button
+              onClick={resetFilters}
+              className="w-full rounded-full border border-secondary-200 py-2.5 text-[13px] font-medium text-secondary-600 transition-colors hover:border-primary-300 hover:text-primary-600"
+            >
               Limpiar filtros
             </button>
           </div>
@@ -479,14 +489,14 @@ export function VehiclesCatalog() {
         {/* Main Content */}
         <div className="flex-1">
           {/* Search Bar */}
-          <div className="relative mb-4">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400" />
+          <div className="relative mb-5">
+            <Search className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-secondary-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar vehículo por nombre, marca o modelo..."
-              className="w-full pl-12 pr-10 py-3 rounded-xl border border-secondary-200 bg-white text-secondary-900 placeholder:text-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+              className="w-full rounded-full bg-white py-3.5 pl-12 pr-10 text-[15px] text-secondary-900 shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.08] placeholder:font-light placeholder:text-secondary-400 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500/60"
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -497,18 +507,24 @@ export function VehiclesCatalog() {
 
           {/* Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <p className="text-secondary-600">
-              <span className="font-semibold text-secondary-900">{filteredVehicles.length}</span> vehículos encontrados
+            <p className="text-[15px] font-light text-secondary-500">
+              <span className="font-display text-lg font-bold text-secondary-950">{filteredVehicles.length}</span> vehículos encontrados
             </p>
 
             <div className="flex items-center gap-4">
-              <button onClick={() => setShowFilters(true)} className="lg:hidden btn-ghost">
-                <SlidersHorizontal className="w-5 h-5" />
+              <button
+                onClick={() => setShowFilters(true)}
+                className="flex items-center gap-2 rounded-full bg-secondary-950 px-4 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-secondary-800 lg:hidden"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
                 Filtros
               </button>
 
               <div className="relative">
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="select-modern py-2 pr-10 text-sm">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="cursor-pointer appearance-none rounded-full bg-white py-2.5 pl-4 pr-9 text-[13px] font-medium text-secondary-700 shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.08] transition-all hover:ring-secondary-900/[0.15] focus:outline-none focus:ring-2 focus:ring-primary-500/60">
                   <option value="relevancia">Relevancia</option>
                   <option value="precio-asc">Precio: menor a mayor</option>
                   <option value="precio-desc">Precio: mayor a menor</option>
@@ -518,27 +534,29 @@ export function VehiclesCatalog() {
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400 pointer-events-none" />
               </div>
 
-              <div className="hidden md:flex items-center border border-secondary-200 rounded-lg overflow-hidden">
+              <div className="hidden items-center gap-1 rounded-full bg-white p-1 shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.08] md:flex">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={cn('p-2 transition-colors', viewMode === 'grid' ? 'bg-primary-600 text-white' : 'bg-white text-secondary-600 hover:bg-secondary-50')}
+                  aria-label="Vista en cuadrícula"
+                  className={cn('rounded-full p-2 transition-colors', viewMode === 'grid' ? 'bg-secondary-950 text-white' : 'text-secondary-500 hover:text-secondary-900')}
                 >
-                  <Grid className="w-5 h-5" />
+                  <Grid className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={cn('p-2 transition-colors', viewMode === 'list' ? 'bg-primary-600 text-white' : 'bg-white text-secondary-600 hover:bg-secondary-50')}
+                  aria-label="Vista en lista"
+                  className={cn('rounded-full p-2 transition-colors', viewMode === 'list' ? 'bg-secondary-950 text-white' : 'text-secondary-500 hover:text-secondary-900')}
                 >
-                  <List className="w-5 h-5" />
+                  <List className="h-4 w-4" />
                 </button>
               </div>
             </div>
           </div>
 
           {/* Vehicle Grid */}
-          <div className={cn('grid gap-6', viewMode === 'grid' ? 'md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1')}>
-            {visibleVehicles.map((vehicle) => (
-              <VehicleCard key={vehicle.id} vehicle={vehicle} viewMode={viewMode} />
+          <div className={cn('grid gap-5', viewMode === 'grid' ? 'md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1')}>
+            {visibleVehicles.map((vehicle, i) => (
+              <VehicleCard key={vehicle.id} vehicle={vehicle} viewMode={viewMode} eager={i < 6} />
             ))}
           </div>
 
@@ -551,7 +569,7 @@ export function VehiclesCatalog() {
               {hasMore && (
                 <button
                   onClick={() => setVisibleCount(prev => prev + VEHICLES_PER_PAGE)}
-                  className="btn-primary"
+                  className="btn-sheen inline-flex items-center justify-center gap-2 rounded-full bg-primary-600 px-8 py-3.5 text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-primary-500 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_0_0_6px_rgba(220,38,38,0.14)] active:scale-[0.98]"
                 >
                   Ver más vehículos
                 </button>
@@ -561,9 +579,13 @@ export function VehiclesCatalog() {
 
           {/* No results */}
           {filteredVehicles.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-xl text-secondary-500 mb-4">No se encontraron vehículos</p>
-              <button onClick={resetFilters} className="btn-primary">
+            <div className="py-20 text-center">
+              <p className="mb-2 font-display text-2xl font-bold text-secondary-900">Sin resultados</p>
+              <p className="mb-6 font-light text-secondary-500">Prueba a ajustar o limpiar los filtros.</p>
+              <button
+                onClick={resetFilters}
+                className="inline-flex items-center justify-center rounded-full bg-secondary-950 px-7 py-3 text-[14px] font-medium text-white transition-colors hover:bg-primary-600"
+              >
                 Limpiar filtros
               </button>
             </div>
@@ -575,14 +597,22 @@ export function VehiclesCatalog() {
       {showFilters && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowFilters(false)} />
-          <div className="absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-xl">
-            <div className="flex items-center justify-between p-4 border-b border-secondary-100">
-              <h2 className="font-bold text-lg">Filtros</h2>
-              <button onClick={() => setShowFilters(false)}><X className="w-6 h-6" /></button>
+          <div className="absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-secondary-100 px-5 py-4">
+              <div className="flex items-center gap-2.5">
+                <span className="h-px w-6 bg-primary-600" />
+                <h2 className="text-[11px] font-medium uppercase tracking-[0.35em] text-secondary-500">Filtros</h2>
+              </div>
+              <button onClick={() => setShowFilters(false)} aria-label="Cerrar filtros" className="rounded-full p-1.5 text-secondary-500 transition-colors hover:bg-secondary-100">
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <div className="p-4 overflow-y-auto h-[calc(100%-60px)]">
+            <div className="h-[calc(100%-64px)] overflow-y-auto p-5">
               {renderFilters()}
-              <button onClick={() => setShowFilters(false)} className="btn-primary w-full justify-center">
+              <button
+                onClick={() => setShowFilters(false)}
+                className="w-full rounded-full bg-primary-600 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-primary-500"
+              >
                 Ver {filteredVehicles.length} resultados
               </button>
             </div>
@@ -590,148 +620,5 @@ export function VehiclesCatalog() {
         </div>
       )}
     </div>
-  )
-}
-
-const MAX_IMAGE_RETRIES = 3
-
-function VehicleCard({ vehicle, viewMode }: { vehicle: Vehicle, viewMode: 'grid' | 'list' }) {
-  const [imgError, setImgError] = useState(false)
-  const [imageIndex, setImageIndex] = useState(0)
-  const monthlyPayment = vehicle.monthlyPayment || Math.round(vehicle.price / 60)
-  const images = vehicle.images || []
-  const mainImage = images[imageIndex]
-
-  const labelColors: Record<string, string> = {
-    'ECO': 'bg-green-500',
-    'C': 'bg-emerald-500',
-    'B': 'bg-yellow-500',
-    '0': 'bg-blue-500',
-  }
-
-  const ImageContent = () => {
-    if (mainImage && !imgError) {
-      return (
-        <Image
-          src={mainImage}
-          alt={vehicle.title}
-          width={400}
-          height={300}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
-          onError={() => {
-            if (imageIndex < images.length - 1 && imageIndex < MAX_IMAGE_RETRIES - 1) {
-              setImageIndex((prev) => prev + 1)
-              return
-            }
-            setImgError(true)
-          }}
-        />
-      )
-    }
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-center">
-          <Fuel className="w-12 h-12 text-secondary-400 mx-auto mb-2" />
-          <p className="text-sm font-medium text-secondary-500">{vehicle.brand}</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (viewMode === 'list') {
-    return (
-      <article className="bg-white rounded-2xl border border-secondary-100 overflow-hidden hover:shadow-xl transition-all duration-300 group relative">
-        <div className="flex flex-col md:flex-row">
-          <div className="relative w-full md:w-72 flex-shrink-0 aspect-[4/3] md:aspect-auto bg-gradient-to-br from-secondary-100 to-secondary-200 overflow-hidden min-h-[150px]">
-            <ImageContent />
-            {vehicle.featured && (
-              <span className="absolute top-3 left-3 badge-primary text-xs">DESTACADO</span>
-            )}
-            {vehicle.label && (
-              <span className={cn(
-                'absolute top-3 right-3 inline-flex items-center justify-center w-10 h-10 rounded-full text-white text-xs font-bold',
-                labelColors[vehicle.label] || 'bg-gray-500'
-              )}>
-                {vehicle.label}
-              </span>
-            )}
-          </div>
-          <div className="flex-1 p-6">
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-              <div>
-                <h3 className="font-bold text-xl text-secondary-900 mb-2 group-hover:text-primary-600 transition-colors">
-                  {vehicle.title}
-                </h3>
-                <div className="flex flex-wrap gap-4 text-sm text-secondary-600">
-                  <span className="flex items-center gap-1"><Gauge className="w-4 h-4" />{formatKilometers(vehicle.km)}</span>
-                  <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{vehicle.year}</span>
-                  <span className="flex items-center gap-1"><Fuel className="w-4 h-4" />{vehicle.fuel}</span>
-                  <span className="flex items-center gap-1"><Zap className="w-4 h-4" />{vehicle.cv}cv</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-primary-600">{formatPrice(vehicle.price)}</span>
-                  {vehicle.originalPrice && (
-                    <span className="text-sm text-secondary-400 line-through">{formatPrice(vehicle.originalPrice)}</span>
-                  )}
-                </div>
-                <p className="text-sm text-secondary-500">Desde {monthlyPayment}€/mes</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <Link href={`/vehiculos/${vehicle.stock_id || vehicle.slug}`} className="absolute inset-0" prefetch={false}>
-          <span className="sr-only">Ver {vehicle.title}</span>
-        </Link>
-      </article>
-    )
-  }
-
-  return (
-    <article className="card-vehicle group relative">
-      <div className="relative aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 overflow-hidden">
-        <ImageContent />
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
-          {vehicle.featured && <span className="badge-primary text-xs">DESTACADO</span>}
-          {vehicle.ivaDeducible && <span className="badge bg-blue-100 text-blue-700 text-xs">IVA DEDUCIBLE</span>}
-        </div>
-        {vehicle.label && (
-          <span className={cn(
-            'absolute top-3 right-3 inline-flex items-center justify-center w-10 h-10 rounded-full text-white text-xs font-bold shadow-lg',
-            labelColors[vehicle.label] || 'bg-gray-500'
-          )}>
-            {vehicle.label}
-          </span>
-        )}
-        {images.length > 1 && (
-          <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
-            {images.length} fotos
-          </span>
-        )}
-      </div>
-      <div className="p-5">
-        <h3 className="font-bold text-lg text-secondary-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
-          {vehicle.title}
-        </h3>
-        <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-2xl font-bold text-primary-600">{formatPrice(vehicle.price)}</span>
-          {vehicle.originalPrice && (
-            <span className="text-sm text-secondary-400 line-through">{formatPrice(vehicle.originalPrice)}</span>
-          )}
-        </div>
-        <p className="text-sm text-secondary-500 mb-4">Desde <span className="font-semibold text-secondary-700">{monthlyPayment}€/mes</span></p>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="flex items-center gap-2 text-secondary-600"><Gauge className="w-4 h-4" /><span>{formatKilometers(vehicle.km)}</span></div>
-          <div className="flex items-center gap-2 text-secondary-600"><Calendar className="w-4 h-4" /><span>{vehicle.year}</span></div>
-          <div className="flex items-center gap-2 text-secondary-600"><Fuel className="w-4 h-4" /><span>{vehicle.fuel}</span></div>
-          <div className="flex items-center gap-2 text-secondary-600"><Zap className="w-4 h-4" /><span>{vehicle.cv}cv</span></div>
-        </div>
-      </div>
-      <Link href={`/vehiculos/${vehicle.stock_id || vehicle.slug}`} className="absolute inset-0" prefetch={false}>
-        <span className="sr-only">Ver {vehicle.title}</span>
-      </Link>
-    </article>
   )
 }
