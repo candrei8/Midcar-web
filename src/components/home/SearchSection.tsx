@@ -169,7 +169,7 @@ export function SearchSection({ vehicleCount, brands, fuelTypes, maxPrice, minYe
             <button
               type="button"
               onClick={search}
-              className="group col-span-2 md:col-span-3 lg:col-span-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary-600 px-7 py-[15px] text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_1px_2px_rgba(2,6,23,0.2)] transition-colors duration-200 hover:bg-primary-700 active:bg-primary-800"
+              className="group col-span-2 md:col-span-3 lg:col-span-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary-600 px-7 py-[15px] text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-200 hover:-translate-y-px hover:bg-primary-700 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_8px_24px_-8px_rgba(220,38,38,0.55)] active:translate-y-0 active:bg-primary-800 active:shadow-none"
             >
               <Search className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
               Buscar
