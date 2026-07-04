@@ -297,6 +297,49 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
     return result
   }, [vehicles, filters, sortBy, searchQuery, urlRange])
 
+  // Precalentamiento en segundo plano: cachea las fotos del siguiente lote
+  // (misma anchura que elegirá el navegador) en tiempo idle y prioridad baja,
+  // para que "Ver más vehículos" pinte al instante. Respeta saveData/2G y
+  // arranca 2,5s tras la carga para no interferir con las métricas iniciales.
+  useEffect(() => {
+    if (isLoading) return
+    const conn = (navigator as { connection?: { saveData?: boolean; effectiveType?: string } }).connection
+    if (conn?.saveData || /2g/.test(conn?.effectiveType || '')) return
+
+    const slot = window.innerWidth <= 640
+      ? window.innerWidth * 0.92
+      : window.innerWidth <= 1280
+        ? window.innerWidth * 0.46
+        : 340
+    const target = slot * (window.devicePixelRatio || 1)
+    const width = [384, 640, 750, 828, 1080, 1200].find(w => w >= target) || 1200
+
+    const urls = filteredVehicles
+      .slice(visibleCount, visibleCount + VEHICLES_PER_PAGE)
+      .map(v => (v.images || [])[0])
+      .filter(Boolean)
+      .map(src => `/_next/image?url=${encodeURIComponent(src as string)}&w=${width}&q=75`)
+    if (!urls.length) return
+
+    let cancelled = false
+    let i = 0
+    const next = () => {
+      if (cancelled || i >= urls.length) return
+      const img = new window.Image()
+      ;(img as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'low'
+      img.decoding = 'async'
+      img.onload = img.onerror = () => window.setTimeout(next, 50)
+      img.src = urls[i++]
+    }
+    const start = () => { for (let k = 0; k < 4; k++) next() }
+    const t = window.setTimeout(() => {
+      if ('requestIdleCallback' in window) {
+        (window as unknown as { requestIdleCallback: (cb: () => void, o?: { timeout: number }) => void }).requestIdleCallback(start, { timeout: 4000 })
+      } else start()
+    }, 2500)
+    return () => { cancelled = true; window.clearTimeout(t) }
+  }, [isLoading, filteredVehicles, visibleCount])
+
   // Reset visible count when filters change
   useEffect(() => {
     setVisibleCount(VEHICLES_PER_PAGE)
