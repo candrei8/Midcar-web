@@ -79,7 +79,7 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
           ? '(max-width: 768px) 100vw, 320px'
           : '(max-width: 640px) 92vw, (max-width: 1280px) 46vw, 340px'
       }
-      className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+      className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
       loading={eager ? 'eager' : 'lazy'}
       onError={handleError}
     />
@@ -126,7 +126,7 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
       <article
         onPointerEnter={warmDetail}
         onTouchStart={warmDetail}
-        className="group relative overflow-hidden rounded-[22px] bg-white shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.06] transition-all duration-500 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_rgba(2,6,23,0.25)]">
+        className="group relative overflow-hidden rounded-[22px] bg-white shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.06] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-10px_rgba(2,6,23,0.16)] hover:ring-secondary-900/[0.12]">
         <div className="flex flex-col md:flex-row">
           <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-gradient-to-br from-secondary-100 to-secondary-200 md:w-80 md:aspect-auto md:min-h-[190px]">
             {photo}
@@ -167,7 +167,7 @@ export function VehicleCard({ vehicle, viewMode = 'grid', eager = false }: Vehic
     <article
       onPointerEnter={warmDetail}
       onTouchStart={warmDetail}
-      className="group relative flex h-full flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.06] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_-20px_rgba(2,6,23,0.3)]">
+      className="group relative flex h-full flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_1px_3px_rgba(2,6,23,0.06)] ring-1 ring-secondary-900/[0.06] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-10px_rgba(2,6,23,0.16)] hover:ring-secondary-900/[0.12]">
       <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-secondary-100 to-secondary-200">
         {photo}
         {overlays}
