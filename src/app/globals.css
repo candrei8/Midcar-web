@@ -174,3 +174,30 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Destello diagonal que barre el botón al hacer hover (CTAs principales) */
+.btn-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.btn-sheen::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent 15%, rgba(255, 255, 255, 0.4) 50%, transparent 85%);
+  transform: skewX(-18deg);
+  pointer-events: none;
+}
+.btn-sheen:hover::after {
+  animation: btn-sheen-sweep 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes btn-sheen-sweep {
+  from { transform: skewX(-18deg) translateX(0); }
+  to { transform: skewX(-18deg) translateX(500%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-sheen:hover::after { animation: none; }
+}
