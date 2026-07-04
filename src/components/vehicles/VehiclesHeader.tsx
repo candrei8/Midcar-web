@@ -11,53 +11,37 @@ const trustItems = [
   { icon: Percent, label: 'Financiación 100%' },
 ]
 
+// Cabecera compacta: identifica la página y cede el protagonismo al stock.
 export function VehiclesHeader({ vehicleCount }: VehiclesHeaderProps) {
   return (
-    <div className="relative overflow-hidden bg-[#07080c] text-white">
-      {/* Halo rojo sutil + textura, como el hero de la home */}
-      <div
-        className="pointer-events-none absolute -right-40 -top-52 h-[460px] w-[460px] rounded-full opacity-[0.16] blur-3xl"
-        style={{ background: 'radial-gradient(circle, #dc2626 0%, transparent 65%)' }}
-      />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.05] bg-[url('/noise.svg')]" />
-
-      <div className="container-custom relative py-12 md:py-16">
-        {/* Breadcrumb */}
-        <nav className="mb-7 flex items-center gap-2 text-[13px] font-light text-white/40">
-          <Link href="/" className="transition-colors hover:text-white">
+    <div className="border-b border-secondary-200/60 bg-white">
+      <div className="container-custom py-6 md:py-8">
+        <nav className="mb-2.5 flex items-center gap-1.5 text-[12px] font-light text-secondary-400">
+          <Link href="/" className="transition-colors hover:text-secondary-900">
             Inicio
           </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="text-white/80">Vehículos</span>
+          <ChevronRight className="h-3 w-3" />
+          <span className="text-secondary-600">Vehículos</span>
         </nav>
 
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="mb-5 flex items-center gap-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary-500" />
-              <span className="text-[11px] font-medium uppercase tracking-[0.4em] text-white/60">
-                Stock completo{vehicleCount ? ` · ${vehicleCount} vehículos` : ''}
-              </span>
-            </div>
-            <h1 className="font-display text-4xl leading-[1.06] tracking-tight md:text-5xl">
-              <span className="font-light">Coches de segunda mano</span>
-              <br />
-              <span className="font-bold">con garantía incluida</span>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-secondary-950 md:text-[28px]">
+              Coches de segunda mano{' '}
+              <span className="font-light text-secondary-400">con garantía incluida</span>
             </h1>
+            {vehicleCount ? (
+              <span className="rounded-full bg-primary-50 px-3 py-1 text-[12px] font-semibold text-primary-700">
+                {vehicleCount} disponibles
+              </span>
+            ) : null}
           </div>
 
-          {/* Confianza compacta, alineada abajo a la derecha */}
-          <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
-            {trustItems.map((item, i) => (
-              <div
-                key={item.label}
-                className={
-                  'flex items-center gap-2.5' +
-                  (i < trustItems.length - 1 ? ' lg:mr-0 lg:border-r lg:border-white/10 lg:pr-7' : '')
-                }
-              >
-                <item.icon className="h-[17px] w-[17px] shrink-0 text-primary-400" strokeWidth={1.5} />
-                <span className="text-[13px] font-light text-white/70">{item.label}</span>
+          <div className="hidden items-center gap-6 lg:flex">
+            {trustItems.map((item) => (
+              <div key={item.label} className="flex items-center gap-2">
+                <item.icon className="h-4 w-4 shrink-0 text-primary-500" strokeWidth={1.5} />
+                <span className="text-[12.5px] font-light text-secondary-500">{item.label}</span>
               </div>
             ))}
           </div>

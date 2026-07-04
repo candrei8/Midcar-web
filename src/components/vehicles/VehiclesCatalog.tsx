@@ -110,6 +110,17 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
     loadData()
   }, [hasServerData])
 
+  // Contadores reales para los filtros rápidos
+  const quickCounts = useMemo(() => ({
+    todos: vehicles.length,
+    turismo: vehicles.filter(v => TURISMO_TYPES.includes(v.bodyType)).length,
+    furgoneta: vehicles.filter(v => v.bodyType === 'furgoneta').length,
+    industrial: vehicles.filter(v => v.bodyType === 'industrial').length,
+    monovolumen: vehicles.filter(v => v.bodyType === 'monovolumen').length,
+    auto: vehicles.filter(v => v.transmission === 'Automático').length,
+    eco: vehicles.filter(v => v.label === 'ECO').length,
+  }), [vehicles])
+
   // Modelos derivados en local del stock ya cargado
   const models = useMemo(() => {
     const source = filters.brand !== 'Todas' ? vehicles.filter(v => v.brand === filters.brand) : vehicles
@@ -331,25 +342,6 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
 
   const renderFilters = () => (
     <>
-      <div className="mb-6">
-        <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-secondary-400">Buscar</label>
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por nombre..."
-            className="w-full rounded-xl bg-secondary-50 py-3 pl-10 pr-9 text-sm font-medium text-secondary-800 placeholder:font-light placeholder:text-secondary-400 ring-1 ring-transparent transition-all duration-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/60"
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="w-4 h-4 text-secondary-400 hover:text-secondary-600" />
-            </button>
-          )}
-        </div>
-      </div>
-
       <FilterDropdown
         label="Carrocería"
         value={filters.bodyType}
@@ -488,6 +480,41 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
 
         {/* Main Content */}
         <div className="flex-1">
+          {/* Filtros rápidos: un tap, stock real */}
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {([
+              { key: 'todos', name: 'Todos', count: quickCounts.todos, active: filters.bodyType === 'todas' && filters.transmission === 'Todas' && filters.label === 'Todas' },
+              { key: 'turismo', name: 'Turismos', count: quickCounts.turismo, active: filters.bodyType === 'turismo' },
+              { key: 'furgoneta', name: 'Furgonetas', count: quickCounts.furgoneta, active: filters.bodyType === 'furgoneta' },
+              { key: 'industrial', name: 'Industriales', count: quickCounts.industrial, active: filters.bodyType === 'industrial' },
+              { key: 'monovolumen', name: '7 plazas', count: quickCounts.monovolumen, active: filters.bodyType === 'monovolumen' },
+              { key: 'auto', name: 'Automáticos', count: quickCounts.auto, active: filters.transmission === 'Automático' },
+              { key: 'eco', name: 'Etiqueta ECO', count: quickCounts.eco, active: filters.label === 'ECO' },
+            ]).map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => {
+                  if (chip.key === 'todos') setFilters({ ...filters, bodyType: 'todas', transmission: 'Todas', label: 'Todas' })
+                  else if (chip.key === 'auto') setFilters({ ...filters, transmission: chip.active ? 'Todas' : 'Automático' })
+                  else if (chip.key === 'eco') setFilters({ ...filters, label: chip.active ? 'Todas' : 'ECO' })
+                  else setFilters({ ...filters, bodyType: chip.active ? 'todas' : chip.key })
+                }}
+                className={cn(
+                  'flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-200',
+                  chip.active
+                    ? 'bg-secondary-950 text-white shadow-sm'
+                    : 'bg-white text-secondary-600 ring-1 ring-secondary-900/[0.08] hover:text-secondary-950 hover:ring-secondary-900/20'
+                )}
+              >
+                {chip.name}
+                <span className={cn('text-[11.5px] font-light', chip.active ? 'text-white/60' : 'text-secondary-400')}>
+                  {chip.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
           {/* Search Bar */}
           <div className="relative mb-5">
             <Search className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-secondary-400" />
