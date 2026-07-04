@@ -1,141 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { ArrowRight, Fuel, Gauge, Calendar, Zap, Camera } from 'lucide-react'
-import { formatPrice, formatKilometers } from '@/lib/utils'
-import { cn } from '@/lib/utils'
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { VehicleCard } from '@/components/vehicles/VehicleCard'
 import { getVehiclesOnSale, getFeaturedVehicles, getVehicleCount, type Vehicle } from '@/lib/vehicles-service'
-import { ScrollAnimation, StaggerContainer, StaggerItem } from '@/components/ui/ScrollAnimation'
-
-const MAX_IMAGE_RETRIES = 3
-
-function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  const [imgError, setImgError] = useState(false)
-  const [imageIndex, setImageIndex] = useState(0)
-  const monthlyPayment = vehicle.monthlyPayment || Math.round(vehicle.price / 60)
-  const images = vehicle.images || []
-  const mainImage = images[imageIndex]
-
-  const labelColors: Record<string, string> = {
-    'ECO': 'bg-green-500',
-    'C': 'bg-emerald-500',
-    'B': 'bg-yellow-500',
-    '0': 'bg-blue-500',
-  }
-
-  return (
-    <article className="card-vehicle group relative">
-      {/* Vehicle Image */}
-      <div className="relative aspect-[4/3] bg-gradient-to-br from-secondary-100 to-secondary-200 overflow-hidden">
-        {mainImage && !imgError ? (
-          <Image
-            src={mainImage}
-            alt={vehicle.title}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-            onError={() => {
-              if (imageIndex < images.length - 1 && imageIndex < MAX_IMAGE_RETRIES - 1) {
-                setImageIndex((prev) => prev + 1)
-                return
-              }
-              setImgError(true)
-            }}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-2 bg-secondary-300 rounded-full flex items-center justify-center">
-                <Fuel className="w-8 h-8 text-secondary-500" />
-              </div>
-              <p className="text-sm font-medium text-secondary-500">{vehicle.brand}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
-          {vehicle.onSale && (
-            <span className="badge-primary text-xs">
-              DISPONIBLE
-            </span>
-          )}
-          {vehicle.ivaDeducible && (
-            <span className="badge bg-blue-100 text-blue-700 text-xs">
-              IVA DEDUCIBLE
-            </span>
-          )}
-        </div>
-
-        {/* Environmental Label */}
-        {vehicle.label && (
-          <div className="absolute top-3 right-3">
-            <span className={cn(
-              'inline-flex items-center justify-center w-10 h-10 rounded-full text-white text-xs font-bold shadow-lg',
-              labelColors[vehicle.label] || 'bg-gray-500'
-            )}>
-              {vehicle.label}
-            </span>
-          </div>
-        )}
-
-        {/* Photo count */}
-        {images.length > 1 && (
-          <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-            <Camera className="w-3 h-3" />
-            {images.length}
-          </span>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="p-5">
-        <h3 className="font-bold text-lg text-secondary-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
-          {vehicle.title}
-        </h3>
-        <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-2xl font-bold text-primary-600">
-            {formatPrice(vehicle.price)}
-          </span>
-          {vehicle.originalPrice && (
-            <span className="text-sm text-secondary-400 line-through">
-              {formatPrice(vehicle.originalPrice)}
-            </span>
-          )}
-        </div>
-        <p className="text-sm text-secondary-500 mb-4">
-          Desde <span className="font-semibold text-secondary-700">{monthlyPayment}€/mes</span>
-        </p>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="flex items-center gap-2 text-secondary-600">
-            <Gauge className="w-4 h-4" />
-            <span>{formatKilometers(vehicle.km)}</span>
-          </div>
-          <div className="flex items-center gap-2 text-secondary-600">
-            <Calendar className="w-4 h-4" />
-            <span>{vehicle.year}</span>
-          </div>
-          <div className="flex items-center gap-2 text-secondary-600">
-            <Fuel className="w-4 h-4" />
-            <span>{vehicle.fuel}</span>
-          </div>
-          <div className="flex items-center gap-2 text-secondary-600">
-            <Zap className="w-4 h-4" />
-            <span>{vehicle.cv}cv</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Link overlay */}
-      <Link href={`/vehiculos/${vehicle.stock_id || vehicle.slug}`} className="absolute inset-0" prefetch={false}>
-        <span className="sr-only">Ver {vehicle.title}</span>
-      </Link>
-    </article>
-  )
-}
 
 interface FeaturedVehiclesProps {
   initialVehicles?: Vehicle[]
@@ -146,6 +15,7 @@ export function FeaturedVehicles({ initialVehicles, initialCount }: FeaturedVehi
   const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles || [])
   const [totalCount, setTotalCount] = useState(initialCount || 0)
   const [isLoading, setIsLoading] = useState(!initialVehicles)
+  const scrollerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Skip fetch if server already provided data
@@ -173,24 +43,22 @@ export function FeaturedVehicles({ initialVehicles, initialCount }: FeaturedVehi
     loadVehicles()
   }, [initialVehicles])
 
+  const scrollBy = (dir: 1 | -1) => {
+    scrollerRef.current?.scrollBy({ left: dir * 680, behavior: 'smooth' })
+  }
+
   if (isLoading) {
     return (
       <section className="py-12 md:py-20">
         <div className="container-custom px-4 md:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 md:mb-12">
-            <div>
-              <div className="h-8 w-64 bg-secondary-200 rounded animate-pulse mb-2" />
-              <div className="h-6 w-96 bg-secondary-100 rounded animate-pulse" />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="mb-10 h-9 w-72 animate-pulse rounded-full bg-secondary-100" />
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse">
-                <div className="aspect-[4/3] bg-secondary-200" />
-                <div className="p-5 space-y-3">
-                  <div className="h-5 bg-secondary-200 rounded w-3/4" />
-                  <div className="h-7 bg-secondary-200 rounded w-1/2" />
-                  <div className="h-4 bg-secondary-100 rounded w-1/3" />
+              <div key={i} className="overflow-hidden rounded-[22px] bg-white ring-1 ring-secondary-900/[0.06] animate-pulse">
+                <div className="aspect-[16/10] bg-secondary-100" />
+                <div className="space-y-3 p-5">
+                  <div className="h-4 w-3/4 rounded-full bg-secondary-100" />
+                  <div className="h-6 w-1/2 rounded-full bg-secondary-100" />
                 </div>
               </div>
             ))}
@@ -203,43 +71,70 @@ export function FeaturedVehicles({ initialVehicles, initialCount }: FeaturedVehi
   return (
     <section className="py-12 md:py-20">
       <div className="container-custom px-4 md:px-6 lg:px-8">
-        {/* Header */}
-        <ScrollAnimation variant="fadeUp">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 md:mb-12">
-            <div>
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-secondary-900 font-display mb-2">Ofertas destacadas</h2>
-              <p className="text-base md:text-lg text-secondary-500 max-w-2xl">
-                Los mejores vehículos a precios increíbles. ¡Solo este mes!
-              </p>
-            </div>
+        {/* Cabecera elegante: eyebrow + título, controles a la derecha */}
+        <div className="mb-8 flex items-end justify-between gap-6 md:mb-10">
+          <div>
+            <p className="mb-2.5 flex items-center gap-2.5 text-[11px] font-medium uppercase tracking-[0.35em] text-primary-600">
+              <span className="h-px w-8 bg-primary-600" />
+              Selección
+            </p>
+            <h2 className="font-display text-3xl font-bold tracking-tight text-secondary-950 md:text-4xl">
+              Vehículos destacados
+            </h2>
+          </div>
+          <div className="flex items-center gap-2.5">
+            {vehicles.length > 4 && (
+              <div className="hidden md:flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => scrollBy(-1)}
+                  aria-label="Anterior"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-secondary-600 ring-1 ring-secondary-200 transition-all duration-300 hover:bg-secondary-950 hover:text-white hover:ring-secondary-950"
+                >
+                  <ChevronLeft className="h-[18px] w-[18px]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollBy(1)}
+                  aria-label="Siguiente"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-secondary-600 ring-1 ring-secondary-200 transition-all duration-300 hover:bg-secondary-950 hover:text-white hover:ring-secondary-950"
+                >
+                  <ChevronRight className="h-[18px] w-[18px]" />
+                </button>
+              </div>
+            )}
             <Link
               href="/vehiculos"
-              className="btn-secondary self-start md:self-auto text-sm md:text-base"
+              className="group hidden sm:inline-flex items-center gap-2 rounded-full bg-secondary-950 px-5 py-2.5 text-[13px] font-medium text-white transition-all duration-300 hover:bg-primary-600"
             >
-              Ver todas las ofertas
-              <ArrowRight className="w-4 h-4" />
+              Ver todo el stock
+              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
             </Link>
           </div>
-        </ScrollAnimation>
+        </div>
 
-        {/* Grid */}
-        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {vehicles.slice(0, 4).map((vehicle) => (
-            <StaggerItem key={vehicle.id}>
+        {/* Carrusel */}
+        <div
+          ref={scrollerRef}
+          className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 scrollbar-hide"
+        >
+          {vehicles.map((vehicle) => (
+            <div key={vehicle.id} className="w-[280px] shrink-0 snap-start sm:w-[320px]">
               <VehicleCard vehicle={vehicle} />
-            </StaggerItem>
+            </div>
           ))}
-        </StaggerContainer>
+        </div>
 
-        {/* CTA */}
-        <ScrollAnimation variant="fadeUp" delay={0.3}>
-          <div className="mt-12 text-center">
-            <Link href="/vehiculos" className="btn-primary text-lg px-8 py-4">
-              Ver todos los vehículos ({totalCount})
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
-        </ScrollAnimation>
+        {/* CTA de cierre */}
+        <div className="mt-10 text-center">
+          <Link
+            href="/vehiculos"
+            className="btn-sheen group inline-flex items-center gap-2.5 rounded-full bg-primary-600 px-8 py-4 text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-primary-500 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_0_0_6px_rgba(220,38,38,0.14)] active:scale-[0.98]"
+          >
+            Explorar los {totalCount} vehículos
+            <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-1" />
+          </Link>
+        </div>
       </div>
     </section>
   )

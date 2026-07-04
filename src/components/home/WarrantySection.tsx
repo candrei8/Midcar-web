@@ -75,9 +75,7 @@ export function WarrantySection({ content: serverContent }: WarrantySectionProps
               {content.titulo}
             </h2>
             <p className="text-lg text-secondary-600 max-w-2xl mx-auto">
-              {content.subtitulo} Los seguros que nos ofrecen cubren, a nivel europeo, el <strong className="text-secondary-900">doble
-              de elementos mecánicos</strong> que nuestra competencia. Además, la garantía cubre hasta
-              <strong className="text-secondary-900"> 2.500€ por avería</strong>, 4 veces más que la garantía usual.
+              {content.subtitulo}
             </p>
           </div>
 

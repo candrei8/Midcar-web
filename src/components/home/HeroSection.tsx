@@ -1,76 +1,96 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { Gauge, ShieldCheck, Wrench, Percent, ArrowRight, Phone } from 'lucide-react'
 import type { HeroContent } from '@/lib/content-service'
 
 interface HeroSectionProps {
   content: HeroContent
+  vehicleCount: number
+  telefono: string
 }
 
-export function HeroSection({ content }: HeroSectionProps) {
+const trustItems = [
+  { icon: Gauge, label: 'Kilómetros certificados' },
+  { icon: ShieldCheck, label: 'Garantía 12 meses' },
+  { icon: Wrench, label: 'Revisados en taller propio' },
+  { icon: Percent, label: 'Financiación a tu medida' },
+]
+
+export function HeroSection({ content, vehicleCount, telefono }: HeroSectionProps) {
   return (
-    <section className="relative isolate h-[100dvh] w-full overflow-hidden bg-[#000000]">
-      {/* Fondo */}
-      <div
-        className="absolute inset-0 z-0"
-        style={{ background: 'radial-gradient(circle at 62% 48%, rgba(26,26,30,1) 0%, rgba(3,3,3,1) 70%)' }}
+    <section className="relative w-full overflow-hidden bg-[#07080c]">
+      {/* Fondo — editable desde el CRM; por defecto, foto premium local (Unsplash, licencia libre) */}
+      <Image
+        src={content.imagenUrl || '/hero-premium.jpg'}
+        alt="Vehículo premium de ocasión en MID Car"
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-[70%_center] opacity-80"
       />
-      <div className="absolute inset-0 opacity-[0.04] bg-[url('/noise.svg')] z-10 pointer-events-none" />
 
-      {/* Coche — foto profesional recortada (sin fondo) */}
-      <div className="absolute inset-y-0 right-0 w-[72%] sm:w-[60%] lg:w-[56%] z-20 pointer-events-none">
-        <Image
-          src="/hero-coche-front.png"
-          alt="Coche de ocasión premium en MID Car"
-          fill
-          priority
-          sizes="(max-width: 1024px) 72vw, 56vw"
-          className="object-contain object-center"
-        />
-      </div>
+      {/* Escenografía: viñeta izquierda para lectura + halo rojo sutil + vignette inferior */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#07080c] via-[#07080c]/80 to-[#07080c]/10" />
+      <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#07080c] via-[#07080c]/60 to-transparent" />
+      <div
+        className="absolute -left-40 -bottom-40 h-[480px] w-[480px] rounded-full opacity-[0.22] blur-3xl pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #dc2626 0%, transparent 65%)' }}
+      />
+      <div className="absolute inset-0 opacity-[0.05] bg-[url('/noise.svg')] pointer-events-none" />
 
-      {/* Scrim: oscurece la izquierda para que el texto blanco se lea sobre el coche */}
-      <div className="absolute inset-0 z-[25] bg-gradient-to-r from-black via-black/75 to-transparent pointer-events-none" />
-
-      {/* Contenido */}
-      <div className="absolute inset-0 z-30 flex flex-col justify-center px-8 md:px-16 lg:px-[8%]">
-        <div className="max-w-4xl w-full mx-auto lg:mx-0">
-          <div className="inline-flex items-center gap-4 mb-8 md:mb-10">
-            <div className="w-12 h-[1px] bg-white/50"></div>
-            <span className="text-white/70 font-light tracking-[0.5em] text-[10px] uppercase">
-              Calidad y Confianza
+      <div className="relative z-10 container-custom px-4 md:px-6 lg:px-8 pt-20 md:pt-28 pb-32 md:pb-44">
+        <div className="max-w-3xl">
+          {/* Eyebrow minimalista */}
+          <div className="flex items-center gap-3 mb-7">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary-500" />
+            <span className="text-white/60 text-[11px] font-medium uppercase tracking-[0.4em]">
+              {content.badge}
             </span>
           </div>
 
-          <h1 className="text-[14vw] md:text-7xl lg:text-[100px] font-bold text-white tracking-tight uppercase leading-[0.9]">
-            {content.titulo1 || 'TU PRÓXIMO'}
-          </h1>
-          <h1 className="text-[14vw] md:text-7xl lg:text-[100px] font-light text-white/30 tracking-tight uppercase leading-[0.9] mb-10 md:mb-12 text-outline">
-            {content.titulo2 || 'COCHE'}
+          <h1 className="font-display text-white text-[42px] sm:text-6xl lg:text-[72px] leading-[1.04] tracking-tight mb-6">
+            <span className="font-light">{content.titulo1}</span>
+            <br />
+            <span className="font-bold">{content.titulo2}</span>
           </h1>
 
-          <p className="text-white/50 text-[14px] font-light leading-relaxed max-w-sm mb-12 md:mb-14 border-l border-white/10 pl-6">
-            {content.subtitulo || 'Vehículos de ocasión revisados en nuestro taller propio. Calidad y transparencia en tu próxima compra.'}
+          <p className="text-white/55 text-base md:text-lg font-light leading-relaxed max-w-xl mb-10">
+            {content.subtitulo}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-8">
+          {/* CTAs: una acción principal clara + llamada directa */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-14">
             <Link
               href="/vehiculos"
-              className="group relative bg-white text-black px-12 py-5 text-[10px] font-bold uppercase tracking-[0.3em] text-center overflow-hidden"
+              className="btn-sheen group inline-flex items-center justify-center gap-2.5 rounded-full bg-primary-600 px-8 py-4 text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-primary-500 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_0_0_6px_rgba(220,38,38,0.16)] active:scale-[0.98]"
             >
-              <span className="relative z-10 group-hover:text-white transition-colors duration-500">Ver Inventario</span>
-              <div className="absolute inset-0 bg-black translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.85,0,0.15,1)]"></div>
+              Ver los {vehicleCount} vehículos
+              <ArrowRight className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
-
-            <Link
-              href="/contacto"
-              className="group flex items-center justify-center gap-4 text-white/40 hover:text-white transition-colors"
+            <a
+              href={`tel:${telefono.replace(/\s/g, '')}`}
+              className="inline-flex items-center justify-center gap-2.5 rounded-full border border-white/20 px-7 py-4 text-[15px] font-medium text-white backdrop-blur-md transition-colors duration-200 hover:border-white/50 hover:bg-white/[0.06]"
             >
-              <span className="text-[10px] uppercase tracking-[0.3em] font-medium">Contactar</span>
-              <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center group-hover:border-white/40 transition-all">
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M1 11L11 1M11 1H1M11 1V11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </div>
-            </Link>
+              <Phone className="h-[17px] w-[17px] text-primary-400" />
+              {telefono}
+            </a>
           </div>
+        </div>
+
+        {/* Confianza: una línea a lo ancho con separadores finos, sin cajas */}
+        <div className="mt-14 grid grid-cols-2 gap-y-5 border-t border-white/10 pt-7 lg:flex lg:items-center">
+          {trustItems.map((item, i) => (
+            <div
+              key={item.label}
+              className={
+                'flex items-center gap-2.5' +
+                (i < trustItems.length - 1 ? ' lg:mr-9 lg:border-r lg:border-white/10 lg:pr-9' : '')
+              }
+            >
+              <item.icon className="h-[18px] w-[18px] shrink-0 text-primary-400" strokeWidth={1.5} />
+              <span className="text-[13.5px] font-light leading-tight text-white/70 lg:whitespace-nowrap">{item.label}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>

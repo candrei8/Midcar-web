@@ -123,3 +123,81 @@
     display: none;
   }
 }
+
+/* Slider doble de precio (home) */
+.dual-range input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+}
+.dual-range input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #dc2626;
+  border: 2.5px solid #fff;
+  box-shadow: 0 0 0 1px rgb(2 6 23 / 0.08), 0 2px 6px rgb(2 6 23 / 0.25);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.dual-range input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.dual-range input[type='range']::-moz-range-thumb {
+  pointer-events: auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #dc2626;
+  border: 2.5px solid #fff;
+  box-shadow: 0 0 0 1px rgb(2 6 23 / 0.08), 0 2px 6px rgb(2 6 23 / 0.25);
+  cursor: pointer;
+}
+.dual-range input[type='range']::-moz-range-track {
+  background: transparent;
+}
+
+/* Carrusel sin barra de scroll visible */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Destello diagonal que barre el botón al hacer hover (CTAs principales) */
+.btn-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.btn-sheen::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent 15%, rgba(255, 255, 255, 0.4) 50%, transparent 85%);
+  transform: skewX(-18deg);
+  pointer-events: none;
+}
+.btn-sheen:hover::after {
+  animation: btn-sheen-sweep 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes btn-sheen-sweep {
+  from { transform: skewX(-18deg) translateX(0); }
+  to { transform: skewX(-18deg) translateX(500%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-sheen:hover::after { animation: none; }
+}
