@@ -47,6 +47,100 @@ const kmRanges = [
 const yearRanges = ['Sin límite', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015']
 const transmissionOptions = ['Todas', 'Manual', 'Automático']
 
+const DEFAULT_FILTERS = {
+  brand: 'Todas',
+  model: 'Todos',
+  fuel: 'Todos',
+  bodyType: 'todas',
+  transmission: 'Todas',
+  label: 'Todas',
+  maxPrice: 'Sin límite',
+  maxKm: 'Sin límite',
+  minYear: 'Sin límite',
+}
+
+type UrlRange = { minPrice?: number; maxPrice?: number; minYear?: number; maxYear?: number }
+
+// Traduce los parámetros de URL a estado de filtros. Es pura y síncrona para
+// poder aplicarla en el PRIMER render: si se aplicara en un efecto posterior,
+// la página pintaría los 130 coches y ~200ms después saltaría al subconjunto
+// filtrado — un layout shift enorme (CLS 0.25 medido por Lighthouse).
+function parseUrlFilters(searchParams: URLSearchParams, brands: string[], fuelTypes: string[]) {
+  const filters = { ...DEFAULT_FILTERS }
+  const range: UrlRange = {}
+
+  const marca = searchParams.get('marca')
+  if (marca) {
+    const matchedBrand = brands.find(b =>
+      b.toLowerCase().replace(/\s+/g, '-') === marca.toLowerCase() ||
+      b.toLowerCase() === marca.toLowerCase()
+    )
+    if (matchedBrand) filters.brand = matchedBrand
+  }
+
+  const tipo = searchParams.get('tipo')
+  const carroceria = searchParams.get('carroceria')
+  if (tipo === 'turismo') {
+    filters.bodyType = 'turismo'
+  } else if (carroceria) {
+    const matchedBody = bodyTypes.find(b => b.id === carroceria.toLowerCase())
+    if (matchedBody) filters.bodyType = matchedBody.id
+  }
+
+  const combustible = searchParams.get('combustible')
+  if (combustible) {
+    const matchedFuel = fuelTypes.find(f => f.toLowerCase() === combustible.toLowerCase())
+    if (matchedFuel && matchedFuel !== 'Todos') filters.fuel = matchedFuel
+  }
+
+  const cambio = searchParams.get('cambio')
+  if (cambio) {
+    const transMap: Record<string, string> = { automatico: 'Automático', manual: 'Manual' }
+    const matched = transMap[cambio.toLowerCase()]
+    if (matched) filters.transmission = matched
+  }
+
+  const etiqueta = searchParams.get('etiqueta')
+  if (etiqueta) {
+    filters.label = etiqueta.toUpperCase() === 'ECO' ? 'ECO' : etiqueta
+  }
+
+  const precioMax = searchParams.get('precio_max')
+  if (precioMax) {
+    const price = parseInt(precioMax)
+    const matchedPrice = priceRanges.find(p => p.value === price)
+    if (matchedPrice) filters.maxPrice = matchedPrice.label
+    else if (!isNaN(price)) range.maxPrice = price
+  }
+
+  const precioMin = searchParams.get('precio_min')
+  if (precioMin) {
+    const price = parseInt(precioMin)
+    if (!isNaN(price) && price > 0) range.minPrice = price
+  }
+
+  const kmMax = searchParams.get('km_max')
+  if (kmMax) {
+    const km = parseInt(kmMax)
+    const matchedKm = kmRanges.find(k => k.value === km)
+    if (matchedKm) filters.maxKm = matchedKm.label
+  }
+
+  const anoMin = searchParams.get('ano_min')
+  if (anoMin) {
+    const y = parseInt(anoMin)
+    if (!isNaN(y)) range.minYear = y
+  }
+
+  const anoMax = searchParams.get('ano_max')
+  if (anoMax) {
+    const y = parseInt(anoMax)
+    if (!isNaN(y)) range.maxYear = y
+  }
+
+  return { filters, range }
+}
+
 interface VehiclesCatalogProps {
   initialVehicles?: Vehicle[]
   initialBrands?: string[]
@@ -78,22 +172,17 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
   const [fuelTypes, setFuelTypes] = useState<string[]>(['Todos', ...(initialFuelTypes || [])])
   const [labels, setLabels] = useState<string[]>(['Todas', ...(initialLabels || [])])
 
-  // Initialize filters from URL params
-  const [filters, setFilters] = useState({
-    brand: 'Todas',
-    model: 'Todos',
-    fuel: 'Todos',
-    bodyType: 'todas',
-    transmission: 'Todas',
-    label: 'Todas',
-    maxPrice: 'Sin límite',
-    maxKm: 'Sin límite',
-    minYear: 'Sin límite',
-  })
+  // Filtros iniciales: los parámetros de URL se aplican de forma síncrona en el
+  // primer render (evita el layout shift de pintar todo y filtrar después)
+  const [filters, setFilters] = useState(
+    () => parseUrlFilters(searchParams, ['Todas', ...(initialBrands || [])], ['Todos', ...(initialFuelTypes || [])]).filters
+  )
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('relevancia')
   // Rangos numéricos que solo llegan por URL (slider de precio y años de la home)
-  const [urlRange, setUrlRange] = useState<{ minPrice?: number; maxPrice?: number; minYear?: number; maxYear?: number }>({})
+  const [urlRange, setUrlRange] = useState<UrlRange>(
+    () => parseUrlFilters(searchParams, [], []).range
+  )
 
   // Load data on mount (solo si el servidor no aportó datos)
   useEffect(() => {
@@ -142,83 +231,11 @@ export function VehiclesCatalog({ initialVehicles, initialBrands, initialFuelTyp
     setFilters(prev => ({ ...prev, brand, model: 'Todos' }))
   }
 
-  // Parse URL params on mount
+  // Cambios de URL posteriores a la carga (navegación con la página ya abierta)
   useEffect(() => {
-    const marca = searchParams.get('marca')
-    const carroceria = searchParams.get('carroceria')
-    const tipo = searchParams.get('tipo')
-    const combustible = searchParams.get('combustible')
-    const cambio = searchParams.get('cambio')
-    const etiqueta = searchParams.get('etiqueta')
-    const precioMax = searchParams.get('precio_max')
-    const precioMin = searchParams.get('precio_min')
-    const kmMax = searchParams.get('km_max')
-    const anoMin = searchParams.get('ano_min')
-    const anoMax = searchParams.get('ano_max')
-
-    const newFilters = { ...filters }
-    const newRange: typeof urlRange = {}
-
-    if (marca) {
-      const matchedBrand = brands.find(b =>
-        b.toLowerCase().replace(/\s+/g, '-') === marca.toLowerCase() ||
-        b.toLowerCase() === marca.toLowerCase()
-      )
-      if (matchedBrand) newFilters.brand = matchedBrand
-    }
-
-    if (tipo === 'turismo') {
-      newFilters.bodyType = 'turismo'
-    } else if (carroceria) {
-      const matchedBody = bodyTypes.find(b => b.id === carroceria.toLowerCase())
-      if (matchedBody) newFilters.bodyType = matchedBody.id
-    }
-
-    if (combustible) {
-      const matchedFuel = fuelTypes.find(f => f.toLowerCase() === combustible.toLowerCase())
-      if (matchedFuel && matchedFuel !== 'Todos') newFilters.fuel = matchedFuel
-    }
-
-    if (cambio) {
-      const transMap: Record<string, string> = { automatico: 'Automático', manual: 'Manual' }
-      const matched = transMap[cambio.toLowerCase()]
-      if (matched) newFilters.transmission = matched
-    }
-
-    if (etiqueta) {
-      newFilters.label = etiqueta.toUpperCase() === 'ECO' ? 'ECO' : etiqueta
-    }
-
-    if (precioMax) {
-      const price = parseInt(precioMax)
-      const matchedPrice = priceRanges.find(p => p.value === price)
-      if (matchedPrice) newFilters.maxPrice = matchedPrice.label
-      else if (!isNaN(price)) newRange.maxPrice = price
-    }
-
-    if (precioMin) {
-      const price = parseInt(precioMin)
-      if (!isNaN(price) && price > 0) newRange.minPrice = price
-    }
-
-    if (kmMax) {
-      const km = parseInt(kmMax)
-      const matchedKm = kmRanges.find(k => k.value === km)
-      if (matchedKm) newFilters.maxKm = matchedKm.label
-    }
-
-    if (anoMin) {
-      const y = parseInt(anoMin)
-      if (!isNaN(y)) newRange.minYear = y
-    }
-
-    if (anoMax) {
-      const y = parseInt(anoMax)
-      if (!isNaN(y)) newRange.maxYear = y
-    }
-
-    setFilters(newFilters)
-    setUrlRange(newRange)
+    const { filters: parsed, range } = parseUrlFilters(searchParams, brands, fuelTypes)
+    setFilters(parsed)
+    setUrlRange(range)
   }, [searchParams, brands, fuelTypes])
 
   // Filter and sort vehicles
