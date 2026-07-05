@@ -165,7 +165,7 @@ const organizationJsonLd = {
   '@type': 'AutoDealer',
   '@id': `${siteUrl}/#organization`,
   name: 'MID Car',
-  alternateName: 'MID Car Madrid',
+  alternateName: ['MID Car Vehículos de Confianza', 'MID Car Madrid', 'MidCar'],
   url: siteUrl,
   logo: `${siteUrl}/logo.png`,
   image: `${siteUrl}/og-image.jpg`,
