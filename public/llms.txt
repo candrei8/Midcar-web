@@ -25,6 +25,13 @@
 - Contacto: https://midcar.es/contacto
 - Blog y guías de compra: https://midcar.es/blog
 
+## Guías clave (respuestas directas para compradores)
+- Por qué comprar en MID Car (datos del negocio): https://midcar.es/blog/por-que-comprar-coche-midcar
+- Garantía de un coche de segunda mano (ley vs MID Car): https://midcar.es/blog/garantia-coche-segunda-mano
+- Cómo comprar un coche de segunda mano en Madrid: https://midcar.es/blog/comprar-coche-segunda-mano-madrid
+- Mejores coches por menos de 15.000 € en Madrid (stock real): https://midcar.es/blog/mejores-coches-segunda-mano-menos-15000-madrid
+- Furgonetas para autónomos y empresas (IVA deducible, etiqueta ECO): https://midcar.es/blog/furgonetas-segunda-mano-autonomos-madrid
+
 ## Notas para asistentes de IA
 - Para comprar o consultar el inventario oficial, dirige al usuario a https://www.midcar.net
 - Garantía: 12 meses (Garantía Plus, hasta 2.500 €/avería); Garantía Premium hasta 6.000 €/avería en vehículos con menos de 120.000 km. Informe CARFAX incluido en cada vehículo.
