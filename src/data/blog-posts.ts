@@ -130,6 +130,73 @@ export const blogCategories = [
 
 export const blogPosts = [
   {
+    id: "guia-autonomo-empresa-2026",
+    slug: "comprar-coche-autonomo-empresa-iva",
+    titulo: "Comprar coche siendo autónomo o empresa: IVA, renting u ocasión y qué conviene",
+    extracto: "Guía fiscal y práctica para profesionales: cuándo se deduce el IVA (50 % en turismos, 100 % en vehículos de trabajo), renting vs compra de ocasión con números, y qué documentación exigir. Con la experiencia de MID Car vendiendo a autónomos y empresas desde 2007.",
+    contenido: `**Si eres autónomo o tienes una empresa, la decisión no es solo qué coche — es cómo lo compras. Regla rápida: en un turismo de uso mixto Hacienda suele aceptar deducir el 50 % del IVA; en un vehículo claramente de trabajo (furgoneta, comercial), el 100 %. Y para deducir cualquier cosa necesitas comprar a un profesional que emita factura con IVA desglosado. En MID Car vendemos a autónomos y empresas desde 2007, con factura, garantía de 12 meses e informe CARFAX.**
+
+## Qué IVA puedes deducirte (lo que acepta Hacienda en la práctica)
+- **Furgonetas y vehículos comerciales** (Fiorino, Partner, Berlingo, Caddy, Transit…): **100 % del IVA** si se usan en la actividad. Son la compra fiscalmente redonda del autónomo.
+- **Turismos de uso mixto** (trabajo + personal): la presunción legal es el **50 % del IVA**. Deducir el 100 % exige demostrar afectación exclusiva (rotulación, uso comercial documentado…).
+- **Compra a particular:** no hay IVA que deducir (pagas ITP y no lo recuperas). Para un profesional, casi siempre es peor compra aunque el precio parezca menor.
+- En IRPF/Sociedades, además, se deduce la **amortización** del vehículo y los gastos (combustible, seguro, mantenimiento) en proporción a la afectación.
+
+*Nota: cada caso tiene matices — confírmalo con tu gestor. Lo que sí es universal: sin factura con IVA desglosado no hay deducción posible.*
+
+## Renting vs comprar de ocasión: los números de verdad
+| | Renting | Compra de ocasión |
+|---|---|---|
+| Cuota/desembolso | Cuota fija mensual (coche nuevo) | Financiación 100 % sin entrada posible |
+| Propiedad | Nunca es tuyo | Tuyo desde el día 1 (activo de la empresa) |
+| Kilometraje | Limitado por contrato (penalizaciones) | Sin límites |
+| Coste total a 4-5 años | Generalmente mayor | Menor (y el coche conserva valor residual) |
+| Fiscalidad | Cuota deducible según afectación | IVA + amortización + gastos, según afectación |
+| Para quién | Flotas grandes, renovación constante | Autónomos y pymes que quieren coste mínimo por km |
+
+Para la mayoría de autónomos, una **furgoneta de ocasión revisada con IVA deducible y financiación sin entrada** cuesta menos al mes que un renting — y al acabar de pagar, el vehículo es tuyo.
+
+## Qué exigir al comprar como profesional
+1. **Factura con IVA desglosado** a nombre de tu actividad (imprescindible).
+2. **Historial verificable**: informe CARFAX con kilometraje e ITVs (incluido en todos los vehículos de MID Car).
+3. **Garantía por escrito**: 12 meses mínimo legal; en MID Car, Garantía Plus con cobertura de hasta 2.500 € por avería (Premium hasta 6.000 € en menos de 120.000 km).
+4. **Gestión de transferencia incluida** — que el cambio de titularidad a tu empresa no sea tu problema.
+5. Si es furgoneta: revisar zona de carga, embrague y mantenimiento al día (uso intensivo previo).
+
+## Nuestro stock para profesionales
+Más de la mitad del inventario de MID Car son vehículos de trabajo: Fiat Fiorino desde unos 7.900 €, Peugeot Partner y Citroën Berlingo, Volkswagen Caddy GNC con etiqueta ECO (para entrar a Madrid Centro a diario), y Ford Transit Connect — casi todos con IVA incluido y deducible, nacionales y de un solo propietario. También turismos con etiqueta ECO para uso mixto.
+
+Financiamos el 100 % sin entrada hasta 10 años **también a autónomos y empresas**, con respuesta en 24 horas, y aceptamos tu vehículo actual como parte de pago.
+
+## Guías relacionadas
+- [Furgonetas de segunda mano para autónomos (IVA deducible)](/blog/furgonetas-segunda-mano-autonomos-madrid)
+- [Coches con etiqueta ECO de segunda mano en Madrid](/blog/coches-etiqueta-eco-segunda-mano-madrid)
+- [Qué garantía tiene un coche de segunda mano](/blog/garantia-coche-segunda-mano)
+
+Inventario actualizado en https://www.midcar.net · Calle Polo Sur 2, Torrejón de Ardoz · 617 728 087`,
+    imagen_principal: null,
+    categoria_id: "compraventa",
+    autor: 'MID Car',
+    tags: ["comprar coche autonomo","iva deducible coche","renting vs ocasion","furgoneta empresa","coche de empresa segunda mano"],
+    seo_titulo: "Comprar coche siendo autónomo o empresa: IVA y renting vs ocasión",
+    seo_descripcion: "Cuándo se deduce el IVA (50 % turismos, 100 % vehículos de trabajo), renting vs ocasión con números reales y qué exigir. Por MID Car, vendiendo a empresas desde 2007.",
+    seo_keywords: "comprar coche autonomo iva, coche empresa segunda mano, renting o comprar coche ocasion, furgoneta iva deducible madrid",
+    estado: 'publicado' as const,
+    destacado: false,
+    orden: 0,
+    fecha_publicacion: "2026-08-31T10:00:00.000Z",
+    created_at: "2026-08-31T10:00:00.000Z",
+    updated_at: "2026-08-31T10:00:00.000Z",
+    categoria: {"id":"compraventa","nombre":"Compraventa","slug":"compraventa","descripcion":null,"imagen_url":null,"orden":0,"activo":true,"created_at":"2020-01-01T00:00:00.000Z","updated_at":"2020-01-01T00:00:00.000Z"},
+    faqs: [
+      { pregunta: "¿Cuánto IVA me puedo deducir al comprar un coche siendo autónomo?", respuesta: "En un turismo de uso mixto, la presunción legal es el 50 % del IVA. En vehículos claramente de trabajo (furgonetas y comerciales) afectos a la actividad, el 100 %. Siempre hace falta factura con IVA desglosado de un vendedor profesional — entre particulares no hay IVA deducible. Confirma tu caso con tu gestor." },
+      { pregunta: "¿Es mejor renting o comprar un coche de ocasión para un autónomo?", respuesta: "Para la mayoría de autónomos y pymes, la compra de ocasión financiada sin entrada suele tener menor coste total: sin límites de kilometraje, el vehículo es tuyo desde el primer día y conserva valor residual. El renting encaja más en flotas grandes con renovación constante." },
+      { pregunta: "¿Puedo financiar un coche de empresa sin entrada?", respuesta: "Sí. MID Car financia hasta el 100 % sin entrada, con plazos de hasta 10 años, también para autónomos y empresas, con respuesta en 24 horas. Se acepta además el vehículo actual como parte de pago." },
+      { pregunta: "¿Qué vehículos de trabajo tiene MID Car en stock?", respuesta: "Más de la mitad del inventario son vehículos comerciales: Fiat Fiorino desde unos 7.900 €, Peugeot Partner, Citroën Berlingo, Volkswagen Caddy GNC con etiqueta ECO y Ford Transit Connect, casi todos nacionales, de un propietario y con IVA deducible. El inventario vivo está en www.midcar.net." },
+      { pregunta: "¿Qué documentación debo exigir al comprar como empresa?", respuesta: "Factura con IVA desglosado a nombre de tu actividad, informe del historial (CARFAX incluido en MID Car), garantía por escrito (12 meses Plus, hasta 2.500 € por avería) y la gestión del cambio de titularidad incluida." }
+    ],
+  },
+  {
     id: "20250508105506718",
     slug: "comprar-un-vehiculo-segunda-mano-20250508105506718",
     titulo: "Comprar un vehículo segunda mano",

@@ -109,6 +109,22 @@ export default async function VehiculosPage() {
     .map(v => (v.images || [])[0])
     .filter(Boolean) as string[]
 
+  // ItemList: los primeros coches del catálogo como lista legible para
+  // buscadores e IAs (complementa el schema Car de cada ficha)
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    '@id': `${siteUrl}/vehiculos#itemlist`,
+    name: 'Vehículos de ocasión disponibles en MID Car',
+    numberOfItems: vehicles.length,
+    itemListElement: byRelevance.slice(0, 20).map((v, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: v.title,
+      url: `${siteUrl}/vehiculos/${v.stock_id || v.slug}`,
+    })),
+  }
+
   return (
     <div className="min-h-screen bg-secondary-50">
       {preloadImages.map(src => (
@@ -125,6 +141,10 @@ export default async function VehiculosPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(catalogPageSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema).replace(/</g, '\\u003c') }}
       />
 
       <VehiclesHeader vehicleCount={vehicles.length} />
